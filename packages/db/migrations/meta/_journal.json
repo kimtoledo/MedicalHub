@@ -15,6 +15,13 @@
       "when": 1786403009512,
       "tag": "0001_overrated_loners",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786405504709,
+      "tag": "0002_sleepy_lethal_legion",
+      "breakpoints": true
     }
   ]
 }

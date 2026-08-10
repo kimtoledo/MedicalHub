@@ -26,6 +26,14 @@ export const clinics = pgTable(
     name: varchar('name', { length: 200 }).notNull(),
     /** URL slug — must be globally unique */
     slug: varchar('slug', { length: 80 }).notNull(),
+
+    /**
+     * Short uppercase prefix for this clinic (e.g. "SBD", "BSM").
+     * Used as the leading segment of all human-readable reference IDs
+     * across associated tables: patients → SBD-000001, appointments → SBD-000042.
+     * Must be globally unique. 2–8 uppercase alphanumeric characters, no spaces.
+     */
+    prefix: varchar('prefix', { length: 8 }).notNull().default(''),
     status: clinicStatusEnum('status').notNull().default('trial'),
     publicationStatus: publicationStatusEnum('publication_status').notNull().default('draft'),
 
@@ -52,6 +60,7 @@ export const clinics = pgTable(
   },
   (t) => ({
     slugUnique: unique('clinics_slug_unique').on(t.slug),
+    prefixUnique: unique('clinics_prefix_unique').on(t.prefix),
     statusIdx: index('clinics_status_idx').on(t.status),
   }),
 );
