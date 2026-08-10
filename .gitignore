@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+apps/web/.next/
+apps/web/out/
+
+# Build artifacts
+apps/api/dist/
+packages/*/dist/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Replit cache
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
