@@ -19,20 +19,20 @@ const cols = [
 
 export default function Footer() {
   return (
-    <footer className="bg-teal-950 text-teal-300 py-16 px-4 sm:px-6">
+    <footer className="bg-violet-950 text-violet-300 py-16 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-teal-500 rounded-xl flex items-center justify-center">
+              <div className="w-8 h-8 bg-violet-500 rounded-xl flex items-center justify-center">
                 <span className="text-white font-bold text-sm">TH</span>
               </div>
               <span className="font-bold text-white text-lg tracking-tight">
-                ToothHub <span className="text-teal-400 text-sm">PH</span>
+                ToothHub <span className="text-violet-400 text-sm">PH</span>
               </span>
             </div>
-            <p className="text-sm text-teal-400 leading-relaxed">
+            <p className="text-sm text-violet-400 leading-relaxed">
               The all-in-one dental practice management platform for the Philippines.
             </p>
           </div>
@@ -46,7 +46,7 @@ export default function Footer() {
                   <li key={link}>
                     <a
                       href="#"
-                      className="text-teal-400 hover:text-white text-sm transition-colors"
+                      className="text-violet-400 hover:text-white text-sm transition-colors"
                     >
                       {link}
                     </a>
@@ -57,7 +57,7 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="border-t border-teal-900 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-teal-500">
+        <div className="border-t border-violet-900 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-violet-500">
           <p>© {new Date().getFullYear()} ToothHub PH. All rights reserved.</p>
           <p>Built with ❤️ for Philippine dental professionals.</p>
         </div>

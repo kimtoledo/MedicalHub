@@ -14,16 +14,16 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-[#f0fdf9]/80 backdrop-blur-md border-b border-teal-100">
+    <header className="sticky top-0 z-50 bg-[#f5f3ff]/80 backdrop-blur-md border-b border-violet-100">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
         {/* Logo */}
         <a href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-teal-600 rounded-xl flex items-center justify-center">
+          <div className="w-8 h-8 bg-violet-600 rounded-xl flex items-center justify-center">
             <span className="text-white font-bold text-sm">TH</span>
           </div>
-          <span className="font-bold text-teal-800 text-xl tracking-tight">
+          <span className="font-bold text-violet-800 text-xl tracking-tight">
             ToothHub
-            <span className="text-teal-500 text-sm font-semibold ml-1">PH</span>
+            <span className="text-violet-500 text-sm font-semibold ml-1">PH</span>
           </span>
         </a>
 
@@ -33,7 +33,7 @@ export default function Navbar() {
             <a
               key={l.href}
               href={l.href}
-              className="text-teal-700 hover:text-teal-500 font-medium text-sm transition-colors"
+              className="text-violet-700 hover:text-violet-500 font-medium text-sm transition-colors"
             >
               {l.label}
             </a>
@@ -44,13 +44,13 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-3">
           <a
             href="/cl-login"
-            className="text-teal-700 font-medium text-sm hover:text-teal-500 transition-colors"
+            className="text-violet-700 font-medium text-sm hover:text-violet-500 transition-colors"
           >
             Sign In
           </a>
           <a
             href="#get-started"
-            className="bg-teal-600 text-white text-sm font-semibold px-4 py-2 rounded-full hover:bg-teal-700 transition-colors"
+            className="bg-violet-600 text-white text-sm font-semibold px-4 py-2 rounded-full hover:bg-violet-700 transition-colors"
           >
             Get Started Free
           </a>
@@ -58,7 +58,7 @@ export default function Navbar() {
 
         {/* Mobile toggle */}
         <button
-          className="md:hidden text-teal-700"
+          className="md:hidden text-violet-700"
           onClick={() => setOpen(!open)}
           aria-label="Toggle menu"
         >
@@ -68,12 +68,12 @@ export default function Navbar() {
 
       {/* Mobile nav */}
       {open && (
-        <div className="md:hidden bg-white border-t border-teal-100 px-4 py-4 flex flex-col gap-4">
+        <div className="md:hidden bg-white border-t border-violet-100 px-4 py-4 flex flex-col gap-4">
           {links.map((l) => (
             <a
               key={l.href}
               href={l.href}
-              className="text-teal-700 font-medium"
+              className="text-violet-700 font-medium"
               onClick={() => setOpen(false)}
             >
               {l.label}
@@ -81,7 +81,7 @@ export default function Navbar() {
           ))}
           <a
             href="#get-started"
-            className="bg-teal-600 text-white font-semibold px-4 py-2 rounded-full text-center"
+            className="bg-violet-600 text-white font-semibold px-4 py-2 rounded-full text-center"
             onClick={() => setOpen(false)}
           >
             Get Started Free

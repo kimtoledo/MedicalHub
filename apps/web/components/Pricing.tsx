@@ -61,13 +61,13 @@ export default function Pricing() {
           <span className="inline-block bg-violet-100 text-violet-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest mb-4">
             Pricing
           </span>
-          <h2 className="text-4xl sm:text-5xl font-extrabold text-teal-900 leading-tight mb-4">
+          <h2 className="text-4xl sm:text-5xl font-extrabold text-violet-900 leading-tight mb-4">
             Simple pricing.{" "}
-            <span className="bg-gradient-to-r from-violet-500 to-teal-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-violet-500 to-violet-500 bg-clip-text text-transparent">
               No surprises.
             </span>
           </h2>
-          <p className="text-lg text-teal-600 max-w-xl mx-auto">
+          <p className="text-lg text-violet-600 max-w-xl mx-auto">
             Start free. Upgrade when you need more. Cancel anytime — no lock-ins.
           </p>
         </div>
@@ -78,8 +78,8 @@ export default function Pricing() {
               key={p.name}
               className={`rounded-3xl p-7 border relative ${
                 p.highlight
-                  ? "bg-teal-600 border-teal-500 text-white shadow-2xl shadow-teal-200 scale-[1.03]"
-                  : "bg-white border-teal-100"
+                  ? "bg-violet-600 border-violet-500 text-white shadow-2xl shadow-violet-200 scale-[1.03]"
+                  : "bg-white border-violet-100"
               }`}
             >
               {p.badge && (
@@ -89,18 +89,18 @@ export default function Pricing() {
               )}
 
               <div className="mb-5">
-                <p className={`text-xs font-bold uppercase tracking-widest mb-2 ${p.highlight ? "text-teal-300" : "text-teal-500"}`}>
+                <p className={`text-xs font-bold uppercase tracking-widest mb-2 ${p.highlight ? "text-violet-300" : "text-violet-500"}`}>
                   {p.name}
                 </p>
                 <div className="flex items-baseline gap-1 mb-2">
-                  <span className={`text-4xl font-extrabold ${p.highlight ? "text-white" : "text-teal-900"}`}>
+                  <span className={`text-4xl font-extrabold ${p.highlight ? "text-white" : "text-violet-900"}`}>
                     {p.price}
                   </span>
-                  <span className={`text-sm font-medium ${p.highlight ? "text-teal-200" : "text-teal-400"}`}>
+                  <span className={`text-sm font-medium ${p.highlight ? "text-violet-200" : "text-violet-400"}`}>
                     {p.period}
                   </span>
                 </div>
-                <p className={`text-sm ${p.highlight ? "text-teal-100" : "text-teal-500"}`}>
+                <p className={`text-sm ${p.highlight ? "text-violet-100" : "text-violet-500"}`}>
                   {p.desc}
                 </p>
               </div>
@@ -110,9 +110,9 @@ export default function Pricing() {
                   <li key={f} className="flex items-start gap-2 text-sm">
                     <CheckCircle2
                       size={16}
-                      className={`mt-0.5 flex-shrink-0 ${p.highlight ? "text-teal-300" : "text-teal-500"}`}
+                      className={`mt-0.5 flex-shrink-0 ${p.highlight ? "text-violet-300" : "text-violet-500"}`}
                     />
-                    <span className={p.highlight ? "text-teal-100" : "text-teal-700"}>
+                    <span className={p.highlight ? "text-violet-100" : "text-violet-700"}>
                       {f}
                     </span>
                   </li>
@@ -123,8 +123,8 @@ export default function Pricing() {
                 href="#get-started"
                 className={`flex items-center justify-center gap-2 w-full py-3 rounded-full font-bold text-sm transition-all ${
                   p.highlight
-                    ? "bg-white text-teal-700 hover:bg-teal-50"
-                    : "bg-teal-600 text-white hover:bg-teal-700"
+                    ? "bg-white text-violet-700 hover:bg-violet-50"
+                    : "bg-violet-600 text-white hover:bg-violet-700"
                 }`}
               >
                 {p.cta}
