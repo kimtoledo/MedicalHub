@@ -187,7 +187,7 @@ function makePatients(
     return {
       id: `${prefix}${String(i + 1).padStart(3, '0')}-0000-0000-0000-000000000001`.replace('00000000-0008-', `00000000-0008-${prefix}`).slice(0, 36),
       clinicId,
-      patientNumber: `${prefix}-${String(i + 1).padStart(4, '0')}`,
+      patientNumber: `${prefix}${String(i + 1).padStart(6, '0')}`,
       firstName,
       lastName,
       middleName: LAST_NAMES[(i + 5) % LAST_NAMES.length].split(' ')[0],
