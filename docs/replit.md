@@ -77,6 +77,48 @@ For each major feature:
 7. Run lint, typecheck, unit tests, integration tests, and production build.
 8. Summarize changes and unresolved risks.
 
+## Database & Migrations
+
+### Stack
+- **ORM**: Drizzle ORM (`packages/db/src/schema/`)
+- **Runner**: Drizzle Kit (`packages/db/drizzle.config.ts`)
+- **Driver**: postgres.js
+- **Database**: Replit PostgreSQL — `DATABASE_URL` from Replit Secrets
+
+### Workflow — every schema change follows this order
+```
+1. Edit schema files in packages/db/src/schema/
+2. npm run db:generate          ← creates a .sql file in packages/db/migrations/
+3. Review the generated SQL
+4. git add packages/db/migrations/
+5. git commit -m "db: <description>"
+6. Push / merge on Replit
+7. post-merge.sh runs automatically → drizzle-kit migrate applies the .sql
+```
+
+### Golden rules
+- **Never hand-edit a migration file** that has already been applied to any shared database.
+- **Never apply raw SQL directly** to the shared DB — always go through `drizzle-kit migrate`.
+- **Always commit the generated `.sql` file** before merging — the migrations folder is the source of truth.
+- **Never use package/plan names** (e.g. `plan === "pro"`) as authorization rules — use `FeatureKey` entitlement keys from `@toothhub/shared`.
+
+### Getting DATABASE_URL locally (VS Code / Codex)
+1. Go to Replit → Secrets → copy `DATABASE_URL`
+2. Paste into your local `.env` file (never commit `.env`)
+3. The schema files and `drizzle.config.ts` both read `process.env.DATABASE_URL`
+
+### Handy scripts
+```bash
+npm run db:generate   # generate migration from schema diff
+npm run db:migrate    # apply pending migrations
+npm run db:studio     # open Drizzle Studio UI
+./scripts/generate-migration.sh   # same as db:generate with guidance
+./scripts/apply-migrations.sh     # same as db:migrate
+```
+
+### Post-merge automation (Replit only)
+`scripts/post-merge.sh` is registered as Replit's post-merge script. After every task merge it runs `npm install` and `drizzle-kit migrate` automatically — no manual step required on Replit.
+
 ## Do not
 - do not create one database per clinic;
 - do not hard-code plan names throughout the code;
