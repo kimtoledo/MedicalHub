@@ -30,3 +30,13 @@ git commit -m "db: <description>"
 5. Filter every tenant query by `clinic_id`.
 
 **DATABASE_URL**: copy from Replit Secrets into your local `.env` (never commit it).
+
+## Task planning
+
+All planned work is documented in `tasks/`:
+- `tasks/README.md` — status badge legend + **golden rule** (any change needs a task first)
+- `tasks/mvp1/` — 17 files covering Foundation + Core Dental Operations
+- `tasks/mvp2/` — 13 files covering Complete Clinic Business Operations
+- `tasks/mvp3/` — 12 files covering Ecosystem + Scale
+
+Before making any code change, check `tasks/` to find the relevant task file and confirm a project task exists in the Replit task panel.

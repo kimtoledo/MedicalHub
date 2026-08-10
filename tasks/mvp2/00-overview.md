@@ -1,0 +1,41 @@
+# MVP 2 Overview — Complete Clinic Business Operations
+
+**Release objective:** Expand ToothHub from core clinical workflow into day-to-day clinic business operations while preserving the same tenant, permission, entitlement, and audit architecture from MVP 1.
+
+---
+
+## Task checklist
+
+| File | What | Status |
+|------|------|--------|
+| `01-treatment-planning.md` | Proposed treatment plans, multi-item, status tracking | 🔜 Future |
+| `02-service-catalog-pricing.md` | Clinic procedure catalog, branch pricing, price history | 🔜 Future |
+| `03-billing-payments.md` | Invoices, partial payments, refunds, audit | 🔜 Future |
+| `04-prescriptions.md` | Prescription records, printable output, immutable snapshot | 🔜 Future |
+| `05-clinical-files-media.md` | Radiographs, photos, consent docs, private storage | 🔜 Future |
+| `06-inventory.md` | Item master, stock in/out, low-stock alerts | 🔜 Future |
+| `07-notifications.md` | Email booking confirmations, reminders, cancellations | 🔜 Future |
+| `08-recall-followup.md` | Recall rules, due dates, follow-up appointment creation | 🔜 Future |
+| `09-reports.md` | Operational, financial, and inventory reports | 🔜 Future |
+| `10-microsite-customization.md` | Theme presets, brand color, gallery, SEO fields | 🔜 Future |
+| `11-subscription-operations.md` | Upgrade/downgrade, add-ons, usage enforcement | 🔜 Future |
+| `12-new-roles.md` | Cashier, Inventory Staff, granular permissions | 🔜 Future |
+
+---
+
+## Release gates (from `docs/MVP_2.md`)
+
+- Financial changes are transactional and audited.
+- Protected clinical files are private — only authorized users with signed URLs can access them.
+- Inventory balances reconcile to stock transactions.
+- Notifications do not leak sensitive clinical content.
+- All new modules honor role + entitlement + tenant checks.
+- Price changes do not rewrite historical invoices.
+- Reports cannot aggregate another clinic's data.
+- Recall reminders handle retries without sending duplicates.
+
+---
+
+## Prerequisite
+
+All MVP 1 release gates must pass before MVP 2 development begins.
