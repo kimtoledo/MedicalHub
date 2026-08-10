@@ -7,4 +7,6 @@ export * from './patients';
 export * from './appointments';
 export * from './subscriptions';
 export * from './audit';
+export * from './encounters';
+export * from './odontogram';
 export * from './helpers';

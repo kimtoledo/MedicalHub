@@ -8,6 +8,13 @@
       "when": 1786375229916,
       "tag": "0000_talented_speedball",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786403009512,
+      "tag": "0001_overrated_loners",
+      "breakpoints": true
     }
   ]
 }

@@ -94,6 +94,43 @@ export const patientMedicalHistories = pgTable(
   }),
 );
 
+/**
+ * patient_dental_histories — versioned dental questionnaire per patient.
+ * Each update creates a new row; latest by created_at is the current version.
+ * Mirrors the same append-only versioning pattern as patient_medical_histories.
+ */
+export const patientDentalHistories = pgTable(
+  'patient_dental_histories',
+  {
+    id: id(),
+    patientId: uuid('patient_id')
+      .notNull()
+      .references(() => patients.id, { onDelete: 'cascade' }),
+    clinicId: uuid('clinic_id')
+      .notNull()
+      .references(() => clinics.id, { onDelete: 'restrict' }),
+
+    // Dental questionnaire fields
+    lastDentalVisit: varchar('last_dental_visit', { length: 50 }),
+    previousTreatments: text('previous_treatments'),
+    hasSensitivity: varchar('has_sensitivity', { length: 10 }),
+    hasBleedingGums: varchar('has_bleeding_gums', { length: 10 }),
+    hasPain: varchar('has_pain', { length: 10 }),
+    oralHabits: text('oral_habits'),
+    orthodonticHistory: text('orthodontic_history'),
+    chiefConcerns: text('chief_concerns'),
+    notes: text('notes'),
+
+    /** ID of the user who recorded this version */
+    recordedBy: uuid('recorded_by'),
+    ...timestamps,
+  },
+  (t) => ({
+    patientIdx: index('dental_hist_patient_id_idx').on(t.patientId),
+  }),
+);
+
 export type Patient = typeof patients.$inferSelect;
 export type NewPatient = typeof patients.$inferInsert;
 export type PatientMedicalHistory = typeof patientMedicalHistories.$inferSelect;
+export type PatientDentalHistory = typeof patientDentalHistories.$inferSelect;
