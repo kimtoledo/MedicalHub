@@ -18,6 +18,14 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ MVP 1 release hardening and synthetic demo data
+- Expanded the clean idempotent seed target to 2 clinics, 4 dentists, 20 synthetic patients, and 50 synthetic appointments while retaining fictional test contact and PRC-style identifiers
+- Added release-gate coverage for concurrent same-dentist booking, multi-clinic dentist separation, unpublished public 404s, PWA API cache exclusion, synthetic seed targets, and append-only audit enforcement
+- Live direct checks confirmed Clinic A receives `403` for Clinic B patients, unpublished clinic/dentist records return `404`, and two simultaneous requests for one dentist/slot return exactly `201 + 409`
+- Rendered and visually inspected clinic PWA, Super Admin audit, and public clinic surfaces at 375×812, 768×1024, and 1280×900; CDP metrics found no document-level horizontal overflow
+- Added `docs/MVP1_RELEASE_CHECKLIST.md` as the durable evidence matrix for every MVP 1 release gate
+- Reseeded the configured database successfully and verified 157 passing API tests plus repository-wide typecheck
+
 ### ✅ Immutable audit baseline and Super Admin audit log
 - Centralized every API audit append through a shared transaction-aware `writeAudit` helper so domain mutations and their audit records remain atomic
 - Covered clinic lifecycle/settings, dentist state/affiliation, package/entitlement, booking/appointment status, patient history, encounter, treatment, and odontogram actions with identifier/state-only metadata

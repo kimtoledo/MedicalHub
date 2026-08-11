@@ -19,4 +19,16 @@ describe('public directory routes', () => {
   it('rejects oversized and malformed directory filters', async () => { const service = directory(); await setup(service); const response = await app!.inject({ method: 'GET', url: `/v1/public/clinics?search=${'x'.repeat(101)}&page=0` }); expect(response.statusCode).toBe(400); expect(service.listClinics).not.toHaveBeenCalled(); });
   it('returns only the publishable clinic detail contract by slug', async () => { const service = directory(); await setup(service); const response = await app!.inject({ method: 'GET', url: '/v1/public/clinics/smile-bright' }); expect(response.statusCode).toBe(200); expect(service.getClinicBySlug).toHaveBeenCalledWith('smile-bright'); expect(response.json().data).not.toHaveProperty('status'); });
   it('returns the publishable dentist profile contract by slug', async () => { const service = directory(); await setup(service); const response = await app!.inject({ method: 'GET', url: '/v1/public/dentists/dr-maria-reyes' }); expect(response.statusCode).toBe(200); expect(service.getDentistBySlug).toHaveBeenCalledWith('dr-maria-reyes'); expect(response.json().data).not.toHaveProperty('email'); });
+  it('returns 404 when clinic or dentist publication lookup rejects the record', async () => {
+    const service = directory();
+    service.getClinicBySlug = vi.fn(async () => null);
+    service.getDentistBySlug = vi.fn(async () => null);
+    await setup(service);
+    const [clinic, dentist] = await Promise.all([
+      app!.inject({ method: 'GET', url: '/v1/public/clinics/unpublished-clinic' }),
+      app!.inject({ method: 'GET', url: '/v1/public/dentists/unpublished-dentist' }),
+    ]);
+    expect(clinic.statusCode).toBe(404);
+    expect(dentist.statusCode).toBe(404);
+  });
 });

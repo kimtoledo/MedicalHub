@@ -258,14 +258,15 @@ function makeAppointments(opts: {
   patients: { id: string; firstName: string; lastName: string; phone: string }[];
   prefix: string;
   offset: number;
+  count?: number;
 }) {
-  const { clinicId, branchId, dentistId, serviceId, patients, prefix, offset } = opts;
-  return Array.from({ length: 15 }, (_, i) => {
-    const dayOffset = i - 7; // -7 to +7 from now
+  const { clinicId, branchId, dentistId, serviceId, patients, prefix, offset, count = 25 } = opts;
+  return Array.from({ length: count }, (_, i) => {
+    const dayOffset = i - Math.floor(count / 2);
     const baseDate = daysFromNow(dayOffset);
     const startsAt = hoursOn(baseDate, 8 + (i % 8), i % 2 === 0 ? 0 : 30);
     const endsAt = addMinutes(startsAt, 45);
-    const status = APPOINTMENT_PATTERN[i];
+    const status = APPOINTMENT_PATTERN[i % APPOINTMENT_PATTERN.length];
     const patient = patients[i % patients.length];
     const isCompleted = status === 'completed';
     const isCancelled = status === 'cancelled';
@@ -756,9 +757,9 @@ async function seed() {
   ]).onConflictDoNothing();
 
   // ── 9. Patients ────────────────────────────────────────────────────────────
-  console.log('  👨‍👩‍👧‍👦  Patients (40 total)...');
-  const sbdPatients = makePatients(CLINIC_SBD_ID, 'SBD', QC_BARANGAYS, 'Quezon City', 'Metro Manila');
-  const bsmPatients = makePatients(CLINIC_BSM_ID, 'BSM', MAKATI_BARANGAYS, 'Makati', 'Metro Manila');
+  console.log('  👨‍👩‍👧‍👦  Patients (20 synthetic records total)...');
+  const sbdPatients = makePatients(CLINIC_SBD_ID, 'SBD', QC_BARANGAYS, 'Quezon City', 'Metro Manila', 10);
+  const bsmPatients = makePatients(CLINIC_BSM_ID, 'BSM', MAKATI_BARANGAYS, 'Makati', 'Metro Manila', 10);
 
   // Fix patient IDs to valid UUIDs
   const sbdPatientIds = sbdPatients.map((_, i) =>
@@ -773,7 +774,7 @@ async function seed() {
   await db.insert(schema.patients).values(bsmPatientRows).onConflictDoNothing();
 
   // ── 10. Appointments ───────────────────────────────────────────────────────
-  console.log('  📅  Appointments (30 total)...');
+  console.log('  📅  Appointments (50 synthetic records total)...');
 
   const sbdAppts = makeAppointments({
     clinicId: CLINIC_SBD_ID,
@@ -949,8 +950,8 @@ async function seed() {
   console.log('  Clinic staff admin@brightsmile.ph       (password from CLINIC_DEMO_PASSWORD)');
   console.log('  Dentist      dr.reyes@smilebrightdental.ph (password from CLINIC_DEMO_PASSWORD)');
   console.log('  ─────────────────────────────────────────────────');
-  console.log('  Patients: 20 per clinic (40 total)');
-  console.log('  Appointments: 15 per clinic (30 total)');
+  console.log('  Patients: 10 per clinic (20 total)');
+  console.log('  Appointments: 25 per clinic (50 total)');
   console.log('  Encounters:' + encounterRows.length + ' | Treatments: ' + treatmentRows.length + ' | Odontogram: ' + odontogramRows.length);
 }
 

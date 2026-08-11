@@ -8,6 +8,7 @@ const config: ApiConfig = { nodeEnv: 'test', host: '127.0.0.1', port: 3001, logL
 const clinicId = '00000000-0000-0000-0000-000000000101';
 const branchId = '00000000-0000-0000-0000-000000000111';
 const serviceId = '00000000-0000-0000-0000-000000000501';
+const dentistId = '00000000-0000-0000-0000-000000000401';
 let app: FastifyInstance | undefined;
 afterEach(async () => { await app?.close(); app = undefined; });
 function booking(): PublicBookingService { return {
@@ -20,6 +21,21 @@ describe('public booking routes', () => {
   it('returns live availability without authentication', async () => { const service = booking(); await setup(service); const response = await app!.inject({ method: 'GET', url: `/v1/public/clinics/smile-bright/availability?branchId=${branchId}&serviceId=${serviceId}&date=2030-05-10` }); expect(response.statusCode).toBe(200); expect(response.json().data.slots).toHaveLength(1); expect(service.availability).toHaveBeenCalledWith({ clinicSlug: 'smile-bright', branchId, serviceId, date: '2030-05-10' }); });
   it('creates a pending appointment and returns a confirmation number', async () => { const service = booking(); await setup(service); const response = await app!.inject({ method: 'POST', url: '/v1/public/appointments', payload: { clinicSlug: 'smile-bright', branchId, serviceId, date: '2030-05-10', startsAt: '2030-05-10T01:00:00.000Z', patientFirstName: 'Ana', patientLastName: 'Santos', patientPhone: '+63 917 000 0000', patientEmail: '', chiefComplaint: 'Routine cleaning' } }); expect(response.statusCode).toBe(201); expect(response.json().data).toMatchObject({ confirmationNumber: 'DNT-20300510-00000000', status: 'pending' }); });
   it('returns 409 when the transactional conflict check loses a race', async () => { const service = booking(); service.book = vi.fn(async () => { throw new PublicBookingError('SLOT_CONFLICT', 'That time was just booked.', 409); }); await setup(service); const response = await app!.inject({ method: 'POST', url: '/v1/public/appointments', payload: { clinicSlug: 'smile-bright', branchId, serviceId, date: '2030-05-10', startsAt: '2030-05-10T01:00:00.000Z', patientFirstName: 'Ana', patientLastName: 'Santos', patientPhone: '09170000000', chiefComplaint: 'Routine cleaning' } }); expect(response.statusCode).toBe(409); expect(response.json().error.code).toBe('SLOT_CONFLICT'); });
+  it('allows exactly one of two concurrent requests for the same slot', async () => {
+    const service = booking();
+    let claimed = false;
+    service.book = vi.fn(async () => {
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      if (claimed) throw new PublicBookingError('SLOT_CONFLICT', 'That time was just booked.', 409);
+      claimed = true;
+      return booking().book({} as never, {});
+    });
+    await setup(service);
+    const request = { method: 'POST' as const, url: '/v1/public/appointments', payload: { clinicSlug: 'smile-bright', branchId, serviceId, dentistId, date: '2030-05-10', startsAt: '2030-05-10T01:00:00.000Z', patientFirstName: 'Ana', patientLastName: 'Santos', patientPhone: '09170000000', chiefComplaint: 'Routine cleaning' } };
+    const responses = await Promise.all([app!.inject(request), app!.inject(request)]);
+    expect(responses.map((response) => response.statusCode).sort()).toEqual([201, 409]);
+    expect(service.book).toHaveBeenCalledTimes(2);
+  });
   it('rejects malformed or client-injected booking fields', async () => { const service = booking(); await setup(service); const response = await app!.inject({ method: 'POST', url: '/v1/public/appointments', payload: { clinicSlug: 'smile-bright', clinicId, branchId, serviceId, date: '2030-05-10', startsAt: '2030-05-10T01:00:00.000Z', patientFirstName: 'Ana', patientLastName: 'Santos', patientPhone: '09170000000', chiefComplaint: 'Cleaning' } }); expect(response.statusCode).toBe(400); expect(service.book).not.toHaveBeenCalled(); });
 });
 

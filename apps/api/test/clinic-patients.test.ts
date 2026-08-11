@@ -20,4 +20,25 @@ describe('clinic patient routes', () => {
   it('returns a profile with versioned histories and appointments', async () => { const service = patientsService(); await setup(member, service); const response = await app!.inject({ method: 'GET', url: `/v1/clinic/patients/${patientId}?clinicId=${clinicId}&appointmentSort=asc` }); expect(response.statusCode).toBe(200); expect(service.detail).toHaveBeenCalledWith(clinicId, patientId, 'asc'); });
   it('appends medical and dental history versions', async () => { const service = patientsService(); await setup(member, service); const medical = await app!.inject({ method: 'POST', url: `/v1/clinic/patients/${patientId}/medical-history?clinicId=${clinicId}`, payload: { allergies: 'None', isPregnant: 'not_applicable' } }); const dental = await app!.inject({ method: 'POST', url: `/v1/clinic/patients/${patientId}/dental-history?clinicId=${clinicId}`, payload: { hasPain: 'no', chiefConcerns: 'Cleaning' } }); expect(medical.statusCode).toBe(201); expect(dental.statusCode).toBe(201); expect(service.addMedicalHistory).toHaveBeenCalledOnce(); expect(service.addDentalHistory).toHaveBeenCalledOnce(); });
   it('denies cross-tenant and unavailable-feature requests before patient queries', async () => { const service = patientsService(); await setup(member, service); const crossTenant = await app!.inject({ method: 'GET', url: `/v1/clinic/patients?clinicId=${otherClinicId}` }); expect(crossTenant.statusCode).toBe(403); expect(service.list).not.toHaveBeenCalled(); await app!.close(); app = undefined; const disabledService = patientsService(); await setup(member, disabledService, entitlements(false)); const unavailable = await app!.inject({ method: 'GET', url: `/v1/clinic/patients?clinicId=${clinicId}` }); expect(unavailable.statusCode).toBe(403); expect(unavailable.json().error.code).toBe('ENTITLEMENT_REQUIRED'); expect(disabledService.list).not.toHaveBeenCalled(); });
+  it('keeps a multi-clinic dentist request scoped to the explicitly selected membership', async () => {
+    const service = patientsService();
+    service.list = vi.fn(async (requestedClinicId) => ({
+      items: [{ id: patientId, clinicId: requestedClinicId }],
+      pagination: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
+    }) as never);
+    const multiClinicDentist: AuthorizationContext = {
+      ...member,
+      clinicMemberships: [
+        { clinicId, branchId: null, role: 'dentist', dentistId: 'dentist-a' },
+        { clinicId: otherClinicId, branchId: null, role: 'dentist', dentistId: 'dentist-a' },
+      ],
+    };
+    await setup(multiClinicDentist, service);
+    const first = await app!.inject({ method: 'GET', url: `/v1/clinic/patients?clinicId=${clinicId}` });
+    const second = await app!.inject({ method: 'GET', url: `/v1/clinic/patients?clinicId=${otherClinicId}` });
+    expect(first.json().data.items[0].clinicId).toBe(clinicId);
+    expect(second.json().data.items[0].clinicId).toBe(otherClinicId);
+    expect(service.list).toHaveBeenNthCalledWith(1, clinicId, expect.objectContaining({ clinicId }));
+    expect(service.list).toHaveBeenNthCalledWith(2, otherClinicId, expect.objectContaining({ clinicId: otherClinicId }));
+  });
 });

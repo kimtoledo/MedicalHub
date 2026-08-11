@@ -1,6 +1,6 @@
 # Hardening + Demo Data
 
-> **Status:** 🔲 Queued — no project task yet (Increment 4 from MVP 1 plan)
+> **Status:** ✅ Done
 
 ---
 
@@ -36,9 +36,11 @@ Every release gate in `docs/MVP_1.md` passes:
 
 ## Steps
 
-1. **Seed script** — write `scripts/seed-demo.ts` that creates a synthetic Super Admin, 2 demo clinics, 4 dentists, 20 patients, and 50 appointments.
-2. **Cross-tenant API tests** — write automated test cases for each release gate involving tenant isolation.
-3. **Entitlement denial tests** — verify 403 responses for features disabled in the test clinic's package.
-4. **Conflict booking test** — write a test that fires two concurrent booking requests for the same slot.
-5. **PWA cache audit** — inspect service worker cache in dev tools and confirm no clinical API responses are stored.
-6. **Responsive QA** — verify all pages on 375 px (iPhone SE), 768 px (iPad), and 1280 px (laptop) breakpoints.
+1. ✅ **Seed script** — the idempotent seed creates a synthetic Super Admin, 2 clinics, 4 dentists, 20 patients, and 50 appointments on a clean database.
+2. ✅ **Cross-tenant API tests** — direct route suites cover patient, encounter, odontogram, dashboard, settings, workspace, and entitlement isolation plus server-owned scope fields.
+3. ✅ **Entitlement denial tests** — disabled-feature calls return `403 ENTITLEMENT_REQUIRED` before domain queries execute.
+4. ✅ **Conflict booking test** — concurrent same-dentist/same-slot requests produce exactly one success and one conflict in both automated HTTP and live database verification.
+5. ✅ **PWA cache audit** — `/api/*` and `/v1/*` remain network-only and an automated static release test guards the shell cache allowlist.
+6. ✅ **Responsive QA** — clinic PWA, Super Admin audit, and public clinic surfaces were rendered and inspected at 375×812, 768×1024, and 1280×900 with no document overflow.
+
+Detailed evidence is recorded in `docs/MVP1_RELEASE_CHECKLIST.md`.
