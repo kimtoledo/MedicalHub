@@ -191,6 +191,20 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 - `replit.md` — Replit-specific setup notes
 - `tasks/README.md` + `tasks/mvp1/`, `tasks/mvp2/`, `tasks/mvp3/` — 42 scoped task files
 
+### ✅ Billing lite — service pricing, invoices & receipts (task #22)
+- Added `price_php` column to `services` table and `invoices`, `invoice_line_items`, `invoice_payments` tables via migration `0004_billing_lite.sql`
+- Added `InvoiceStatus` and `PaymentMethod` enums + billing `AuditAction` entries to `@dentra/shared`
+- Created `apps/api/src/clinic/billing-service.ts` with full service: list/price-update for services, generate invoice from finalized encounter, record single payment, today's earnings
+- Created `apps/api/src/routes/clinic-billing.ts` with 6 routes under `/v1/clinic/:clinicId/*`, registered in `app.ts` / `server.ts`
+- Added web proxy route `apps/web/app/api/clinic/[...path]/route.ts`
+- Added Billing nav item to `AppSidebar.tsx`
+- Built invoice list page (`/app/billing`) with patient/status search filter and pagination
+- Built invoice detail page (`/app/billing/[invoiceId]`) as server component + client child for payment modal + print
+- Built service pricing settings page (`/app/settings/services`) with inline editable price fields
+- Updated clinic dashboard to show live Today's Collections tile fetched from `/v1/clinic/:clinicId/earnings/today`
+- Seeded all 12 demo services with PHP prices (₱350–₱8,000); seed script updated to include `pricePhp`
+- All 49 existing API tests continue to pass; typecheck clean
+
 ---
 
 ## Queued (Proposed Tasks)

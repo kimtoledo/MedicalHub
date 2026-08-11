@@ -11,7 +11,6 @@ import {
   Settings,
   UserCircle,
   CalendarCheck,
-  Stethoscope,
   ClipboardList,
   Grid3X3,
   ChevronLeft,
@@ -19,6 +18,8 @@ import {
   LogOut,
   ChevronDown,
   Building2,
+  Receipt,
+  Stethoscope,
 } from "lucide-react";
 import { type ClinicRole } from "@/lib/clinic-types";
 import { signOutClinic } from "@/lib/clinic-auth-client";
@@ -28,6 +29,7 @@ const clinicNavItems = [
   { label: "Dashboard",        href: "/app",              icon: LayoutDashboard, exact: true },
   { label: "Appointments",     href: "/app/appointments", icon: CalendarDays  },
   { label: "Patients",         href: "/app/patients",     icon: Users         },
+  { label: "Billing",          href: "/app/billing",      icon: Receipt       },
   { label: "Staff",            href: "/app/staff",        icon: UserCog       },
   { label: "Clinic Settings",  href: "/app/settings",     icon: Settings      },
   { label: "My Profile",       href: "/app/profile",      icon: UserCircle    },

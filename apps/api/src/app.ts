@@ -16,8 +16,13 @@ import type {
   AdminClinicListService,
   AdminClinicStatusService,
 } from './admin/clinics-service.js';
+import type {
+  ClinicBillingService,
+  ClinicServiceListService,
+} from './clinic/billing-service.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
+import { registerClinicBillingRoutes } from './routes/clinic-billing.js';
 import { registerHealthRoutes } from './routes/health.js';
 
 export type BuildAppOptions = {
@@ -29,6 +34,8 @@ export type BuildAppOptions = {
   adminClinicBranchCreation?: AdminClinicBranchCreationService;
   adminClinicDetails?: AdminClinicDetailService;
   adminClinicStatus?: AdminClinicStatusService;
+  clinicBilling?: ClinicBillingService;
+  clinicServiceList?: ClinicServiceListService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -76,6 +83,13 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         branchCreation: options.adminClinicBranchCreation,
         details: options.adminClinicDetails,
         status: options.adminClinicStatus,
+      });
+    }
+    if (options.clinicBilling && options.clinicServiceList) {
+      await registerClinicBillingRoutes(app, {
+        auth: options.auth,
+        billingService: options.clinicBilling,
+        serviceListService: options.clinicServiceList,
       });
     }
   }

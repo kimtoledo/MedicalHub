@@ -98,7 +98,7 @@ export const FeatureKey = {
   STAFF_MANAGE: 'staff.manage',
   ROLES_MANAGE: 'roles.manage',
 
-  // Billing features (MVP 2)
+  // Billing features (MVP 1 lite → MVP 2 full)
   BILLING_INVOICES: 'billing.invoices',
   BILLING_PAYMENTS: 'billing.payments',
   PRESCRIPTIONS: 'clinical.prescriptions',
@@ -121,6 +121,28 @@ export const FeatureKey = {
   BRANCHES_MULTI: 'branches.multi',
 } as const;
 export type FeatureKey = (typeof FeatureKey)[keyof typeof FeatureKey];
+
+// ---------------------------------------------------------------------------
+// Invoice status
+// ---------------------------------------------------------------------------
+export const InvoiceStatus = {
+  PENDING: 'pending',
+  PAID:    'paid',
+  VOIDED:  'voided',
+} as const;
+export type InvoiceStatus = (typeof InvoiceStatus)[keyof typeof InvoiceStatus];
+
+// ---------------------------------------------------------------------------
+// Payment method
+// ---------------------------------------------------------------------------
+export const PaymentMethod = {
+  CASH:          'cash',
+  GCASH:         'gcash',
+  CARD:          'card',
+  BANK_TRANSFER: 'bank_transfer',
+  OTHER:         'other',
+} as const;
+export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod];
 
 // ---------------------------------------------------------------------------
 // Audit event actions
@@ -158,6 +180,12 @@ export const AuditAction = {
   ENCOUNTER_UPDATED: 'encounter.updated',
   TREATMENT_RECORDED: 'treatment.recorded',
   ODONTOGRAM_EVENT: 'odontogram.event',
+
+  // Billing
+  INVOICE_CREATED:   'invoice.created',
+  INVOICE_PAID:      'invoice.paid',
+  INVOICE_VOIDED:    'invoice.voided',
+  PAYMENT_RECORDED:  'payment.recorded',
 
   // Support / admin access
   SUPPORT_ACCESS_GRANTED: 'support_access.granted',
