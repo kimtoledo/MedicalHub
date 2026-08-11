@@ -27,6 +27,8 @@ export const branches = pgTable(
     city: varchar('city', { length: 100 }),
     province: varchar('province', { length: 100 }),
     mapUrl: varchar('map_url', { length: 500 }),
+    /** JSON object keyed by weekday with public opening-hour labels. */
+    operatingHours: text('operating_hours'),
 
     isActive: boolean('is_active').notNull().default(true),
 

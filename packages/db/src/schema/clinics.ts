@@ -44,6 +44,7 @@ export const clinics = pgTable(
     description: text('description'),
     logoUrl: varchar('logo_url', { length: 500 }),
     coverUrl: varchar('cover_url', { length: 500 }),
+    heroText: varchar('hero_text', { length: 300 }),
 
     // Address
     address: text('address'),
