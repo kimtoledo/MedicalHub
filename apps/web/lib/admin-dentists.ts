@@ -35,6 +35,26 @@ type AdminDentistListResponse = {
   data: AdminDentistListResult;
 };
 
+export type AdminDentistDetail = Omit<AdminDentistListItem, 'affiliatedClinicCount'> & {
+  bio: string | null;
+  photoUrl: string | null;
+  phone: string | null;
+  email: string | null;
+  updatedAt: string;
+  affiliations: Array<{
+    id: string;
+    clinicId: string;
+    clinicName: string;
+    branchId: string;
+    branchName: string;
+  }>;
+};
+
+type AdminDentistDetailResponse = {
+  success: true;
+  data: AdminDentistDetail;
+};
+
 export async function getAdminDentists(filters: {
   search: string;
   verificationStatus?: DentistVerificationStatus;
@@ -61,5 +81,23 @@ export async function getAdminDentists(filters: {
   }
 
   const payload = (await response.json()) as AdminDentistListResponse;
+  return payload.data;
+}
+
+export async function getAdminDentistDetail(
+  dentistId: string,
+): Promise<AdminDentistDetail | null> {
+  const response = await fetch(
+    getBackendUrl(`/v1/admin/dentists/${encodeURIComponent(dentistId)}`),
+    {
+      headers: { cookie: cookies().toString() },
+      cache: 'no-store',
+    },
+  );
+  if (response.status === 400 || response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`Dentist detail request failed with status ${response.status}`);
+  }
+  const payload = (await response.json()) as AdminDentistDetailResponse;
   return payload.data;
 }

@@ -4,6 +4,7 @@ import { buildApp } from '../src/app.js';
 import {
   AdminDentistCreationError,
   type AdminDentistCreationService,
+  type AdminDentistDetailService,
   type AdminDentistListService,
 } from '../src/admin/dentists-service.js';
 import type { AuthServices, AuthorizationContext } from '../src/auth/types.js';
@@ -107,10 +108,39 @@ function createDentistCreationService(): AdminDentistCreationService {
   };
 }
 
+function createDentistDetailService(): AdminDentistDetailService {
+  return {
+    getById: vi.fn(async (dentistId) => ({
+      id: dentistId,
+      firstName: 'Maria',
+      lastName: 'Reyes',
+      slug: 'dr-maria-reyes',
+      licenseNumber: 'PRC-1234',
+      specialty: 'General Dentistry',
+      bio: 'Professional biography',
+      photoUrl: null,
+      phone: '09171234567',
+      email: 'maria@example.test',
+      verificationStatus: 'verified' as const,
+      publicationStatus: 'published',
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-08-01T00:00:00.000Z'),
+      affiliations: [{
+        id: '77777777-7777-4777-8777-777777777777',
+        clinicId: '33333333-3333-4333-8333-333333333333',
+        clinicName: 'Smile Bright Dental',
+        branchId: '88888888-8888-4888-8888-888888888888',
+        branchName: 'Main Branch',
+      }],
+    })),
+  };
+}
+
 async function createApp(
   context: AuthorizationContext | null,
   dentists: AdminDentistListService,
   creation?: AdminDentistCreationService,
+  details?: AdminDentistDetailService,
 ) {
   app = await buildApp({
     config,
@@ -119,6 +149,7 @@ async function createApp(
     auth: createAuth(context),
     adminDentists: dentists,
     adminDentistCreation: creation,
+    adminDentistDetails: details,
   });
 }
 
@@ -186,6 +217,47 @@ describe('GET /v1/admin/dentists', () => {
     expect(response.statusCode).toBe(400);
     expect(response.json().error.code).toBe('VALIDATION_ERROR');
     expect(dentists.list).not.toHaveBeenCalled();
+  });
+});
+
+describe('GET /v1/admin/dentists/:dentistId', () => {
+  const dentistId = '55555555-5555-4555-8555-555555555555';
+
+  it('returns profile and affiliation data to a Super Admin', async () => {
+    const details = createDentistDetailService();
+    await createApp(superAdminContext, createDentistService(), undefined, details);
+    const response = await app!.inject({
+      method: 'GET',
+      url: `/v1/admin/dentists/${dentistId}`,
+    });
+    expect(response.statusCode).toBe(200);
+    expect(details.getById).toHaveBeenCalledWith(dentistId);
+    expect(response.json().data).toMatchObject({
+      firstName: 'Maria',
+      affiliations: [{ clinicName: 'Smile Bright Dental' }],
+    });
+  });
+
+  it('rejects clinic members before querying detail data', async () => {
+    const details = createDentistDetailService();
+    await createApp(clinicMemberContext, createDentistService(), undefined, details);
+    const response = await app!.inject({
+      method: 'GET',
+      url: `/v1/admin/dentists/${dentistId}`,
+    });
+    expect(response.statusCode).toBe(403);
+    expect(details.getById).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed dentist identifiers', async () => {
+    const details = createDentistDetailService();
+    await createApp(superAdminContext, createDentistService(), undefined, details);
+    const response = await app!.inject({
+      method: 'GET',
+      url: '/v1/admin/dentists/not-a-uuid',
+    });
+    expect(response.statusCode).toBe(400);
+    expect(details.getById).not.toHaveBeenCalled();
   });
 });
 

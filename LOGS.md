@@ -18,6 +18,12 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Super Admin dentist detail
+- Added protected `GET /v1/admin/dentists/:dentistId` and linked directory rows to the dentist detail page
+- Shows professional profile fields, verification/publication state, and active clinic-branch affiliations
+- Keeps the platform response limited to dentist and affiliation metadata with no patient or clinical records
+- Verified authorization, identifier validation, and response behavior with 82 passing API tests and repository-wide typecheck
+
 ### ✅ Super Admin dentist creation
 - Added protected `POST /v1/admin/dentists` with strict normalization and rejection of client-injected fields
 - Creates dentist profiles with safe `unverified` and private `draft` defaults, while enforcing globally unique public slugs

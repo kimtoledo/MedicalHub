@@ -13,6 +13,7 @@ import {
 import type { DB } from '@dentra/db';
 import {
   auditEvents,
+  branches,
   clinics,
   dentistBranchAssignments,
   dentists,
@@ -98,6 +99,34 @@ export type AdminDentistCreationService = {
     input: CreateAdminDentistInput,
     actor: CreateAdminDentistActor,
   ) => Promise<CreatedAdminDentist>;
+};
+
+export type AdminDentistDetail = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  slug: string;
+  licenseNumber: string | null;
+  specialty: string | null;
+  bio: string | null;
+  photoUrl: string | null;
+  phone: string | null;
+  email: string | null;
+  verificationStatus: DentistVerificationStatus;
+  publicationStatus: string;
+  createdAt: Date;
+  updatedAt: Date;
+  affiliations: Array<{
+    id: string;
+    clinicId: string;
+    clinicName: string;
+    branchId: string;
+    branchName: string;
+  }>;
+};
+
+export type AdminDentistDetailService = {
+  getById: (dentistId: string) => Promise<AdminDentistDetail | null>;
 };
 
 export function createAdminDentistListService(
@@ -277,6 +306,60 @@ export function createAdminDentistCreationService(
         }
         throw error;
       }
+    },
+  };
+}
+
+export function createAdminDentistDetailService(
+  database: DB,
+): AdminDentistDetailService {
+  return {
+    getById: async (dentistId) => {
+      const [dentist] = await database
+        .select({
+          id: dentists.id,
+          firstName: dentists.firstName,
+          lastName: dentists.lastName,
+          slug: dentists.slug,
+          licenseNumber: dentists.licenseNumber,
+          specialty: dentists.specialty,
+          bio: dentists.bio,
+          photoUrl: dentists.photoUrl,
+          phone: dentists.phone,
+          email: dentists.email,
+          verificationStatus: dentists.verificationStatus,
+          publicationStatus: dentists.publicationStatus,
+          createdAt: dentists.createdAt,
+          updatedAt: dentists.updatedAt,
+        })
+        .from(dentists)
+        .where(and(eq(dentists.id, dentistId), isNull(dentists.deletedAt)))
+        .limit(1);
+
+      if (!dentist) return null;
+
+      const affiliations = await database
+        .select({
+          id: dentistBranchAssignments.id,
+          clinicId: clinics.id,
+          clinicName: clinics.name,
+          branchId: branches.id,
+          branchName: branches.name,
+        })
+        .from(dentistBranchAssignments)
+        .innerJoin(clinics, eq(dentistBranchAssignments.clinicId, clinics.id))
+        .innerJoin(branches, eq(dentistBranchAssignments.branchId, branches.id))
+        .where(
+          and(
+            eq(dentistBranchAssignments.dentistId, dentistId),
+            eq(dentistBranchAssignments.isActive, 'true'),
+            isNull(clinics.deletedAt),
+            isNull(branches.deletedAt),
+          ),
+        )
+        .orderBy(clinics.name, branches.name);
+
+      return { ...dentist, affiliations };
     },
   };
 }

@@ -12,6 +12,7 @@ import {
 import { createAdminClinicSettingsService } from './admin/clinic-settings-service.js';
 import {
   createAdminDentistCreationService,
+  createAdminDentistDetailService,
   createAdminDentistListService,
 } from './admin/dentists-service.js';
 
@@ -26,6 +27,7 @@ const adminClinicStatus = createAdminClinicStatusService(database.db);
 const adminClinicSettings = createAdminClinicSettingsService(database.db);
 const adminDentists = createAdminDentistListService(database.db);
 const adminDentistCreation = createAdminDentistCreationService(database.db);
+const adminDentistDetails = createAdminDentistDetailService(database.db);
 const app = await buildApp({
   config,
   checkDatabase: database.check,
@@ -38,6 +40,7 @@ const app = await buildApp({
   adminClinicSettings,
   adminDentists,
   adminDentistCreation,
+  adminDentistDetails,
 });
 
 app.addHook('onClose', async () => {

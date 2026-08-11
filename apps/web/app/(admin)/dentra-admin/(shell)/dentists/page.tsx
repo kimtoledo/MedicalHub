@@ -224,9 +224,12 @@ export default async function DentistsPage({ searchParams }: DentistsPageProps) 
                             {getInitials(dentist.firstName, dentist.lastName)}
                           </div>
                           <div>
-                            <p className="font-semibold text-slate-900">
+                            <Link
+                              href={`/dentra-admin/dentists/${dentist.id}`}
+                              className="font-semibold text-slate-900 transition hover:text-violet-700"
+                            >
                               Dr. {dentist.firstName} {dentist.lastName}
-                            </p>
+                            </Link>
                             <p className="text-xs text-slate-500">
                               {dentist.specialty ?? 'General dentistry'}
                               {dentist.licenseNumber
