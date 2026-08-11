@@ -18,6 +18,12 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Super Admin subscription ledger
+- Added protected, paginated `GET /v1/admin/subscriptions` with clinic/package search and status/package filters
+- Preserves and displays historical as well as current effective-dated assignments instead of flattening subscription history
+- Replaced the subscriptions stub with a responsive filterable ledger linked to clinic detail
+- Verified authorization, filter validation, and response behavior with 102 passing API tests and repository-wide typecheck
+
 ### ✅ Super Admin package catalog management
 - Added a human-readable package price display and a database uniqueness constraint for package-to-feature mappings through migration `0004_bored_sumo.sql`
 - Added protected package list/create/edit/deactivate APIs backed exclusively by canonical `FeatureKey` values
