@@ -12,4 +12,5 @@ export * from './encounters';
 export * from './odontogram';
 export * from './billing';
 export * from './prescriptions';
+export * from './clinical-files';
 export * from './helpers';

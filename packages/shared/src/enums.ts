@@ -145,6 +145,20 @@ export const PaymentMethod = {
 export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod];
 
 // ---------------------------------------------------------------------------
+// Clinical file types
+// ---------------------------------------------------------------------------
+export const ClinicalFileType = {
+  RADIOGRAPH:       'radiograph',
+  INTRAORAL_PHOTO:  'intraoral_photo',
+  EXTRAORAL_PHOTO:  'extraoral_photo',
+  CONSENT_FORM:     'consent_form',
+  LAB_RESULT:       'lab_result',
+  REFERRAL_LETTER:  'referral_letter',
+  OTHER:            'other',
+} as const;
+export type ClinicalFileType = (typeof ClinicalFileType)[keyof typeof ClinicalFileType];
+
+// ---------------------------------------------------------------------------
 // Prescription status
 // ---------------------------------------------------------------------------
 export const PrescriptionStatus = {
@@ -197,6 +211,11 @@ export const AuditAction = {
 
   // Prescriptions
   PRESCRIPTION_ISSUED: 'prescription.issued',
+
+  // Clinical files
+  FILE_UPLOADED: 'file.uploaded',
+  FILE_DELETED: 'file.deleted',
+  FILE_URL_GENERATED: 'file.url_generated',
 
   // Support / admin access
   SUPPORT_ACCESS_GRANTED: 'support_access.granted',

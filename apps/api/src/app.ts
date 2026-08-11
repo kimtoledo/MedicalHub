@@ -20,11 +20,16 @@ import type {
   ClinicBillingService,
   ClinicServiceListService,
 } from './clinic/billing-service.js';
+import multipart from '@fastify/multipart';
 import type { ClinicPrescriptionService } from './clinic/prescription-service.js';
+import type { ClinicFilesService } from './clinic/clinical-files-service.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
 import { registerClinicBillingRoutes } from './routes/clinic-billing.js';
 import { registerClinicPrescriptionRoutes } from './routes/clinic-prescriptions.js';
+import { registerClinicFilesRoutes } from './routes/clinic-files.js';
+import { registerClinicEncounterRoutes } from './routes/clinic-encounters.js';
+import { registerClinicPatientRoutes } from './routes/clinic-patients.js';
 import { registerHealthRoutes } from './routes/health.js';
 
 export type BuildAppOptions = {
@@ -39,6 +44,8 @@ export type BuildAppOptions = {
   clinicBilling?: ClinicBillingService;
   clinicServiceList?: ClinicServiceListService;
   clinicPrescription?: ClinicPrescriptionService;
+  clinicFiles?: ClinicFilesService;
+  db?: import('@dentra/db').DB;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -63,6 +70,10 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   await app.register(helmet);
   await app.register(cookie);
   await app.register(rateLimit, { global: false });
+  // Multipart uploads — 20 MB limit, 1 file per request
+  await app.register(multipart, {
+    limits: { fileSize: 20 * 1024 * 1024, files: 1, fields: 10 },
+  });
   await app.register(cors, {
     credentials: true,
     origin(origin, callback) {
@@ -100,6 +111,16 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         auth: options.auth,
         prescriptionService: options.clinicPrescription,
       });
+    }
+    if (options.clinicFiles) {
+      await registerClinicFilesRoutes(app, {
+        auth: options.auth,
+        filesService: options.clinicFiles,
+      });
+    }
+    if (options.db) {
+      await registerClinicEncounterRoutes(app, { auth: options.auth, db: options.db });
+      await registerClinicPatientRoutes(app, { auth: options.auth, db: options.db });
     }
   }
 

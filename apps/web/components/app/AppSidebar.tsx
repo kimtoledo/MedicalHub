@@ -30,6 +30,7 @@ const clinicNavItems = [
   { label: "Dashboard",        href: "/app",                  icon: LayoutDashboard, exact: true },
   { label: "Appointments",     href: "/app/appointments",     icon: CalendarDays  },
   { label: "Patients",         href: "/app/patients",         icon: Users         },
+  { label: "Encounters",       href: "/app/encounters",       icon: ClipboardList },
   { label: "Prescriptions",    href: "/app/prescriptions",    icon: FileText      },
   { label: "Billing",          href: "/app/billing",          icon: Receipt       },
   { label: "Staff",            href: "/app/staff",            icon: UserCog       },
@@ -40,7 +41,7 @@ const clinicNavItems = [
 const dentistNavItems = [
   { label: "My Schedule",    href: "/app/dentist",                  icon: CalendarCheck, exact: true },
   { label: "My Patients",    href: "/app/dentist/patients",         icon: Users          },
-  { label: "Encounters",     href: "/app/dentist/encounters",       icon: ClipboardList  },
+  { label: "Encounters",     href: "/app/encounters",               icon: ClipboardList  },
   { label: "Prescriptions",  href: "/app/prescriptions",            icon: FileText       },
   { label: "Odontogram",     href: "/app/dentist/odontogram",       icon: Grid3X3        },
   { label: "My Profile",     href: "/app/dentist/profile",          icon: UserCircle     },
