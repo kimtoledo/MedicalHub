@@ -26,7 +26,7 @@
 | `05-public-landing-site.md` | Landing page refinement, clinic/dentist directories | ✅ Done |
 | `06-clinic-microsite.md` | `/clinic/[slug]` public page | ✅ Done |
 | `07-dentist-profile-page.md` | `/dentists/[slug]` public page | ✅ Done |
-| `08-appointment-booking-public.md` | Public booking flows, conflict validation | 🔲 Queued |
+| `08-appointment-booking-public.md` | Public booking flows, conflict validation | ✅ Done |
 | `09-clinic-pwa-shell.md` | PWA manifest, installable, offline fallback | 🔵 Active |
 | `10-patient-management.md` | Patient list, profile, medical/dental history | 🔲 Queued |
 | `11-clinical-encounter.md` | Encounter form, chief complaint, findings, procedures | 🔲 Queued |

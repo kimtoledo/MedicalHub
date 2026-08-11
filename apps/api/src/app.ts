@@ -28,6 +28,7 @@ import type { AdminPackageService } from './admin/packages-service.js';
 import type { AdminSubscriptionListService } from './admin/subscriptions-service.js';
 import type { EntitlementService } from './entitlements/service.js';
 import type { PublicDirectoryService } from './public/directory-service.js';
+import type { PublicBookingService } from './public/booking-service.js';
 import type { ClinicSettingsService } from './clinic/settings-service.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
@@ -36,6 +37,7 @@ import { registerAdminPackageRoutes } from './routes/admin-packages.js';
 import { registerAdminSubscriptionRoutes } from './routes/admin-subscriptions.js';
 import { registerEntitlementRoutes } from './routes/entitlements.js';
 import { registerPublicDirectoryRoutes } from './routes/public-directory.js';
+import { registerPublicBookingRoutes } from './routes/public-booking.js';
 import { registerClinicSettingsRoutes } from './routes/clinic-settings.js';
 import { registerHealthRoutes } from './routes/health.js';
 
@@ -58,6 +60,7 @@ export type BuildAppOptions = {
   adminSubscriptions?: AdminSubscriptionListService;
   entitlements?: EntitlementService;
   publicDirectory?: PublicDirectoryService;
+  publicBooking?: PublicBookingService;
   clinicSettings?: ClinicSettingsService;
   logger?: FastifyServerOptions['logger'];
 };
@@ -98,6 +101,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   await registerHealthRoutes(app, { checkDatabase: options.checkDatabase });
   if (options.publicDirectory) {
     await registerPublicDirectoryRoutes(app, { directory: options.publicDirectory });
+  }
+  if (options.publicBooking) {
+    await registerPublicBookingRoutes(app, { booking: options.publicBooking });
   }
   if (options.auth) {
     await registerAuthRoutes(app, { auth: options.auth, config: options.config });

@@ -1,6 +1,6 @@
 # Public Appointment Booking
 
-> **Status:** 🔲 Queued — no project task yet
+> **Status:** ✅ Done
 
 ---
 
@@ -43,8 +43,8 @@ Patients can book appointments directly from the public clinic microsite or dent
 
 ## Steps
 
-1. **Availability API** — `GET /v1/public/clinics/[slug]/availability` returning available slots for a dentist/date/service.
-2. **Booking API** — `POST /v1/public/appointments` with server-side conflict check inside a transaction.
-3. **Booking wizard UI** — multi-step form at `apps/web/app/clinic/[clinicSlug]/appointment/page.tsx`.
-4. **Dentist booking page** — `apps/web/app/dentists/[dentistSlug]/appointment/page.tsx` reusing the same wizard with pre-filled dentist context.
-5. **Confirmation page** — display appointment reference number and summary.
+1. **Availability API** — ✅ `GET /v1/public/clinics/[slug]/availability` resolves operating hours, service duration, active dentist assignments, and conflicts across all clinic affiliations.
+2. **Booking API** — ✅ `POST /v1/public/appointments` validates the public booking boundary and serializes the final overlap check in a transaction before writing the appointment, initial status history, and audit event.
+3. **Booking wizard UI** — ✅ The clinic route provides a responsive three-step flow for visit selection, live time slots, and patient contact/reason details.
+4. **Dentist booking page** — ✅ The dentist route reuses the wizard with the dentist fixed and active clinic/branch affiliations selectable or prefilled from the profile CTA.
+5. **Confirmation page** — ✅ Successful submission displays the pending status, reference number, clinic, branch, dentist, service, and schedule.

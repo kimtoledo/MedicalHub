@@ -18,6 +18,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Public appointment booking
+- Added public availability resolution using branch operating hours, service duration, active dentist assignments, and all-affiliation schedule conflicts
+- Added a rate-limited anonymous booking endpoint with strict input validation and server-owned clinic scope
+- Serializes the final same-dentist overlap check with row locks and atomically creates the pending appointment, initial status history, and PII-safe audit event
+- Added reusable clinic and dentist booking wizards with prefilled context, live slots, inline race-condition feedback, and a detailed confirmation reference
+- Verified both live seeded entry pages and the same-origin availability proxy, 120 API tests including overlap/conflict cases, and repository-wide typecheck
+
 ### ✅ Public dentist profile pages
 - Added a publication-safe `GET /v1/public/dentists/:slug` boundary for verified, published dentists
 - Added crawlable, server-rendered dentist profiles with professional information, specialty/service tags, and dynamic SEO metadata
