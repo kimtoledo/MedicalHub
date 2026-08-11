@@ -3,8 +3,9 @@ import { cookies } from 'next/headers';
 import { getBackendUrl } from './backend';
 export type SubscriptionStatus = 'trial' | 'active' | 'past_due' | 'cancelled' | 'expired';
 export type AdminSubscriptionListResult = {
-  items: Array<{ id: string; clinicId: string; clinicName: string; clinicSlug: string; packageId: string; packageName: string; packageSlug: string; status: SubscriptionStatus; startsAt: string; expiresAt: string | null; createdAt: string }>;
+  items: Array<{ id: string; clinicId: string; clinicName: string; clinicSlug: string; packageId: string; packageName: string; packageSlug: string; status: SubscriptionStatus; startsAt: string; expiresAt: string | null; createdAt: string; isCurrent: boolean }>;
   packageOptions: Array<{ id: string; name: string }>;
+  assignmentPackageOptions: Array<{ id: string; name: string; slug: string }>;
   pagination: { page: number; pageSize: number; total: number; totalPages: number };
 };
 export async function getAdminSubscriptions(filters: { search: string; status?: SubscriptionStatus; packageId?: string; page: number }): Promise<AdminSubscriptionListResult> {

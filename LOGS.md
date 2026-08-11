@@ -18,6 +18,12 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Subscription reassignment from the ledger
+- Identifies currently effective versus historical subscription rows without deleting plan history
+- Reuses the protected, audited effective-date package assignment workflow directly from current subscription rows
+- Limits reassignment options to active packages and keeps historical rows read-only
+- Verified the integration with 102 passing API tests and repository-wide typecheck
+
 ### ✅ Super Admin subscription ledger
 - Added protected, paginated `GET /v1/admin/subscriptions` with clinic/package search and status/package filters
 - Preserves and displays historical as well as current effective-dated assignments instead of flattening subscription history
