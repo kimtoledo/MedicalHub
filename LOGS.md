@@ -18,6 +18,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Public discovery directories and landing refinement
+- Added public clinic and dentist APIs with a server-owned publication boundary: clinics must be operational/published and dentists verified/published
+- Added responsive, server-rendered `/clinics` and `/dentists` directories with filtering and pagination
+- Public payloads expose only profile, location, service, and published affiliation metadata—never tenant-internal or clinical fields
+- Wired homepage published counts to a cached summary endpoint, fixed public navigation/CTA/footer destinations, and added page-specific SEO/Open Graph metadata
+- Verified live seeded responses and rendered HTML, location/service filters, 108 API tests, repository-wide typecheck, and production builds
+
 ### ✅ Complete Super Admin package and subscription management
 - Added tenant-protected `GET /v1/entitlements/:clinicId` resolving all canonical feature keys from the effective package plus latest active overrides
 - Returns explicit disabled/unavailable features for deterministic PWA navigation gating

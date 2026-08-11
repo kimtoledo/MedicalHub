@@ -3,19 +3,40 @@ import DentraLogo from "@/components/brand/DentraLogo";
 const cols = [
   {
     heading: "Product",
-    links: ["Features", "Pricing", "Clinic Directory", "Dentist Directory", "PWA"],
+    links: [
+      { label: "Features", href: "/#features" },
+      { label: "Pricing", href: "/#pricing" },
+      { label: "Clinic Directory", href: "/clinics" },
+      { label: "Dentist Directory", href: "/dentists" },
+      { label: "Clinic App", href: "/cl-login" },
+    ],
   },
   {
     heading: "For Clinics",
-    links: ["Getting Started", "Appointment Booking", "Patient Records", "Staff Management", "Billing"],
+    links: [
+      { label: "Getting Started", href: "/#get-started" },
+      { label: "Appointment Booking", href: "/clinics" },
+      { label: "Patient Records", href: "/#features" },
+      { label: "Staff Management", href: "/#features" },
+      { label: "Sign In", href: "/cl-login" },
+    ],
   },
   {
     heading: "For Dentists",
-    links: ["Create Profile", "Manage Schedule", "Clinic Affiliations", "Online Visibility"],
+    links: [
+      { label: "Dentist Directory", href: "/dentists" },
+      { label: "Manage Schedule", href: "/cl-login" },
+      { label: "Clinic Affiliations", href: "/#dentists" },
+      { label: "Online Visibility", href: "/#dentists" },
+    ],
   },
   {
     heading: "Company",
-    links: ["About Dentra.ph", "Blog", "Careers", "Contact Us", "Privacy Policy"],
+    links: [
+      { label: "About Dentra.ph", href: "/" },
+      { label: "Book a Demo", href: "mailto:hello@dentra.ph?subject=Book%20a%20Dentra.ph%20demo" },
+      { label: "Contact Us", href: "mailto:hello@dentra.ph" },
+    ],
   },
 ];
 
@@ -38,12 +59,12 @@ export default function Footer() {
               <p className="text-white font-semibold text-sm mb-4">{col.heading}</p>
               <ul className="space-y-2">
                 {col.links.map((link) => (
-                  <li key={link}>
+                  <li key={link.label}>
                     <a
-                      href="#"
+                      href={link.href}
                       className="text-violet-400 hover:text-white text-sm transition-colors"
                     >
-                      {link}
+                      {link.label}
                     </a>
                   </li>
                 ))}

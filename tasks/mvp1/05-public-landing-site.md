@@ -1,6 +1,6 @@
 # Public Landing Site
 
-> **Status:** 🔲 Queued — no project task yet
+> **Status:** ✅ Done — all five implementation steps are complete
 > The homepage sections exist as static components; clinic/dentist directories need to be wired to real data.
 
 ---
@@ -33,8 +33,8 @@ The public site (`/`) is the face of Dentra.ph. It must be responsive, indexable
 
 ## Steps
 
-1. **Clinic directory** — build `/clinics` page fetching published clinics from `GET /v1/public/clinics`; add search and simple filters.
-2. **Dentist directory** — build `/dentists` page fetching published dentist profiles from `GET /v1/public/dentists`.
-3. **Homepage refinement** — update static stat sections (clinic count, dentist count) to pull from an API summary endpoint.
-4. **SEO/meta** — add `<title>`, `<meta description>`, and Open Graph tags to all public pages.
-5. **Accessibility pass** — check headings, alt text, focus states, and color contrast on all public sections.
+1. **Clinic directory** — ✅ `/clinics` server-renders operational published clinics from `GET /v1/public/clinics` with name, location, and service filters plus pagination.
+2. **Dentist directory** — ✅ `/dentists` server-renders verified published profiles from `GET /v1/public/dentists` with search, specialty filtering, and pagination.
+3. **Homepage refinement** — ✅ Homepage clinic/dentist counts use the cached public summary endpoint with graceful API fallback.
+4. **SEO/meta** — ✅ Global and directory-specific titles, descriptions, and Open Graph metadata are present and verified in rendered HTML.
+5. **Accessibility pass** — ✅ Public navigation, directory search labels, focus states, responsive headings, menu state attributes, logo alt text, and working CTA/footer links were reviewed and corrected.

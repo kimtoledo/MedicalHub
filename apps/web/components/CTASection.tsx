@@ -21,14 +21,14 @@ export default function CTASection() {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
-                href="#"
+                href="mailto:hello@dentra.ph?subject=Join%20the%20Dentra.ph%20beta"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-violet-700 font-bold text-lg px-8 py-4 rounded-full hover:bg-violet-50 transition-all shadow-lg"
               >
                 Start for free
                 <ArrowRight size={20} />
               </a>
               <a
-                href="#"
+                href="mailto:hello@dentra.ph?subject=Book%20a%20Dentra.ph%20demo"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/40 text-white font-semibold text-lg px-8 py-4 rounded-full hover:bg-white/10 transition-all"
               >
                 Book a demo

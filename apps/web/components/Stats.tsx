@@ -1,11 +1,14 @@
-const stats = [
-  { value: "Beta", label: "Now Open for Early Clinics" },
-  { value: "Free", label: "During the Beta Period" },
-  { value: "PH-Built", label: "Designed for Philippine Dentists" },
-  { value: "MVP 1", label: "Core Features Ready" },
-];
+import { getPublicSummary } from '@/lib/public-directory';
 
-export default function Stats() {
+export default async function Stats() {
+  let summary = { publishedClinicCount: 0, publishedDentistCount: 0 };
+  try { summary = await getPublicSummary(); } catch { /* Public counts gracefully fall back during API downtime. */ }
+  const stats = [
+    { value: String(summary.publishedClinicCount), label: 'Published Clinics' },
+    { value: String(summary.publishedDentistCount), label: 'Verified Dentists' },
+    { value: 'Beta', label: 'Now Open for Early Clinics' },
+    { value: 'PH-Built', label: 'Designed for Philippine Dentists' },
+  ];
   return (
     <section className="py-14 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto">

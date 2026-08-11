@@ -23,7 +23,7 @@
 | `02-super-admin-clinic-management.md` | Clinic CRUD, branches, package assignment, entitlements | ✅ Done |
 | `03-super-admin-dentist-management.md` | Dentist CRUD, affiliations, verification | ✅ Done |
 | `04-super-admin-package-management.md` | Plans, feature catalog, overrides | ✅ Done |
-| `05-public-landing-site.md` | Landing page refinement, clinic/dentist directories | 🔲 Queued |
+| `05-public-landing-site.md` | Landing page refinement, clinic/dentist directories | ✅ Done |
 | `06-clinic-microsite.md` | `/clinic/[slug]` public page | 🔲 Queued |
 | `07-dentist-profile-page.md` | `/dentists/[slug]` public page | 🔲 Queued |
 | `08-appointment-booking-public.md` | Public booking flows, conflict validation | 🔲 Queued |

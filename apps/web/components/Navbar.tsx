@@ -5,10 +5,10 @@ import { Menu, X } from "lucide-react";
 import DentraLogo from "@/components/brand/DentraLogo";
 
 const links = [
-  { label: "Features", href: "#features" },
-  { label: "For Dentists", href: "#dentists" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "Clinics", href: "#clinics" },
+  { label: "Features", href: "/#features" },
+  { label: "Dentists", href: "/dentists" },
+  { label: "Pricing", href: "/#pricing" },
+  { label: "Clinics", href: "/clinics" },
 ];
 
 export default function Navbar() {
@@ -44,7 +44,7 @@ export default function Navbar() {
             Sign In
           </a>
           <a
-            href="#get-started"
+            href="/#get-started"
             className="bg-violet-600 text-white text-sm font-semibold px-4 py-2 rounded-full hover:bg-violet-700 transition-colors"
           >
             Get Started Free
@@ -56,6 +56,8 @@ export default function Navbar() {
           className="md:hidden text-violet-700"
           onClick={() => setOpen(!open)}
           aria-label="Toggle menu"
+          aria-expanded={open}
+          aria-controls="mobile-navigation"
         >
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
@@ -63,7 +65,7 @@ export default function Navbar() {
 
       {/* Mobile nav */}
       {open && (
-        <div className="md:hidden bg-white border-t border-violet-100 px-4 py-4 flex flex-col gap-4">
+        <div id="mobile-navigation" className="md:hidden bg-white border-t border-violet-100 px-4 py-4 flex flex-col gap-4">
           {links.map((l) => (
             <a
               key={l.href}
@@ -75,7 +77,7 @@ export default function Navbar() {
             </a>
           ))}
           <a
-            href="#get-started"
+            href="/#get-started"
             className="bg-violet-600 text-white font-semibold px-4 py-2 rounded-full text-center"
             onClick={() => setOpen(false)}
           >

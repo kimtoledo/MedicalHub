@@ -11,11 +11,21 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Dentra.ph — Smarter Dentistry. Better Care.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:5000'),
+  title: {
+    default: "Dentra.ph — Smarter Dentistry. Better Care.",
+    template: "%s | Dentra.ph",
+  },
   description:
     "Dentra.ph is the all-in-one platform for Philippine dental clinics. Manage appointments, patient records, staff, and grow your practice online.",
   icons: {
     icon: "/brand/dentra-logo-icon.svg",
+  },
+  openGraph: {
+    title: "Dentra.ph — Smarter Dentistry. Better Care.",
+    description: "The all-in-one platform for Philippine dental clinics and dentists.",
+    type: "website",
+    siteName: "Dentra.ph",
   },
 };
 

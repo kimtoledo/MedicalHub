@@ -20,6 +20,7 @@ import {
 import { createAdminPackageService } from './admin/packages-service.js';
 import { createAdminSubscriptionListService } from './admin/subscriptions-service.js';
 import { createEntitlementService } from './entitlements/service.js';
+import { createPublicDirectoryService } from './public/directory-service.js';
 
 const config = loadConfig();
 const database = await createDatabaseServices();
@@ -38,6 +39,7 @@ const adminDentistProfileState = createAdminDentistProfileStateService(database.
 const adminPackages = createAdminPackageService(database.db);
 const adminSubscriptions = createAdminSubscriptionListService(database.db);
 const entitlements = createEntitlementService(database.db);
+const publicDirectory = createPublicDirectoryService(database.db);
 const app = await buildApp({
   config,
   checkDatabase: database.check,
@@ -56,6 +58,7 @@ const app = await buildApp({
   adminPackages,
   adminSubscriptions,
   entitlements,
+  publicDirectory,
 });
 
 app.addHook('onClose', async () => {
