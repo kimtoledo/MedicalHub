@@ -40,3 +40,15 @@ All planned work is documented in `tasks/`:
 - `tasks/mvp3/` — 12 files covering Ecosystem + Scale
 
 Before making any code change, check `tasks/` to find the relevant task file and confirm a project task exists in the Replit task panel.
+
+## LOGS.md — keep it current
+
+`LOGS.md` (root) is the running record of everything built, in progress, and queued.
+
+**Update it after every task or session that changes the project:**
+- Move completed items into the **Completed** section with a short summary.
+- Update the **Queued** table to reflect the latest task states.
+- Add new entries to **Known Gaps / Tech Debt** if anything was deferred.
+- Update the **Reference** section if credentials, prefixes, or scripts change.
+
+Do not skip this step — future agents (and humans) rely on `LOGS.md` as the first place to understand current project state.

@@ -97,6 +97,20 @@ npm run db:studio     # open Drizzle Studio UI
 
 ---
 
+## LOGS.md — keep it current
+
+`LOGS.md` (root) is the running record of everything built, in progress, and queued.
+
+**Update it after every task or session that changes the project:**
+- Move completed items into the **Completed** section with a short summary.
+- Update the **Queued** table to reflect the latest task states.
+- Add new entries to **Known Gaps / Tech Debt** if anything was deferred.
+- Update the **Reference** section if credentials, prefixes, or scripts change.
+
+Do not skip this step — future agents (and humans) rely on `LOGS.md` as the first place to understand current project state.
+
+---
+
 ## User preferences
 
 - Landing page design theme: similar to tonikbank.com (bold colors, rounded cards, playful but professional)
