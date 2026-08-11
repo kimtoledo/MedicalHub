@@ -7,6 +7,7 @@ import {
   ilike,
   inArray,
   isNull,
+  ne,
   or,
   sql,
 } from 'drizzle-orm';
@@ -123,10 +124,55 @@ export type AdminDentistDetail = {
     branchId: string;
     branchName: string;
   }>;
+  availableBranches: Array<{
+    clinicId: string;
+    clinicName: string;
+    branchId: string;
+    branchName: string;
+  }>;
 };
 
 export type AdminDentistDetailService = {
   getById: (dentistId: string) => Promise<AdminDentistDetail | null>;
+};
+
+export type AdminDentistAffiliationActor = CreateAdminDentistActor;
+
+export type AdminDentistAffiliation = {
+  id: string;
+  dentistId: string;
+  clinicId: string;
+  branchId: string;
+  isActive: string;
+};
+
+export type AdminDentistAffiliationErrorCode =
+  | 'DENTIST_NOT_FOUND'
+  | 'BRANCH_NOT_AVAILABLE'
+  | 'AFFILIATION_EXISTS'
+  | 'AFFILIATION_NOT_FOUND';
+
+export class AdminDentistAffiliationError extends Error {
+  constructor(
+    public readonly code: AdminDentistAffiliationErrorCode,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'AdminDentistAffiliationError';
+  }
+}
+
+export type AdminDentistAffiliationService = {
+  add: (
+    dentistId: string,
+    branchId: string,
+    actor: AdminDentistAffiliationActor,
+  ) => Promise<AdminDentistAffiliation>;
+  remove: (
+    dentistId: string,
+    affiliationId: string,
+    actor: AdminDentistAffiliationActor,
+  ) => Promise<AdminDentistAffiliation>;
 };
 
 export function createAdminDentistListService(
@@ -338,7 +384,8 @@ export function createAdminDentistDetailService(
 
       if (!dentist) return null;
 
-      const affiliations = await database
+      const [affiliations, availableBranchRows] = await Promise.all([
+        database
         .select({
           id: dentistBranchAssignments.id,
           clinicId: clinics.id,
@@ -357,9 +404,179 @@ export function createAdminDentistDetailService(
             isNull(branches.deletedAt),
           ),
         )
-        .orderBy(clinics.name, branches.name);
+        .orderBy(clinics.name, branches.name),
+        database
+          .select({
+            clinicId: clinics.id,
+            clinicName: clinics.name,
+            branchId: branches.id,
+            branchName: branches.name,
+          })
+          .from(branches)
+          .innerJoin(clinics, eq(branches.clinicId, clinics.id))
+          .where(
+            and(
+              eq(branches.isActive, true),
+              ne(clinics.status, 'archived'),
+              isNull(branches.deletedAt),
+              isNull(clinics.deletedAt),
+            ),
+          )
+          .orderBy(clinics.name, branches.name),
+      ]);
 
-      return { ...dentist, affiliations };
+      const assignedBranchIds = new Set(
+        affiliations.map((affiliation) => affiliation.branchId),
+      );
+      const availableBranches = availableBranchRows.filter(
+        (branch) => !assignedBranchIds.has(branch.branchId),
+      );
+
+      return { ...dentist, affiliations, availableBranches };
     },
+  };
+}
+
+export function createAdminDentistAffiliationService(
+  database: DB,
+): AdminDentistAffiliationService {
+  return {
+    add: async (dentistId, branchId, actor) =>
+      database.transaction(async (transaction) => {
+        const [dentist] = await transaction
+          .select({ id: dentists.id })
+          .from(dentists)
+          .where(and(eq(dentists.id, dentistId), isNull(dentists.deletedAt)))
+          .limit(1);
+        if (!dentist) {
+          throw new AdminDentistAffiliationError('DENTIST_NOT_FOUND', 'Dentist not found');
+        }
+
+        const [branch] = await transaction
+          .select({ branchId: branches.id, clinicId: clinics.id })
+          .from(branches)
+          .innerJoin(clinics, eq(branches.clinicId, clinics.id))
+          .where(
+            and(
+              eq(branches.id, branchId),
+              eq(branches.isActive, true),
+              ne(clinics.status, 'archived'),
+              isNull(branches.deletedAt),
+              isNull(clinics.deletedAt),
+            ),
+          )
+          .limit(1);
+        if (!branch) {
+          throw new AdminDentistAffiliationError(
+            'BRANCH_NOT_AVAILABLE',
+            'The selected clinic branch is not available',
+          );
+        }
+
+        const [existing] = await transaction
+          .select({ id: dentistBranchAssignments.id })
+          .from(dentistBranchAssignments)
+          .where(
+            and(
+              eq(dentistBranchAssignments.dentistId, dentistId),
+              eq(dentistBranchAssignments.branchId, branchId),
+              eq(dentistBranchAssignments.isActive, 'true'),
+            ),
+          )
+          .limit(1);
+        if (existing) {
+          throw new AdminDentistAffiliationError(
+            'AFFILIATION_EXISTS',
+            'The dentist is already affiliated with that branch',
+          );
+        }
+
+        const [affiliation] = await transaction
+          .insert(dentistBranchAssignments)
+          .values({ dentistId, branchId, clinicId: branch.clinicId })
+          .returning({
+            id: dentistBranchAssignments.id,
+            dentistId: dentistBranchAssignments.dentistId,
+            clinicId: dentistBranchAssignments.clinicId,
+            branchId: dentistBranchAssignments.branchId,
+            isActive: dentistBranchAssignments.isActive,
+          });
+
+        await transaction.insert(auditEvents).values({
+          actorId: actor.id,
+          actorEmail: actor.email,
+          clinicId: branch.clinicId,
+          entityType: 'dentist_branch_assignment',
+          entityId: affiliation.id,
+          action: AuditAction.DENTIST_AFFILIATED,
+          metadata: JSON.stringify({ dentistId, branchId }),
+          ipAddress: actor.ipAddress,
+          userAgent: actor.userAgent,
+        });
+        return affiliation;
+      }),
+
+    remove: async (dentistId, affiliationId, actor) =>
+      database.transaction(async (transaction) => {
+        const [existing] = await transaction
+          .select({
+            id: dentistBranchAssignments.id,
+            dentistId: dentistBranchAssignments.dentistId,
+            clinicId: dentistBranchAssignments.clinicId,
+            branchId: dentistBranchAssignments.branchId,
+          })
+          .from(dentistBranchAssignments)
+          .where(
+            and(
+              eq(dentistBranchAssignments.id, affiliationId),
+              eq(dentistBranchAssignments.dentistId, dentistId),
+              eq(dentistBranchAssignments.isActive, 'true'),
+            ),
+          )
+          .limit(1);
+        if (!existing) {
+          throw new AdminDentistAffiliationError(
+            'AFFILIATION_NOT_FOUND',
+            'Active dentist affiliation not found',
+          );
+        }
+
+        const [affiliation] = await transaction
+          .update(dentistBranchAssignments)
+          .set({ isActive: 'false' })
+          .where(
+            and(
+              eq(dentistBranchAssignments.id, affiliationId),
+              eq(dentistBranchAssignments.dentistId, dentistId),
+              eq(dentistBranchAssignments.isActive, 'true'),
+            ),
+          )
+          .returning({
+            id: dentistBranchAssignments.id,
+            dentistId: dentistBranchAssignments.dentistId,
+            clinicId: dentistBranchAssignments.clinicId,
+            branchId: dentistBranchAssignments.branchId,
+            isActive: dentistBranchAssignments.isActive,
+          });
+        if (!affiliation) {
+          throw new AdminDentistAffiliationError(
+            'AFFILIATION_NOT_FOUND',
+            'The affiliation changed before this request completed',
+          );
+        }
+
+        await transaction.insert(auditEvents).values({
+          actorId: actor.id,
+          actorEmail: actor.email,
+          clinicId: existing.clinicId,
+          entityType: 'dentist_branch_assignment',
+          entityId: existing.id,
+          action: AuditAction.DENTIST_UNAFFILIATED,
+          metadata: JSON.stringify({ dentistId, branchId: existing.branchId }),
+          ipAddress: actor.ipAddress,
+          userAgent: actor.userAgent,
+        });
+        return affiliation;
+      }),
   };
 }

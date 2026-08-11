@@ -48,6 +48,12 @@ export type AdminDentistDetail = Omit<AdminDentistListItem, 'affiliatedClinicCou
     branchId: string;
     branchName: string;
   }>;
+  availableBranches: Array<{
+    clinicId: string;
+    clinicName: string;
+    branchId: string;
+    branchName: string;
+  }>;
 };
 
 type AdminDentistDetailResponse = {

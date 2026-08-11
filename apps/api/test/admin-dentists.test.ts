@@ -3,6 +3,8 @@ import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../src/app.js';
 import {
   AdminDentistCreationError,
+  AdminDentistAffiliationError,
+  type AdminDentistAffiliationService,
   type AdminDentistCreationService,
   type AdminDentistDetailService,
   type AdminDentistListService,
@@ -132,6 +134,26 @@ function createDentistDetailService(): AdminDentistDetailService {
         branchId: '88888888-8888-4888-8888-888888888888',
         branchName: 'Main Branch',
       }],
+      availableBranches: [{
+        clinicId: '33333333-3333-4333-8333-333333333333',
+        clinicName: 'Smile Bright Dental',
+        branchId: '99999999-9999-4999-8999-999999999999',
+        branchName: 'BGC Branch',
+      }],
+    })),
+  };
+}
+
+function createDentistAffiliationService(): AdminDentistAffiliationService {
+  return {
+    add: vi.fn(async (dentistId, branchId) => ({
+      id: '77777777-7777-4777-8777-777777777777', dentistId,
+      clinicId: '33333333-3333-4333-8333-333333333333', branchId, isActive: 'true',
+    })),
+    remove: vi.fn(async (dentistId, affiliationId) => ({
+      id: affiliationId, dentistId,
+      clinicId: '33333333-3333-4333-8333-333333333333',
+      branchId: '99999999-9999-4999-8999-999999999999', isActive: 'false',
     })),
   };
 }
@@ -141,6 +163,7 @@ async function createApp(
   dentists: AdminDentistListService,
   creation?: AdminDentistCreationService,
   details?: AdminDentistDetailService,
+  affiliations?: AdminDentistAffiliationService,
 ) {
   app = await buildApp({
     config,
@@ -150,6 +173,7 @@ async function createApp(
     adminDentists: dentists,
     adminDentistCreation: creation,
     adminDentistDetails: details,
+    adminDentistAffiliations: affiliations,
   });
 }
 
@@ -217,6 +241,52 @@ describe('GET /v1/admin/dentists', () => {
     expect(response.statusCode).toBe(400);
     expect(response.json().error.code).toBe('VALIDATION_ERROR');
     expect(dentists.list).not.toHaveBeenCalled();
+  });
+});
+
+describe('Super Admin dentist affiliations', () => {
+  const dentistId = '55555555-5555-4555-8555-555555555555';
+  const branchId = '99999999-9999-4999-8999-999999999999';
+  const affiliationId = '77777777-7777-4777-8777-777777777777';
+
+  it('adds an affiliation using only a server-resolved branch identifier', async () => {
+    const affiliations = createDentistAffiliationService();
+    await createApp(superAdminContext, createDentistService(), undefined, undefined, affiliations);
+    const response = await app!.inject({ method: 'POST', url: `/v1/admin/dentists/${dentistId}/affiliations`, payload: { branchId } });
+    expect(response.statusCode).toBe(201);
+    expect(affiliations.add).toHaveBeenCalledWith(dentistId, branchId, expect.objectContaining({ id: superAdminContext.user.id }));
+  });
+
+  it('rejects injected clinic scope', async () => {
+    const affiliations = createDentistAffiliationService();
+    await createApp(superAdminContext, createDentistService(), undefined, undefined, affiliations);
+    const response = await app!.inject({ method: 'POST', url: `/v1/admin/dentists/${dentistId}/affiliations`, payload: { branchId, clinicId: '33333333-3333-4333-8333-333333333333' } });
+    expect(response.statusCode).toBe(400);
+    expect(affiliations.add).not.toHaveBeenCalled();
+  });
+
+  it('removes only the dentist-scoped active affiliation', async () => {
+    const affiliations = createDentistAffiliationService();
+    await createApp(superAdminContext, createDentistService(), undefined, undefined, affiliations);
+    const response = await app!.inject({ method: 'DELETE', url: `/v1/admin/dentists/${dentistId}/affiliations/${affiliationId}` });
+    expect(response.statusCode).toBe(200);
+    expect(affiliations.remove).toHaveBeenCalledWith(dentistId, affiliationId, expect.objectContaining({ id: superAdminContext.user.id }));
+  });
+
+  it('does not expose affiliation actions to clinic members', async () => {
+    const affiliations = createDentistAffiliationService();
+    await createApp(clinicMemberContext, createDentistService(), undefined, undefined, affiliations);
+    const response = await app!.inject({ method: 'POST', url: `/v1/admin/dentists/${dentistId}/affiliations`, payload: { branchId } });
+    expect(response.statusCode).toBe(403);
+    expect(affiliations.add).not.toHaveBeenCalled();
+  });
+
+  it('maps duplicate affiliation errors to conflicts', async () => {
+    const affiliations = createDentistAffiliationService();
+    vi.mocked(affiliations.add).mockRejectedValueOnce(new AdminDentistAffiliationError('AFFILIATION_EXISTS', 'Already affiliated'));
+    await createApp(superAdminContext, createDentistService(), undefined, undefined, affiliations);
+    const response = await app!.inject({ method: 'POST', url: `/v1/admin/dentists/${dentistId}/affiliations`, payload: { branchId } });
+    expect(response.statusCode).toBe(409);
   });
 });
 

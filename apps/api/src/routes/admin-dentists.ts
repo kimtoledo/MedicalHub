@@ -2,6 +2,8 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import {
   AdminDentistCreationError,
+  AdminDentistAffiliationError,
+  type AdminDentistAffiliationService,
   type AdminDentistCreationService,
   type AdminDentistDetailService,
   type AdminDentistListService,
@@ -43,11 +45,20 @@ const dentistParamsSchema = z.object({
   dentistId: z.string().uuid(),
 });
 
+const affiliationParamsSchema = dentistParamsSchema.extend({
+  affiliationId: z.string().uuid(),
+});
+
+const createAffiliationBodySchema = z.object({
+  branchId: z.string().uuid(),
+}).strict();
+
 type RegisterAdminDentistRoutesOptions = {
   auth: AuthServices;
   dentists: AdminDentistListService;
   creation?: AdminDentistCreationService;
   details?: AdminDentistDetailService;
+  affiliations?: AdminDentistAffiliationService;
 };
 
 export async function registerAdminDentistRoutes(
@@ -123,6 +134,51 @@ export async function registerAdminDentistRoutes(
         });
       }
       return reply.send({ success: true, data: dentist });
+    });
+  }
+
+  const affiliations = options.affiliations;
+  if (affiliations) {
+    app.post('/v1/admin/dentists/:dentistId/affiliations', async (request, reply) => {
+      const authorization = await resolveRequestAuthorization(request, options.auth);
+      if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
+      if (!isSuperAdmin(authorization)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Super Admin access is required' } });
+      const params = dentistParamsSchema.safeParse(request.params);
+      const body = createAffiliationBodySchema.safeParse(request.body);
+      if (!params.success || !body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid dentist affiliation details' } });
+      try {
+        const affiliation = await affiliations.add(params.data.dentistId, body.data.branchId, {
+          id: authorization.user.id,
+          email: authorization.user.email,
+          ipAddress: request.ip,
+          userAgent: request.headers['user-agent'],
+        });
+        return reply.status(201).send({ success: true, data: affiliation });
+      } catch (error) {
+        if (!(error instanceof AdminDentistAffiliationError)) throw error;
+        const status = error.code === 'DENTIST_NOT_FOUND' || error.code === 'BRANCH_NOT_AVAILABLE' ? 404 : 409;
+        return reply.status(status).send({ success: false, error: { code: error.code, message: error.message } });
+      }
+    });
+
+    app.delete('/v1/admin/dentists/:dentistId/affiliations/:affiliationId', async (request, reply) => {
+      const authorization = await resolveRequestAuthorization(request, options.auth);
+      if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
+      if (!isSuperAdmin(authorization)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Super Admin access is required' } });
+      const params = affiliationParamsSchema.safeParse(request.params);
+      if (!params.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid dentist affiliation identifier' } });
+      try {
+        const affiliation = await affiliations.remove(params.data.dentistId, params.data.affiliationId, {
+          id: authorization.user.id,
+          email: authorization.user.email,
+          ipAddress: request.ip,
+          userAgent: request.headers['user-agent'],
+        });
+        return reply.send({ success: true, data: affiliation });
+      } catch (error) {
+        if (!(error instanceof AdminDentistAffiliationError)) throw error;
+        return reply.status(404).send({ success: false, error: { code: error.code, message: error.message } });
+      }
     });
   }
 

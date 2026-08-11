@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import {
   ArrowLeft,
-  Building2,
   FileText,
   Mail,
   Phone,
@@ -10,6 +9,7 @@ import {
   Stethoscope,
 } from 'lucide-react';
 import { getAdminDentistDetail } from '@/lib/admin-dentists';
+import DentistAffiliationManager from '@/components/admin/DentistAffiliationManager';
 
 type DentistDetailPageProps = { params: { dentistId: string } };
 
@@ -68,21 +68,7 @@ export default async function DentistDetailPage({ params }: DentistDetailPagePro
             </dl>
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="flex items-center gap-2 font-semibold text-slate-900"><Building2 size={18} className="text-violet-600" /> Clinic affiliations</h2>
-            {dentist.affiliations.length === 0 ? (
-              <p className="mt-4 text-sm text-slate-500">No active clinic affiliations.</p>
-            ) : (
-              <ul className="mt-4 space-y-3">
-                {dentist.affiliations.map((affiliation) => (
-                  <li key={affiliation.id} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                    <Link href={`/dentra-admin/clinics/${affiliation.clinicId}`} className="text-sm font-semibold text-slate-800 hover:text-violet-700">{affiliation.clinicName}</Link>
-                    <p className="mt-1 text-xs text-slate-500">{affiliation.branchName}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+          <DentistAffiliationManager dentistId={dentist.id} affiliations={dentist.affiliations} availableBranches={dentist.availableBranches} />
         </div>
       </div>
     </div>

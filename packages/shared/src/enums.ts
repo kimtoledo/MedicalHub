@@ -141,6 +141,8 @@ export const AuditAction = {
 
   // Dentist lifecycle
   DENTIST_CREATED: 'dentist.created',
+  DENTIST_AFFILIATED: 'dentist.affiliated',
+  DENTIST_UNAFFILIATED: 'dentist.unaffiliated',
 
   // Membership / roles
   MEMBER_INVITED: 'member.invited',

@@ -18,6 +18,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Super Admin dentist affiliation management
+- Added protected add/remove affiliation endpoints and responsive controls on dentist detail
+- Resolves clinic scope from the selected branch instead of accepting a client-supplied tenant ID
+- Rejects archived/deleted branch targets, duplicate active affiliations, and cross-dentist removals
+- Preserves removal history through deactivation and appends tenant-scoped affiliated/unaffiliated audit events transactionally
+- Verified authorization, tenant injection denial, scoping, and audit behavior with 89 passing API tests and repository-wide typecheck
+
 ### ✅ Super Admin dentist detail
 - Added protected `GET /v1/admin/dentists/:dentistId` and linked directory rows to the dentist detail page
 - Shows professional profile fields, verification/publication state, and active clinic-branch affiliations
