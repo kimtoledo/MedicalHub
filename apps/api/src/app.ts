@@ -26,11 +26,13 @@ import type {
 } from './admin/dentists-service.js';
 import type { AdminPackageService } from './admin/packages-service.js';
 import type { AdminSubscriptionListService } from './admin/subscriptions-service.js';
+import type { EntitlementService } from './entitlements/service.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
 import { registerAdminDentistRoutes } from './routes/admin-dentists.js';
 import { registerAdminPackageRoutes } from './routes/admin-packages.js';
 import { registerAdminSubscriptionRoutes } from './routes/admin-subscriptions.js';
+import { registerEntitlementRoutes } from './routes/entitlements.js';
 import { registerHealthRoutes } from './routes/health.js';
 
 export type BuildAppOptions = {
@@ -50,6 +52,7 @@ export type BuildAppOptions = {
   adminDentistProfileState?: AdminDentistProfileStateService;
   adminPackages?: AdminPackageService;
   adminSubscriptions?: AdminSubscriptionListService;
+  entitlements?: EntitlementService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -118,6 +121,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (options.adminSubscriptions) {
       await registerAdminSubscriptionRoutes(app, { auth: options.auth, subscriptions: options.adminSubscriptions });
+    }
+    if (options.entitlements) {
+      await registerEntitlementRoutes(app, { auth: options.auth, entitlements: options.entitlements });
     }
   }
 

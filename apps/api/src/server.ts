@@ -19,6 +19,7 @@ import {
 } from './admin/dentists-service.js';
 import { createAdminPackageService } from './admin/packages-service.js';
 import { createAdminSubscriptionListService } from './admin/subscriptions-service.js';
+import { createEntitlementService } from './entitlements/service.js';
 
 const config = loadConfig();
 const database = await createDatabaseServices();
@@ -36,6 +37,7 @@ const adminDentistAffiliations = createAdminDentistAffiliationService(database.d
 const adminDentistProfileState = createAdminDentistProfileStateService(database.db);
 const adminPackages = createAdminPackageService(database.db);
 const adminSubscriptions = createAdminSubscriptionListService(database.db);
+const entitlements = createEntitlementService(database.db);
 const app = await buildApp({
   config,
   checkDatabase: database.check,
@@ -53,6 +55,7 @@ const app = await buildApp({
   adminDentistProfileState,
   adminPackages,
   adminSubscriptions,
+  entitlements,
 });
 
 app.addHook('onClose', async () => {

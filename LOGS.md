@@ -18,6 +18,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Complete Super Admin package and subscription management
+- Added tenant-protected `GET /v1/entitlements/:clinicId` resolving all canonical feature keys from the effective package plus latest active overrides
+- Returns explicit disabled/unavailable features for deterministic PWA navigation gating
+- Enforces same-clinic membership or exact Super Admin access and denies cross-tenant discovery before querying
+- Completed package catalog, plan-feature mapping, subscription ledger/reassignment, and entitlement API across all Task 04 steps
+- Verified the module with 105 passing API tests, repository-wide typecheck, and web/API production builds
+
 ### ✅ Subscription reassignment from the ledger
 - Identifies currently effective versus historical subscription rows without deleting plan history
 - Reuses the protected, audited effective-date package assignment workflow directly from current subscription rows
