@@ -214,7 +214,12 @@ export default async function ClinicsPage({ searchParams }: ClinicsPageProps) {
                             {clinic.prefix || clinic.name.slice(0, 2).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-semibold text-slate-900">{clinic.name}</p>
+                            <Link
+                              href={`/dentra-admin/clinics/${clinic.id}`}
+                              className="font-semibold text-slate-900 transition hover:text-violet-700"
+                            >
+                              {clinic.name}
+                            </Link>
                             <p className="text-xs capitalize text-slate-500">
                               {clinic.publicationStatus}
                             </p>

@@ -4,6 +4,7 @@ import { buildApp } from '../src/app.js';
 import {
   AdminClinicCreationError,
   type AdminClinicCreationService,
+  type AdminClinicDetailService,
   type AdminClinicListService,
 } from '../src/admin/clinics-service.js';
 import type { AuthServices, AuthorizationContext } from '../src/auth/types.js';
@@ -116,10 +117,91 @@ function createClinicCreationService(): AdminClinicCreationService {
   };
 }
 
+function createClinicDetailService(): AdminClinicDetailService {
+  return {
+    getById: vi.fn(async (clinicId) => ({
+      id: clinicId,
+      name: 'Smile Bright Dental',
+      slug: 'smile-bright-dental',
+      prefix: 'SBD',
+      status: 'active' as const,
+      publicationStatus: 'published' as const,
+      email: 'hello@smilebrightdental.ph',
+      phone: '+63 2 8123 4567',
+      website: 'https://smilebrightdental.ph',
+      description: 'Family dental clinic',
+      address: '123 Demo Street',
+      city: 'Makati',
+      province: 'Metro Manila',
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-08-01T00:00:00.000Z'),
+      owner: {
+        id: '77777777-7777-4777-8777-777777777777',
+        name: 'Demo Owner',
+        email: 'owner@example.com',
+        invitedAt: '2026-01-01T00:00:00.000Z',
+        joinedAt: '2026-01-02T00:00:00.000Z',
+      },
+      branches: [
+        {
+          id: '88888888-8888-4888-8888-888888888888',
+          name: 'Main Branch',
+          isMain: true,
+          isActive: true,
+          phone: '+63 2 8123 4567',
+          email: 'main@example.com',
+          address: '123 Demo Street',
+          city: 'Makati',
+          province: 'Metro Manila',
+        },
+      ],
+      subscription: {
+        id: '99999999-9999-4999-8999-999999999999',
+        status: 'active' as const,
+        startsAt: new Date('2026-01-01T00:00:00.000Z'),
+        expiresAt: null,
+        package: {
+          id: '00000000-0002-0000-0000-000000000002',
+          name: 'Professional',
+          slug: 'professional',
+          description: 'Professional package',
+        },
+      },
+      featureOverrides: [
+        {
+          id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          featureKey: 'reports.advanced',
+          isEnabled: true,
+          reason: 'Pilot access',
+          expiresAt: null,
+          createdAt: new Date('2026-08-01T00:00:00.000Z'),
+        },
+      ],
+      effectiveEntitlements: [
+        {
+          featureKey: 'appointments.manage',
+          isEnabled: true,
+          source: 'package' as const,
+          reason: null,
+          expiresAt: null,
+        },
+        {
+          featureKey: 'reports.advanced',
+          isEnabled: true,
+          source: 'override' as const,
+          reason: 'Pilot access',
+          expiresAt: null,
+        },
+      ],
+    })),
+  };
+}
+
 async function createApp(
   context: AuthorizationContext | null,
   clinics: AdminClinicListService,
   creation?: AdminClinicCreationService,
+  details?: AdminClinicDetailService,
 ) {
   app = await buildApp({
     config,
@@ -128,6 +210,7 @@ async function createApp(
     auth: createAuth(context),
     adminClinics: clinics,
     adminClinicCreation: creation,
+    adminClinicDetails: details,
   });
 }
 
@@ -321,5 +404,84 @@ describe('Super Admin clinic onboarding', () => {
 
     expect(response.statusCode).toBe(409);
     expect(response.json().error.code).toBe('SLUG_TAKEN');
+  });
+});
+
+describe('GET /v1/admin/clinics/:clinicId', () => {
+  const clinicId = '00000000-0001-0000-0000-000000000001';
+
+  it('rejects unauthenticated detail requests before querying data', async () => {
+    const details = createClinicDetailService();
+    await createApp(null, createClinicService(), undefined, details);
+
+    const response = await app!.inject({
+      method: 'GET',
+      url: `/v1/admin/clinics/${clinicId}`,
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(details.getById).not.toHaveBeenCalled();
+  });
+
+  it('rejects clinic members attempting to inspect platform clinic data', async () => {
+    const details = createClinicDetailService();
+    await createApp(clinicMemberContext, createClinicService(), undefined, details);
+
+    const response = await app!.inject({
+      method: 'GET',
+      url: `/v1/admin/clinics/${clinicId}`,
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(details.getById).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed clinic identifiers before querying data', async () => {
+    const details = createClinicDetailService();
+    await createApp(superAdminContext, createClinicService(), undefined, details);
+
+    const response = await app!.inject({
+      method: 'GET',
+      url: '/v1/admin/clinics/not-a-uuid',
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(details.getById).not.toHaveBeenCalled();
+  });
+
+  it('returns not found when the clinic does not exist', async () => {
+    const details = createClinicDetailService();
+    vi.mocked(details.getById).mockResolvedValueOnce(null);
+    await createApp(superAdminContext, createClinicService(), undefined, details);
+
+    const response = await app!.inject({
+      method: 'GET',
+      url: `/v1/admin/clinics/${clinicId}`,
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json().error.code).toBe('CLINIC_NOT_FOUND');
+  });
+
+  it('returns management details and effective entitlements to a Super Admin', async () => {
+    const details = createClinicDetailService();
+    await createApp(superAdminContext, createClinicService(), undefined, details);
+
+    const response = await app!.inject({
+      method: 'GET',
+      url: `/v1/admin/clinics/${clinicId}`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(details.getById).toHaveBeenCalledWith(clinicId);
+    expect(response.json().data).toMatchObject({
+      name: 'Smile Bright Dental',
+      owner: { email: 'owner@example.com' },
+      subscription: { package: { name: 'Professional' } },
+      effectiveEntitlements: [
+        { featureKey: 'appointments.manage', source: 'package' },
+        { featureKey: 'reports.advanced', source: 'override' },
+      ],
+    });
   });
 });

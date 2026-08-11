@@ -3,6 +3,7 @@ import {
   count,
   desc,
   eq,
+  gt,
   ilike,
   inArray,
   isNull,
@@ -12,13 +13,16 @@ import type { DB } from '@dentra/db';
 import {
   auditEvents,
   branches,
+  clinicFeatureOverrides,
   clinicMemberships,
   clinics,
   clinicSubscriptions,
+  packageFeatures,
   packages,
   users,
 } from '@dentra/db/schema';
 import { AuditAction } from '@dentra/shared';
+import type { FeatureKey } from '@dentra/shared';
 
 export type ClinicStatus = typeof clinics.$inferSelect.status;
 
@@ -107,6 +111,73 @@ export type AdminClinicCreationService = {
     input: CreateAdminClinicInput,
     actor: CreateAdminClinicActor,
   ) => Promise<CreatedAdminClinic>;
+};
+
+export type AdminClinicDetail = {
+  id: string;
+  name: string;
+  slug: string;
+  prefix: string;
+  status: ClinicStatus;
+  publicationStatus: typeof clinics.$inferSelect.publicationStatus;
+  email: string | null;
+  phone: string | null;
+  website: string | null;
+  description: string | null;
+  address: string | null;
+  city: string | null;
+  province: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  owner: {
+    id: string;
+    name: string;
+    email: string;
+    invitedAt: string | null;
+    joinedAt: string | null;
+  } | null;
+  branches: Array<{
+    id: string;
+    name: string;
+    isMain: boolean;
+    isActive: boolean;
+    phone: string | null;
+    email: string | null;
+    address: string | null;
+    city: string | null;
+    province: string | null;
+  }>;
+  subscription: {
+    id: string;
+    status: typeof clinicSubscriptions.$inferSelect.status;
+    startsAt: Date;
+    expiresAt: Date | null;
+    package: {
+      id: string;
+      name: string;
+      slug: string;
+      description: string | null;
+    };
+  } | null;
+  featureOverrides: Array<{
+    id: string;
+    featureKey: FeatureKey | string;
+    isEnabled: boolean;
+    reason: string;
+    expiresAt: Date | null;
+    createdAt: Date;
+  }>;
+  effectiveEntitlements: Array<{
+    featureKey: FeatureKey | string;
+    isEnabled: boolean;
+    source: 'package' | 'override';
+    reason: string | null;
+    expiresAt: Date | null;
+  }>;
+};
+
+export type AdminClinicDetailService = {
+  getById: (clinicId: string) => Promise<AdminClinicDetail | null>;
 };
 
 export function createAdminClinicListService(
@@ -202,6 +273,194 @@ export function createAdminClinicListService(
           branchCount: branchCounts.get(clinic.id) ?? 0,
         })),
         pagination: { page, pageSize: input.pageSize, total, totalPages },
+      };
+    },
+  };
+}
+
+export function createAdminClinicDetailService(
+  database: DB,
+): AdminClinicDetailService {
+  return {
+    getById: async (clinicId) => {
+      const [clinic] = await database
+        .select({
+          id: clinics.id,
+          name: clinics.name,
+          slug: clinics.slug,
+          prefix: clinics.prefix,
+          status: clinics.status,
+          publicationStatus: clinics.publicationStatus,
+          email: clinics.email,
+          phone: clinics.phone,
+          website: clinics.website,
+          description: clinics.description,
+          address: clinics.address,
+          city: clinics.city,
+          province: clinics.province,
+          createdAt: clinics.createdAt,
+          updatedAt: clinics.updatedAt,
+        })
+        .from(clinics)
+        .where(and(eq(clinics.id, clinicId), isNull(clinics.deletedAt)))
+        .limit(1);
+
+      if (!clinic) {
+        return null;
+      }
+
+      const now = new Date();
+      const [ownerRows, branchRows, subscriptionRows, overrideRows] =
+        await Promise.all([
+          database
+            .select({
+              id: users.id,
+              name: users.name,
+              email: users.email,
+              invitedAt: clinicMemberships.invitedAt,
+              joinedAt: clinicMemberships.joinedAt,
+            })
+            .from(clinicMemberships)
+            .innerJoin(users, eq(clinicMemberships.userId, users.id))
+            .where(
+              and(
+                eq(clinicMemberships.clinicId, clinicId),
+                eq(clinicMemberships.role, 'clinic_owner'),
+                eq(clinicMemberships.isActive, 'true'),
+                isNull(users.deletedAt),
+              ),
+            )
+            .orderBy(clinicMemberships.createdAt)
+            .limit(1),
+          database
+            .select({
+              id: branches.id,
+              name: branches.name,
+              isMain: branches.isMain,
+              isActive: branches.isActive,
+              phone: branches.phone,
+              email: branches.email,
+              address: branches.address,
+              city: branches.city,
+              province: branches.province,
+            })
+            .from(branches)
+            .where(
+              and(
+                eq(branches.clinicId, clinicId),
+                isNull(branches.deletedAt),
+              ),
+            )
+            .orderBy(desc(branches.isMain), branches.name),
+          database
+            .select({
+              id: clinicSubscriptions.id,
+              status: clinicSubscriptions.status,
+              startsAt: clinicSubscriptions.startsAt,
+              expiresAt: clinicSubscriptions.expiresAt,
+              packageId: packages.id,
+              packageName: packages.name,
+              packageSlug: packages.slug,
+              packageDescription: packages.description,
+            })
+            .from(clinicSubscriptions)
+            .innerJoin(packages, eq(clinicSubscriptions.packageId, packages.id))
+            .where(eq(clinicSubscriptions.clinicId, clinicId))
+            .orderBy(desc(clinicSubscriptions.startsAt))
+            .limit(1),
+          database
+            .select({
+              id: clinicFeatureOverrides.id,
+              featureKey: clinicFeatureOverrides.featureKey,
+              isEnabled: clinicFeatureOverrides.isEnabled,
+              reason: clinicFeatureOverrides.reason,
+              expiresAt: clinicFeatureOverrides.expiresAt,
+              createdAt: clinicFeatureOverrides.createdAt,
+            })
+            .from(clinicFeatureOverrides)
+            .where(
+              and(
+                eq(clinicFeatureOverrides.clinicId, clinicId),
+                or(
+                  isNull(clinicFeatureOverrides.expiresAt),
+                  gt(clinicFeatureOverrides.expiresAt, now),
+                ),
+              ),
+            )
+            .orderBy(desc(clinicFeatureOverrides.createdAt)),
+        ]);
+
+      const subscriptionRow = subscriptionRows[0];
+      const packageFeatureRows = subscriptionRow
+        ? await database
+            .select({
+              featureKey: packageFeatures.featureKey,
+              isEnabled: packageFeatures.isEnabled,
+            })
+            .from(packageFeatures)
+            .where(eq(packageFeatures.packageId, subscriptionRow.packageId))
+        : [];
+
+      const latestOverrides = new Map<
+        string,
+        (typeof overrideRows)[number]
+      >();
+      overrideRows.forEach((override) => {
+        if (!latestOverrides.has(override.featureKey)) {
+          latestOverrides.set(override.featureKey, override);
+        }
+      });
+
+      const packageEntitlements = new Map(
+        packageFeatureRows.map((feature) => [feature.featureKey, feature.isEnabled]),
+      );
+      const featureKeys = new Set([
+        ...packageEntitlements.keys(),
+        ...latestOverrides.keys(),
+      ]);
+      const effectiveEntitlements = [...featureKeys]
+        .sort()
+        .map((featureKey) => {
+          const override = latestOverrides.get(featureKey);
+          if (override) {
+            return {
+              featureKey,
+              isEnabled: override.isEnabled,
+              source: 'override' as const,
+              reason: override.reason,
+              expiresAt: override.expiresAt,
+            };
+          }
+
+          return {
+            featureKey,
+            isEnabled: packageEntitlements.get(featureKey) ?? false,
+            source: 'package' as const,
+            reason: null,
+            expiresAt: null,
+          };
+        });
+
+      return {
+        ...clinic,
+        owner: ownerRows[0] ?? null,
+        branches: branchRows,
+        subscription: subscriptionRow
+          ? {
+              id: subscriptionRow.id,
+              status: subscriptionRow.status,
+              startsAt: subscriptionRow.startsAt,
+              expiresAt: subscriptionRow.expiresAt,
+              package: {
+                id: subscriptionRow.packageId,
+                name: subscriptionRow.packageName,
+                slug: subscriptionRow.packageSlug,
+                description: subscriptionRow.packageDescription,
+              },
+            }
+          : null,
+        featureOverrides: [...latestOverrides.values()],
+        effectiveEntitlements,
       };
     },
   };

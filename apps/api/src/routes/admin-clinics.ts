@@ -6,8 +6,13 @@ import type { AuthServices } from '../auth/types.js';
 import {
   AdminClinicCreationError,
   type AdminClinicCreationService,
+  type AdminClinicDetailService,
   type AdminClinicListService,
 } from '../admin/clinics-service.js';
+
+const postgresUuidSchema = z.string().regex(
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+);
 
 const listClinicsQuerySchema = z.object({
   search: z.string().trim().max(100).default(''),
@@ -31,15 +36,18 @@ const createClinicBodySchema = z.object({
     .max(8)
     .regex(/^[A-Z0-9]+$/),
   ownerEmail: z.string().trim().toLowerCase().email().max(255),
-  packageId: z.string().regex(
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-  ),
+  packageId: postgresUuidSchema,
+});
+
+const clinicParamsSchema = z.object({
+  clinicId: postgresUuidSchema,
 });
 
 type RegisterAdminClinicRoutesOptions = {
   auth: AuthServices;
   clinics: AdminClinicListService;
   creation?: AdminClinicCreationService;
+  details?: AdminClinicDetailService;
 };
 
 export async function registerAdminClinicRoutes(
@@ -85,6 +93,57 @@ export async function registerAdminClinicRoutes(
 
     return reply.send({ success: true, data: result });
   });
+
+  const details = options.details;
+  if (details) {
+    app.get('/v1/admin/clinics/:clinicId', async (request, reply) => {
+      const authorization = await resolveRequestAuthorization(request, options.auth);
+
+      if (!authorization) {
+        return reply.status(401).send({
+          success: false,
+          error: {
+            code: 'UNAUTHENTICATED',
+            message: 'A valid session is required',
+          },
+        });
+      }
+
+      if (!isSuperAdmin(authorization)) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Super Admin access is required',
+          },
+        });
+      }
+
+      const params = clinicParamsSchema.safeParse(request.params);
+      if (!params.success) {
+        return reply.status(400).send({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid clinic identifier',
+          },
+        });
+      }
+
+      const clinic = await details.getById(params.data.clinicId);
+      if (!clinic) {
+        return reply.status(404).send({
+          success: false,
+          error: {
+            code: 'CLINIC_NOT_FOUND',
+            message: 'Clinic not found',
+          },
+        });
+      }
+
+      return reply.send({ success: true, data: clinic });
+    });
+  }
 
   const creation = options.creation;
   if (!creation) {
