@@ -4,8 +4,10 @@ import { isSuperAdmin } from '../auth/authorization.js';
 import { resolveRequestAuthorization } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
 import {
+  AdminClinicBranchCreationError,
   AdminClinicCreationError,
   AdminClinicStatusError,
+  type AdminClinicBranchCreationService,
   type AdminClinicCreationService,
   type AdminClinicDetailService,
   type AdminClinicListService,
@@ -49,12 +51,35 @@ const updateClinicStatusBodySchema = z.object({
   status: z.enum(['active', 'suspended', 'archived']),
 });
 
+const optionalText = (maxLength: number) => z
+  .union([z.string().trim().max(maxLength), z.null()])
+  .optional()
+  .transform((value) => value || null);
+
+const createClinicBranchBodySchema = z.object({
+  name: z.string().trim().min(2).max(200),
+  isMain: z.boolean().default(false),
+  phone: optionalText(20),
+  email: z
+    .union([
+      z.string().trim().toLowerCase().email().max(255),
+      z.literal(''),
+      z.null(),
+    ])
+    .optional()
+    .transform((value) => value || null),
+  address: optionalText(500),
+  city: optionalText(100),
+  province: optionalText(100),
+}).strict();
+
 type RegisterAdminClinicRoutesOptions = {
   auth: AuthServices;
   clinics: AdminClinicListService;
   creation?: AdminClinicCreationService;
   details?: AdminClinicDetailService;
   status?: AdminClinicStatusService;
+  branchCreation?: AdminClinicBranchCreationService;
 };
 
 export async function registerAdminClinicRoutes(
@@ -208,6 +233,77 @@ export async function registerAdminClinicRoutes(
         return reply.send({ success: true, data: clinic });
       } catch (error) {
         if (!(error instanceof AdminClinicStatusError)) {
+          throw error;
+        }
+
+        const statusCode = error.code === 'CLINIC_NOT_FOUND' ? 404 : 409;
+        return reply.status(statusCode).send({
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+          },
+        });
+      }
+    });
+  }
+
+  const branchCreation = options.branchCreation;
+  if (branchCreation) {
+    app.post('/v1/admin/clinics/:clinicId/branches', async (request, reply) => {
+      const authorization = await resolveRequestAuthorization(request, options.auth);
+
+      if (!authorization) {
+        return reply.status(401).send({
+          success: false,
+          error: {
+            code: 'UNAUTHENTICATED',
+            message: 'A valid session is required',
+          },
+        });
+      }
+
+      if (!isSuperAdmin(authorization)) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Super Admin access is required',
+          },
+        });
+      }
+
+      const params = clinicParamsSchema.safeParse(request.params);
+      const body = createClinicBranchBodySchema.safeParse(request.body);
+      if (!params.success || !body.success) {
+        return reply.status(400).send({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid branch details',
+          },
+        });
+      }
+
+      try {
+        const userAgent = request.headers['user-agent'];
+        const branch = await branchCreation.create(
+          params.data.clinicId,
+          body.data,
+          {
+            id: authorization.user.id,
+            email: authorization.user.email,
+            ipAddress: request.ip,
+            userAgent:
+              typeof userAgent === 'string'
+                ? userAgent.slice(0, 500)
+                : undefined,
+          },
+        );
+
+        return reply.status(201).send({ success: true, data: branch });
+      } catch (error) {
+        if (!(error instanceof AdminClinicBranchCreationError)) {
           throw error;
         }
 

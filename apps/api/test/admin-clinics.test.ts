@@ -2,8 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../src/app.js';
 import {
+  AdminClinicBranchCreationError,
   AdminClinicCreationError,
   AdminClinicStatusError,
+  type AdminClinicBranchCreationService,
   type AdminClinicCreationService,
   type AdminClinicDetailService,
   type AdminClinicListService,
@@ -209,12 +211,31 @@ function createClinicStatusService(): AdminClinicStatusService {
   };
 }
 
+function createClinicBranchCreationService(): AdminClinicBranchCreationService {
+  return {
+    create: vi.fn(async (clinicId, input) => ({
+      id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      clinicId,
+      name: input.name,
+      isMain: input.isMain,
+      isActive: true,
+      phone: input.phone,
+      email: input.email,
+      address: input.address,
+      city: input.city,
+      province: input.province,
+      createdAt: new Date('2026-08-11T00:00:00.000Z'),
+    })),
+  };
+}
+
 async function createApp(
   context: AuthorizationContext | null,
   clinics: AdminClinicListService,
   creation?: AdminClinicCreationService,
   details?: AdminClinicDetailService,
   status?: AdminClinicStatusService,
+  branchCreation?: AdminClinicBranchCreationService,
 ) {
   app = await buildApp({
     config,
@@ -225,6 +246,7 @@ async function createApp(
     adminClinicCreation: creation,
     adminClinicDetails: details,
     adminClinicStatus: status,
+    adminClinicBranchCreation: branchCreation,
   });
 }
 
@@ -613,6 +635,166 @@ describe('PATCH /v1/admin/clinics/:clinicId/status', () => {
       method: 'PATCH',
       url: `/v1/admin/clinics/${clinicId}/status`,
       payload: { status: 'active' },
+    });
+
+    expect(response.statusCode).toBe(httpStatus);
+    expect(response.json().error.code).toBe(code);
+  });
+});
+
+describe('POST /v1/admin/clinics/:clinicId/branches', () => {
+  const clinicId = '00000000-0001-0000-0000-000000000001';
+  const validPayload = {
+    name: '  BGC Branch  ',
+    isMain: false,
+    phone: '',
+    email: 'BGC@EXAMPLE.PH',
+    address: '  123 High Street  ',
+    city: 'Taguig',
+    province: 'Metro Manila',
+  };
+
+  it('rejects unauthenticated branch creation before writing data', async () => {
+    const branchCreation = createClinicBranchCreationService();
+    await createApp(
+      null,
+      createClinicService(),
+      undefined,
+      undefined,
+      undefined,
+      branchCreation,
+    );
+
+    const response = await app!.inject({
+      method: 'POST',
+      url: `/v1/admin/clinics/${clinicId}/branches`,
+      payload: validPayload,
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(branchCreation.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects clinic members attempting to create branches', async () => {
+    const branchCreation = createClinicBranchCreationService();
+    await createApp(
+      clinicMemberContext,
+      createClinicService(),
+      undefined,
+      undefined,
+      undefined,
+      branchCreation,
+    );
+
+    const response = await app!.inject({
+      method: 'POST',
+      url: `/v1/admin/clinics/${clinicId}/branches`,
+      payload: validPayload,
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(branchCreation.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed IDs, invalid fields, and client-supplied tenant IDs', async () => {
+    const branchCreation = createClinicBranchCreationService();
+    await createApp(
+      superAdminContext,
+      createClinicService(),
+      undefined,
+      undefined,
+      undefined,
+      branchCreation,
+    );
+
+    const invalidId = await app!.inject({
+      method: 'POST',
+      url: '/v1/admin/clinics/not-a-uuid/branches',
+      payload: validPayload,
+    });
+    const invalidBody = await app!.inject({
+      method: 'POST',
+      url: `/v1/admin/clinics/${clinicId}/branches`,
+      payload: { ...validPayload, name: 'A', email: 'not-an-email' },
+    });
+    const injectedTenant = await app!.inject({
+      method: 'POST',
+      url: `/v1/admin/clinics/${clinicId}/branches`,
+      payload: {
+        ...validPayload,
+        clinicId: '99999999-9999-4999-8999-999999999999',
+      },
+    });
+
+    expect(invalidId.statusCode).toBe(400);
+    expect(invalidBody.statusCode).toBe(400);
+    expect(injectedTenant.statusCode).toBe(400);
+    expect(branchCreation.create).not.toHaveBeenCalled();
+  });
+
+  it('normalizes input and scopes creation to the route clinic', async () => {
+    const branchCreation = createClinicBranchCreationService();
+    await createApp(
+      superAdminContext,
+      createClinicService(),
+      undefined,
+      undefined,
+      undefined,
+      branchCreation,
+    );
+
+    const response = await app!.inject({
+      method: 'POST',
+      url: `/v1/admin/clinics/${clinicId}/branches`,
+      headers: { 'user-agent': 'Dentra API test' },
+      payload: validPayload,
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(branchCreation.create).toHaveBeenCalledWith(
+      clinicId,
+      {
+        name: 'BGC Branch',
+        isMain: false,
+        phone: null,
+        email: 'bgc@example.ph',
+        address: '123 High Street',
+        city: 'Taguig',
+        province: 'Metro Manila',
+      },
+      expect.objectContaining({
+        id: superAdminContext.user.id,
+        email: superAdminContext.user.email,
+        userAgent: 'Dentra API test',
+      }),
+    );
+    expect(response.json().data).toMatchObject({
+      clinicId,
+      name: 'BGC Branch',
+    });
+  });
+
+  it.each([
+    ['CLINIC_NOT_FOUND', 404],
+    ['MAIN_BRANCH_EXISTS', 409],
+  ] as const)('maps %s service failures to HTTP %i', async (code, httpStatus) => {
+    const branchCreation = createClinicBranchCreationService();
+    vi.mocked(branchCreation.create).mockRejectedValueOnce(
+      new AdminClinicBranchCreationError(code, 'Branch creation rejected'),
+    );
+    await createApp(
+      superAdminContext,
+      createClinicService(),
+      undefined,
+      undefined,
+      undefined,
+      branchCreation,
+    );
+
+    const response = await app!.inject({
+      method: 'POST',
+      url: `/v1/admin/clinics/${clinicId}/branches`,
+      payload: validPayload,
     });
 
     expect(response.statusCode).toBe(httpStatus);

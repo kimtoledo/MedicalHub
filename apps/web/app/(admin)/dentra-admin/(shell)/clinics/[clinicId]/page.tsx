@@ -18,6 +18,7 @@ import {
   type ClinicStatus,
 } from '@/lib/admin-clinics';
 import ClinicStatusActions from '@/components/admin/ClinicStatusActions';
+import AddClinicBranch from '@/components/admin/AddClinicBranch';
 
 type ClinicDetailPageProps = {
   params: { clinicId: string };
@@ -231,9 +232,16 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
         </div>
 
         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-5 py-4">
-            <h2 className="font-bold text-slate-900">Branches</h2>
-            <p className="mt-1 text-sm text-slate-500">Operational locations associated with this tenant.</p>
+          <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="font-bold text-slate-900">Branches</h2>
+              <p className="mt-1 text-sm text-slate-500">Operational locations associated with this tenant.</p>
+            </div>
+            <AddClinicBranch
+              clinicId={clinic.id}
+              clinicName={clinic.name}
+              hasBranches={clinic.branches.length > 0}
+            />
           </div>
           {clinic.branches.length === 0 ? (
             <p className="p-6 text-sm text-slate-500">No branches have been added yet.</p>

@@ -11,6 +11,7 @@ import type { ApiConfig } from './config.js';
 import type { AuthServices } from './auth/types.js';
 import type {
   AdminClinicCreationService,
+  AdminClinicBranchCreationService,
   AdminClinicDetailService,
   AdminClinicListService,
   AdminClinicStatusService,
@@ -25,6 +26,7 @@ export type BuildAppOptions = {
   auth?: AuthServices;
   adminClinics?: AdminClinicListService;
   adminClinicCreation?: AdminClinicCreationService;
+  adminClinicBranchCreation?: AdminClinicBranchCreationService;
   adminClinicDetails?: AdminClinicDetailService;
   adminClinicStatus?: AdminClinicStatusService;
   logger?: FastifyServerOptions['logger'];
@@ -71,6 +73,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         auth: options.auth,
         clinics: options.adminClinics,
         creation: options.adminClinicCreation,
+        branchCreation: options.adminClinicBranchCreation,
         details: options.adminClinicDetails,
         status: options.adminClinicStatus,
       });

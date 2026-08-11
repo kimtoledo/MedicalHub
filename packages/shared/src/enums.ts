@@ -134,6 +134,9 @@ export const AuditAction = {
   CLINIC_REACTIVATED: 'clinic.reactivated',
   CLINIC_ARCHIVED: 'clinic.archived',
 
+  // Branch lifecycle
+  BRANCH_CREATED: 'branch.created',
+
   // Membership / roles
   MEMBER_INVITED: 'member.invited',
   MEMBER_ROLE_CHANGED: 'member.role_changed',

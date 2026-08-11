@@ -215,6 +215,59 @@ export type AdminClinicStatusService = {
   ) => Promise<UpdatedAdminClinicStatus>;
 };
 
+export type CreateAdminClinicBranchInput = {
+  name: string;
+  isMain: boolean;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  city: string | null;
+  province: string | null;
+};
+
+export type CreateAdminClinicBranchActor = {
+  id: string;
+  email: string;
+  ipAddress?: string;
+  userAgent?: string;
+};
+
+export type CreatedAdminClinicBranch = {
+  id: string;
+  clinicId: string;
+  name: string;
+  isMain: boolean;
+  isActive: boolean;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  city: string | null;
+  province: string | null;
+  createdAt: Date;
+};
+
+export type AdminClinicBranchCreationErrorCode =
+  | 'CLINIC_NOT_FOUND'
+  | 'MAIN_BRANCH_EXISTS';
+
+export class AdminClinicBranchCreationError extends Error {
+  constructor(
+    public readonly code: AdminClinicBranchCreationErrorCode,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'AdminClinicBranchCreationError';
+  }
+}
+
+export type AdminClinicBranchCreationService = {
+  create: (
+    clinicId: string,
+    input: CreateAdminClinicBranchInput,
+    actor: CreateAdminClinicBranchActor,
+  ) => Promise<CreatedAdminClinicBranch>;
+};
+
 export function createAdminClinicListService(
   database: DB,
 ): AdminClinicListService {
@@ -587,6 +640,89 @@ export function createAdminClinicStatusService(
         });
 
         return updatedClinic;
+      }),
+  };
+}
+
+export function createAdminClinicBranchCreationService(
+  database: DB,
+): AdminClinicBranchCreationService {
+  return {
+    create: async (clinicId, input, actor) =>
+      database.transaction(async (transaction) => {
+        const [clinic] = await transaction
+          .select({ id: clinics.id })
+          .from(clinics)
+          .where(and(eq(clinics.id, clinicId), isNull(clinics.deletedAt)))
+          .limit(1)
+          .for('update');
+
+        if (!clinic) {
+          throw new AdminClinicBranchCreationError(
+            'CLINIC_NOT_FOUND',
+            'Clinic not found',
+          );
+        }
+
+        const existingBranches = await transaction
+          .select({ isMain: branches.isMain })
+          .from(branches)
+          .where(
+            and(
+              eq(branches.clinicId, clinicId),
+              eq(branches.isActive, true),
+              isNull(branches.deletedAt),
+            ),
+          );
+        const isFirstBranch = existingBranches.length === 0;
+        const isMain = isFirstBranch || input.isMain;
+
+        if (isMain && existingBranches.some((branch) => branch.isMain)) {
+          throw new AdminClinicBranchCreationError(
+            'MAIN_BRANCH_EXISTS',
+            'This clinic already has an active main branch',
+          );
+        }
+
+        const [createdBranch] = await transaction
+          .insert(branches)
+          .values({
+            clinicId,
+            name: input.name,
+            isMain,
+            phone: input.phone,
+            email: input.email,
+            address: input.address,
+            city: input.city,
+            province: input.province,
+          })
+          .returning({
+            id: branches.id,
+            clinicId: branches.clinicId,
+            name: branches.name,
+            isMain: branches.isMain,
+            isActive: branches.isActive,
+            phone: branches.phone,
+            email: branches.email,
+            address: branches.address,
+            city: branches.city,
+            province: branches.province,
+            createdAt: branches.createdAt,
+          });
+
+        await transaction.insert(auditEvents).values({
+          actorId: actor.id,
+          actorEmail: actor.email,
+          clinicId,
+          entityType: 'branch',
+          entityId: createdBranch.id,
+          action: AuditAction.BRANCH_CREATED,
+          metadata: JSON.stringify({ isMain: createdBranch.isMain }),
+          ipAddress: actor.ipAddress,
+          userAgent: actor.userAgent,
+        });
+
+        return createdBranch;
       }),
   };
 }
