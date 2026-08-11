@@ -1,6 +1,6 @@
 # Dentist Public Profile Page
 
-> **Status:** 🔲 Queued — no project task yet
+> **Status:** ✅ Done
 
 ---
 
@@ -29,7 +29,7 @@ Each dentist gets a public profile at `/dentists/[dentistSlug]` showing their pr
 
 ## Steps
 
-1. **Public dentist API endpoint** — `GET /v1/public/dentists/[slug]` with only publishable fields.
-2. **Profile page** — build `apps/web/app/dentists/[dentistSlug]/page.tsx` with all sections.
-3. **Affiliated clinics section** — show each clinic card with branch location and a booking link.
-4. **Booking CTA** — link to `/dentists/[dentistSlug]/appointment` (see task `08`).
+1. **Public dentist API endpoint** — ✅ `GET /v1/public/dentists/[slug]` exposes only the verified, published professional profile and active public affiliations.
+2. **Profile page** — ✅ `apps/web/app/dentists/[dentistSlug]/page.tsx` renders the complete profile with server-side metadata and 404 handling.
+3. **Affiliated clinics section** — ✅ Cards show operational, published clinics, active branches, locations, and available clinic services.
+4. **Booking CTA** — ✅ Each affiliation links to `/dentists/[dentistSlug]/appointment` with its clinic and branch preselected for Task `08`.

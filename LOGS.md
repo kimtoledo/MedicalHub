@@ -18,6 +18,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Public dentist profile pages
+- Added a publication-safe `GET /v1/public/dentists/:slug` boundary for verified, published dentists
+- Added crawlable, server-rendered dentist profiles with professional information, specialty/service tags, and dynamic SEO metadata
+- Shows only active affiliations at operational, published clinics and branches, with clinic-specific service context
+- Added booking links prefilled with the selected dentist, clinic, and branch for the public booking flow
+- Verified hidden-profile behavior, API response safety, live seeded rendering, 115 API tests, repository-wide typecheck, and production builds
+
 ### ✅ Public clinic microsite and clinic-managed content
 - Added structured clinic hero text and per-branch weekly operating hours through migration `0005_faithful_azazel.sql`
 - Added a publication-safe clinic detail API and server-rendered microsite with profile, contact/social, map, branch/hour, service, and published dentist sections
@@ -287,8 +294,8 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 
 - **Clinic owner invitation delivery** — clinic creation links or creates a pending owner identity and membership, but invite email delivery and password setup remain a separate onboarding step.
 - **Clinic membership selection** — authenticated users currently enter their first active clinic membership; explicit clinic/branch switching remains part of the PWA shell real-data work.
-- **PWA entitlement and branch context remain static** — the required entitlement and branch-listing API endpoints are not implemented yet.
-- **Most domain API routes remain queued** — Task 02 clinic management and Task 03 dentist listing/creation are implemented; dentist detail/affiliation actions, branch editing, and other domain modules still need backend routes.
+- **PWA branch context remains static** — entitlement resolution is implemented, while branch listing and shell integration remain part of Task 09.
+- **Clinical domain API routes remain queued** — platform administration and public discovery are implemented; patient, encounter, treatment, odontogram, and live dashboard modules remain in Tasks 10–14.
 - **Patient number sequencing** — no DB-level sequence generator; race condition possible under concurrent inserts
 - **Clinic prefix required** — schema allows `prefix = ''` as default; admin UI must enforce non-empty unique prefix on clinic creation
 - **Dependency upgrades pending** — `npm audit` reports 2 high advisories in the existing Next.js/PostCSS stack and 4 moderate build-tool advisories through Drizzle Kit. The runtime Drizzle ORM, new Fastify API, and Vitest test runner were upgraded to patched releases; the remaining fixes require separate tested framework/tooling upgrades.

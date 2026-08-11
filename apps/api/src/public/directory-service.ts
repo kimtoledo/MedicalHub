@@ -10,6 +10,7 @@ export type PublicDirectoryService = {
   listDentists: (input: PublicDentistListInput) => Promise<{ items: Array<{ id: string; firstName: string; lastName: string; slug: string; specialty: string | null; bio: string | null; photoUrl: string | null; affiliatedClinicCount: number }>; pagination: Pagination }>;
   summary: () => Promise<{ publishedClinicCount: number; publishedDentistCount: number }>;
   getClinicBySlug: (slug: string) => Promise<PublicClinicDetail | null>;
+  getDentistBySlug: (slug: string) => Promise<PublicDentistDetail | null>;
 };
 export type PublicClinicDetail = {
   id: string; name: string; slug: string; heroText: string | null; description: string | null;
@@ -19,6 +20,11 @@ export type PublicClinicDetail = {
   branches: Array<{ id: string; name: string; phone: string | null; email: string | null; address: string | null; city: string | null; province: string | null; mapUrl: string | null; operatingHours: Record<string, string> }>;
   services: Array<{ id: string; name: string; description: string | null; durationMinutes: string }>;
   dentists: Array<{ id: string; firstName: string; lastName: string; slug: string; specialty: string | null; photoUrl: string | null; branches: string[] }>;
+};
+export type PublicDentistDetail = {
+  id: string; firstName: string; lastName: string; slug: string; specialty: string | null;
+  bio: string | null; photoUrl: string | null; licenseNumber: string | null;
+  affiliations: Array<{ assignmentId: string; clinicId: string; clinicName: string; clinicSlug: string; clinicLogoUrl: string | null; branchId: string; branchName: string; address: string | null; city: string | null; province: string | null; services: string[] }>;
 };
 type Pagination = { page: number; pageSize: number; total: number; totalPages: number };
 const publicClinic = and(eq(clinics.publicationStatus, 'published'), inArray(clinics.status, ['trial', 'active']), isNull(clinics.deletedAt));
@@ -73,6 +79,14 @@ export function createPublicDirectoryService(database: DB): PublicDirectoryServi
       dentistRows.forEach((row) => { const current = dentistMap.get(row.id); if (current) current.branches.push(row.branchName); else dentistMap.set(row.id, { id: row.id, firstName: row.firstName, lastName: row.lastName, slug: row.slug, specialty: row.specialty, photoUrl: row.photoUrl, branches: [row.branchName] }); });
       const safeHours = (value: string | null): Record<string, string> => { if (!value) return {}; try { const parsed: unknown = JSON.parse(value); return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed) ? parsed as Record<string, string> : {}; } catch { return {}; } };
       return { ...clinic, branches: branchRows.map((branch) => ({ ...branch, operatingHours: safeHours(branch.operatingHours) })), services: serviceRows, dentists: [...dentistMap.values()] };
+    },
+    getDentistBySlug: async (slug) => {
+      const [dentist] = await database.select({ id: dentists.id, firstName: dentists.firstName, lastName: dentists.lastName, slug: dentists.slug, specialty: dentists.specialty, bio: dentists.bio, photoUrl: dentists.photoUrl, licenseNumber: dentists.licenseNumber }).from(dentists).where(and(eq(dentists.slug, slug), publicDentist)).limit(1);
+      if (!dentist) return null;
+      const affiliationRows = await database.select({ assignmentId: dentistBranchAssignments.id, clinicId: clinics.id, clinicName: clinics.name, clinicSlug: clinics.slug, clinicLogoUrl: clinics.logoUrl, branchId: branches.id, branchName: branches.name, address: branches.address, city: branches.city, province: branches.province }).from(dentistBranchAssignments).innerJoin(clinics, eq(dentistBranchAssignments.clinicId, clinics.id)).innerJoin(branches, eq(dentistBranchAssignments.branchId, branches.id)).where(and(eq(dentistBranchAssignments.dentistId, dentist.id), eq(dentistBranchAssignments.isActive, 'true'), eq(branches.isActive, true), isNull(branches.deletedAt), publicClinic)).orderBy(clinics.name, branches.name);
+      const clinicIds = [...new Set(affiliationRows.map((row) => row.clinicId))];
+      const serviceRows = clinicIds.length ? await database.select({ clinicId: services.clinicId, name: services.name }).from(services).where(and(inArray(services.clinicId, clinicIds), eq(services.isActive, 'true'))).orderBy(services.name) : [];
+      return { ...dentist, affiliations: affiliationRows.map((row) => ({ ...row, services: serviceRows.filter((service) => service.clinicId === row.clinicId).map((service) => service.name) })) };
     },
   };
 }
