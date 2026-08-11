@@ -1,6 +1,6 @@
 # Patient Management
 
-> **Status:** 🔲 Queued — no project task yet
+> **Status:** ✅ Done
 
 ---
 
@@ -44,8 +44,8 @@ Clinic staff need to register patients, view their profiles, and access their me
 
 ## Steps
 
-1. **Patient list page** — wire `/app/patients` to `GET /v1/clinic/patients` with search and pagination; build "New Patient" registration slide-over.
-2. **Patient profile page** — build `/app/patients/[patientId]` with demographics, contact, and emergency contact tabs.
-3. **Medical history form** — versioned medical history editor within the patient profile; call `POST /v1/clinic/patients/[id]/medical-history`.
-4. **Dental history form** — versioned dental history editor; call `POST /v1/clinic/patients/[id]/dental-history`.
-5. **Appointment history tab** — list past/upcoming appointments for this patient with links to encounters.
+1. **Patient list page** — ✅ `/app/patients` and the dentist view use a protected, entitlement-enforced searchable/paginated API and responsive registration slide-over.
+2. **Patient profile page** — ✅ Tenant-scoped profiles show demographics, contact/address, emergency contact, guardian, and clinical navigation.
+3. **Medical history form** — ✅ Each submission appends a new actor/timestamped medical questionnaire version and an audit event.
+4. **Dental history form** — ✅ Each submission appends a new actor/timestamped dental questionnaire version and an audit event.
+5. **Appointment history tab** — ✅ Sortable past/upcoming appointments include branch, dentist, service, status, and encounter links when available.

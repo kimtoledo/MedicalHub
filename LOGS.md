@@ -18,6 +18,14 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Tenant-scoped patient management
+- Added protected patient list, registration, profile, medical-history, and dental-history APIs with role and feature-key entitlement enforcement
+- Enforces the clinic boundary before every patient query and confirmed a seeded Clinic A session receives `403` for Clinic B records
+- Added migration `0006_dazzling_legion.sql` for database-enforced per-clinic patient-number uniqueness and serialized number allocation per tenant
+- Added responsive staff and dentist patient directories, a registration slide-over, complete demographic/contact/emergency/guardian profiles, and sortable appointment history with encounter links
+- Medical and dental questionnaire edits are append-only versions with actor/timestamp timelines and PII-safe audit metadata
+- Verified live seeded APIs and rendered list/profile pages, 129 API tests, repository-wide typecheck, and production builds
+
 ### ✅ Clinic PWA shell with live tenant context
 - Added a protected clinic workspace endpoint that returns real clinic metadata and only active branches authorized by the current membership
 - Wired the server-rendered app shell to live clinic, branch, package, and feature-key entitlement data
@@ -194,6 +202,9 @@ All Drizzle ORM schema files created:
 | `0001_overrated_loners.sql` | `patient_dental_histories`, `encounters`, `treatment_records`, `odontogram_events` |
 | `0002_sleepy_lethal_legion.sql` | `prefix` column + unique constraint on `clinics` |
 | `0003_great_zemo.sql` | Better Auth `accounts`, `sessions`, and `verifications`; auth identity fields on `users` |
+| `0004_bored_sumo.sql` | Package display price and unique package-feature mappings |
+| `0005_faithful_azazel.sql` | Structured clinic hero text and branch operating hours |
+| `0006_dazzling_legion.sql` | Tenant-scoped patient-number uniqueness |
 
 ### ✅ Demo seed data (live in DB)
 Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
@@ -310,7 +321,6 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 - **Clinic owner invitation delivery** — clinic creation links or creates a pending owner identity and membership, but invite email delivery and password setup remain a separate onboarding step.
 - **Clinic membership selection** — authenticated users currently enter their first active clinic membership; explicit clinic/branch switching remains part of the PWA shell real-data work.
 - **Clinical domain API routes remain queued** — platform administration and public discovery are implemented; patient, encounter, treatment, odontogram, and live dashboard modules remain in Tasks 10–14.
-- **Patient number sequencing** — no DB-level sequence generator; race condition possible under concurrent inserts
 - **Clinic prefix required** — schema allows `prefix = ''` as default; admin UI must enforce non-empty unique prefix on clinic creation
 - **Dependency upgrades pending** — `npm audit` reports 2 high advisories in the existing Next.js/PostCSS stack and 4 moderate build-tool advisories through Drizzle Kit. The runtime Drizzle ORM, new Fastify API, and Vitest test runner were upgraded to patched releases; the remaining fixes require separate tested framework/tooling upgrades.
 

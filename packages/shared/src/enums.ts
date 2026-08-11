@@ -168,6 +168,11 @@ export const AuditAction = {
   APPOINTMENT_STATUS_CHANGED: 'appointment.status_changed',
   APPOINTMENT_CANCELLED: 'appointment.cancelled',
 
+  // Patient records
+  PATIENT_CREATED: 'patient.created',
+  MEDICAL_HISTORY_RECORDED: 'patient.medical_history_recorded',
+  DENTAL_HISTORY_RECORDED: 'patient.dental_history_recorded',
+
   // Clinical
   ENCOUNTER_CREATED: 'encounter.created',
   ENCOUNTER_UPDATED: 'encounter.updated',

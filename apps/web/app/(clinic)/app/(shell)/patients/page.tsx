@@ -1,12 +1,5 @@
-import AppStubPage from "@/components/app/AppStubPage";
-import { Users } from "lucide-react";
-
-export default function PatientsPage() {
-  return (
-    <AppStubPage
-      title="Patients"
-      description="Search and manage patient profiles, medical histories, dental histories, and appointment records."
-      icon={<Users size={28} className="text-violet-500" />}
-    />
-  );
-}
+import { redirect } from 'next/navigation';
+import PatientDirectory from '@/components/app/patients/PatientDirectory';
+import { getClinicSession } from '@/lib/clinic-session';
+import { getClinicPatients } from '@/lib/clinic-patients';
+export default async function PatientsPage({ searchParams }: { searchParams: { search?: string; page?: string } }) { const identity = await getClinicSession(); if (!identity) redirect('/cl-login'); const search = searchParams.search?.trim() ?? ''; const page = Math.max(1, Number(searchParams.page) || 1); const data = await getClinicPatients(identity.clinicId, search, page); return <PatientDirectory clinicId={identity.clinicId} data={data} search={search} />; }
