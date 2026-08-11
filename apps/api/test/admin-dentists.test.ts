@@ -8,6 +8,7 @@ import {
   type AdminDentistCreationService,
   type AdminDentistDetailService,
   type AdminDentistListService,
+  type AdminDentistProfileStateService,
 } from '../src/admin/dentists-service.js';
 import type { AuthServices, AuthorizationContext } from '../src/auth/types.js';
 import type { ApiConfig } from '../src/config.js';
@@ -158,12 +159,20 @@ function createDentistAffiliationService(): AdminDentistAffiliationService {
   };
 }
 
+function createDentistProfileStateService(): AdminDentistProfileStateService {
+  return {
+    updateVerification: vi.fn(async (id, verificationStatus) => ({ id, verificationStatus })),
+    updatePublication: vi.fn(async (id, publicationStatus) => ({ id, publicationStatus })),
+  };
+}
+
 async function createApp(
   context: AuthorizationContext | null,
   dentists: AdminDentistListService,
   creation?: AdminDentistCreationService,
   details?: AdminDentistDetailService,
   affiliations?: AdminDentistAffiliationService,
+  profileState?: AdminDentistProfileStateService,
 ) {
   app = await buildApp({
     config,
@@ -174,6 +183,7 @@ async function createApp(
     adminDentistCreation: creation,
     adminDentistDetails: details,
     adminDentistAffiliations: affiliations,
+    adminDentistProfileState: profileState,
   });
 }
 
@@ -241,6 +251,34 @@ describe('GET /v1/admin/dentists', () => {
     expect(response.statusCode).toBe(400);
     expect(response.json().error.code).toBe('VALIDATION_ERROR');
     expect(dentists.list).not.toHaveBeenCalled();
+  });
+});
+
+describe('Super Admin dentist verification and publication', () => {
+  const dentistId = '55555555-5555-4555-8555-555555555555';
+
+  it('verifies and publishes through protected state services', async () => {
+    const state = createDentistProfileStateService();
+    await createApp(superAdminContext, createDentistService(), undefined, undefined, undefined, state);
+    const verifyResponse = await app!.inject({ method: 'PATCH', url: `/v1/admin/dentists/${dentistId}/verification`, payload: { verificationStatus: 'verified' } });
+    const publishResponse = await app!.inject({ method: 'PATCH', url: `/v1/admin/dentists/${dentistId}/publication`, payload: { publicationStatus: 'published' } });
+    expect(verifyResponse.statusCode).toBe(200);
+    expect(publishResponse.statusCode).toBe(200);
+    expect(state.updateVerification).toHaveBeenCalledWith(dentistId, 'verified', expect.objectContaining({ id: superAdminContext.user.id }));
+    expect(state.updatePublication).toHaveBeenCalledWith(dentistId, 'published', expect.objectContaining({ id: superAdminContext.user.id }));
+  });
+
+  it('rejects clinic members and invalid state values', async () => {
+    const state = createDentistProfileStateService();
+    await createApp(clinicMemberContext, createDentistService(), undefined, undefined, undefined, state);
+    const denied = await app!.inject({ method: 'PATCH', url: `/v1/admin/dentists/${dentistId}/verification`, payload: { verificationStatus: 'verified' } });
+    expect(denied.statusCode).toBe(403);
+    expect(state.updateVerification).not.toHaveBeenCalled();
+    await app!.close(); app = undefined;
+    await createApp(superAdminContext, createDentistService(), undefined, undefined, undefined, state);
+    const invalid = await app!.inject({ method: 'PATCH', url: `/v1/admin/dentists/${dentistId}/publication`, payload: { publicationStatus: 'draft' } });
+    expect(invalid.statusCode).toBe(400);
+    expect(state.updatePublication).not.toHaveBeenCalled();
   });
 });
 

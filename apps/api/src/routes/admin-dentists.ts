@@ -3,10 +3,12 @@ import { z } from 'zod';
 import {
   AdminDentistCreationError,
   AdminDentistAffiliationError,
+  AdminDentistProfileStateError,
   type AdminDentistAffiliationService,
   type AdminDentistCreationService,
   type AdminDentistDetailService,
   type AdminDentistListService,
+  type AdminDentistProfileStateService,
 } from '../admin/dentists-service.js';
 import { isSuperAdmin } from '../auth/authorization.js';
 import { resolveRequestAuthorization } from '../auth/request.js';
@@ -52,6 +54,8 @@ const affiliationParamsSchema = dentistParamsSchema.extend({
 const createAffiliationBodySchema = z.object({
   branchId: z.string().uuid(),
 }).strict();
+const updateVerificationBodySchema = z.object({ verificationStatus: z.enum(['unverified', 'verified']) }).strict();
+const updatePublicationBodySchema = z.object({ publicationStatus: z.enum(['published', 'unpublished']) }).strict();
 
 type RegisterAdminDentistRoutesOptions = {
   auth: AuthServices;
@@ -59,6 +63,7 @@ type RegisterAdminDentistRoutesOptions = {
   creation?: AdminDentistCreationService;
   details?: AdminDentistDetailService;
   affiliations?: AdminDentistAffiliationService;
+  profileState?: AdminDentistProfileStateService;
 };
 
 export async function registerAdminDentistRoutes(
@@ -178,6 +183,41 @@ export async function registerAdminDentistRoutes(
       } catch (error) {
         if (!(error instanceof AdminDentistAffiliationError)) throw error;
         return reply.status(404).send({ success: false, error: { code: error.code, message: error.message } });
+      }
+    });
+  }
+
+  const profileState = options.profileState;
+  if (profileState) {
+    app.patch('/v1/admin/dentists/:dentistId/verification', async (request, reply) => {
+      const authorization = await resolveRequestAuthorization(request, options.auth);
+      if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
+      if (!isSuperAdmin(authorization)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Super Admin access is required' } });
+      const params = dentistParamsSchema.safeParse(request.params);
+      const body = updateVerificationBodySchema.safeParse(request.body);
+      if (!params.success || !body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid verification change' } });
+      try {
+        const result = await profileState.updateVerification(params.data.dentistId, body.data.verificationStatus, { id: authorization.user.id, email: authorization.user.email, ipAddress: request.ip, userAgent: request.headers['user-agent'] });
+        return reply.send({ success: true, data: result });
+      } catch (error) {
+        if (!(error instanceof AdminDentistProfileStateError)) throw error;
+        return reply.status(error.code === 'DENTIST_NOT_FOUND' ? 404 : 409).send({ success: false, error: { code: error.code, message: error.message } });
+      }
+    });
+
+    app.patch('/v1/admin/dentists/:dentistId/publication', async (request, reply) => {
+      const authorization = await resolveRequestAuthorization(request, options.auth);
+      if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
+      if (!isSuperAdmin(authorization)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Super Admin access is required' } });
+      const params = dentistParamsSchema.safeParse(request.params);
+      const body = updatePublicationBodySchema.safeParse(request.body);
+      if (!params.success || !body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid publication change' } });
+      try {
+        const result = await profileState.updatePublication(params.data.dentistId, body.data.publicationStatus, { id: authorization.user.id, email: authorization.user.email, ipAddress: request.ip, userAgent: request.headers['user-agent'] });
+        return reply.send({ success: true, data: result });
+      } catch (error) {
+        if (!(error instanceof AdminDentistProfileStateError)) throw error;
+        return reply.status(error.code === 'DENTIST_NOT_FOUND' ? 404 : 409).send({ success: false, error: { code: error.code, message: error.message } });
       }
     });
   }

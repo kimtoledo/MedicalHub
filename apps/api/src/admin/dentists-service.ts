@@ -175,6 +175,32 @@ export type AdminDentistAffiliationService = {
   ) => Promise<AdminDentistAffiliation>;
 };
 
+export type DentistPublicationStatus = 'draft' | 'published' | 'unpublished';
+export type AdminDentistProfileStateErrorCode =
+  | 'DENTIST_NOT_FOUND'
+  | 'STATE_UNCHANGED'
+  | 'VERIFICATION_REQUIRED';
+
+export class AdminDentistProfileStateError extends Error {
+  constructor(public readonly code: AdminDentistProfileStateErrorCode, message: string) {
+    super(message);
+    this.name = 'AdminDentistProfileStateError';
+  }
+}
+
+export type AdminDentistProfileStateService = {
+  updateVerification: (
+    dentistId: string,
+    status: Extract<DentistVerificationStatus, 'unverified' | 'verified'>,
+    actor: CreateAdminDentistActor,
+  ) => Promise<{ id: string; verificationStatus: DentistVerificationStatus }>;
+  updatePublication: (
+    dentistId: string,
+    status: Extract<DentistPublicationStatus, 'published' | 'unpublished'>,
+    actor: CreateAdminDentistActor,
+  ) => Promise<{ id: string; publicationStatus: string }>;
+};
+
 export function createAdminDentistListService(
   database: DB,
 ): AdminDentistListService {
@@ -577,6 +603,54 @@ export function createAdminDentistAffiliationService(
           userAgent: actor.userAgent,
         });
         return affiliation;
+      }),
+  };
+}
+
+export function createAdminDentistProfileStateService(
+  database: DB,
+): AdminDentistProfileStateService {
+  return {
+    updateVerification: async (dentistId, status, actor) =>
+      database.transaction(async (transaction) => {
+        const [current] = await transaction.select({ status: dentists.verificationStatus })
+          .from(dentists).where(and(eq(dentists.id, dentistId), isNull(dentists.deletedAt))).limit(1);
+        if (!current) throw new AdminDentistProfileStateError('DENTIST_NOT_FOUND', 'Dentist not found');
+        if (current.status === status) throw new AdminDentistProfileStateError('STATE_UNCHANGED', `Dentist is already ${status}`);
+        const [updated] = await transaction.update(dentists).set({ verificationStatus: status })
+          .where(and(eq(dentists.id, dentistId), eq(dentists.verificationStatus, current.status), isNull(dentists.deletedAt)))
+          .returning({ id: dentists.id, verificationStatus: dentists.verificationStatus });
+        if (!updated) throw new AdminDentistProfileStateError('STATE_UNCHANGED', 'Dentist verification changed before this request completed');
+        await transaction.insert(auditEvents).values({
+          actorId: actor.id, actorEmail: actor.email, entityType: 'dentist', entityId: dentistId,
+          action: status === 'verified' ? AuditAction.DENTIST_VERIFIED : AuditAction.DENTIST_VERIFICATION_REVOKED,
+          metadata: JSON.stringify({ previousStatus: current.status, nextStatus: status }),
+          ipAddress: actor.ipAddress, userAgent: actor.userAgent,
+        });
+        return updated;
+      }),
+    updatePublication: async (dentistId, status, actor) =>
+      database.transaction(async (transaction) => {
+        const [current] = await transaction.select({
+          publicationStatus: dentists.publicationStatus,
+          verificationStatus: dentists.verificationStatus,
+        }).from(dentists).where(and(eq(dentists.id, dentistId), isNull(dentists.deletedAt))).limit(1);
+        if (!current) throw new AdminDentistProfileStateError('DENTIST_NOT_FOUND', 'Dentist not found');
+        if (current.publicationStatus === status) throw new AdminDentistProfileStateError('STATE_UNCHANGED', `Dentist profile is already ${status}`);
+        if (status === 'published' && current.verificationStatus !== 'verified') {
+          throw new AdminDentistProfileStateError('VERIFICATION_REQUIRED', 'Verify the dentist before publishing the public profile');
+        }
+        const [updated] = await transaction.update(dentists).set({ publicationStatus: status })
+          .where(and(eq(dentists.id, dentistId), eq(dentists.publicationStatus, current.publicationStatus), isNull(dentists.deletedAt)))
+          .returning({ id: dentists.id, publicationStatus: dentists.publicationStatus });
+        if (!updated) throw new AdminDentistProfileStateError('STATE_UNCHANGED', 'Dentist publication changed before this request completed');
+        await transaction.insert(auditEvents).values({
+          actorId: actor.id, actorEmail: actor.email, entityType: 'dentist', entityId: dentistId,
+          action: status === 'published' ? AuditAction.DENTIST_PUBLISHED : AuditAction.DENTIST_UNPUBLISHED,
+          metadata: JSON.stringify({ previousStatus: current.publicationStatus, nextStatus: status }),
+          ipAddress: actor.ipAddress, userAgent: actor.userAgent,
+        });
+        return updated;
       }),
   };
 }

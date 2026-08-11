@@ -15,6 +15,7 @@ import {
   createAdminDentistAffiliationService,
   createAdminDentistDetailService,
   createAdminDentistListService,
+  createAdminDentistProfileStateService,
 } from './admin/dentists-service.js';
 
 const config = loadConfig();
@@ -30,6 +31,7 @@ const adminDentists = createAdminDentistListService(database.db);
 const adminDentistCreation = createAdminDentistCreationService(database.db);
 const adminDentistDetails = createAdminDentistDetailService(database.db);
 const adminDentistAffiliations = createAdminDentistAffiliationService(database.db);
+const adminDentistProfileState = createAdminDentistProfileStateService(database.db);
 const app = await buildApp({
   config,
   checkDatabase: database.check,
@@ -44,6 +46,7 @@ const app = await buildApp({
   adminDentistCreation,
   adminDentistDetails,
   adminDentistAffiliations,
+  adminDentistProfileState,
 });
 
 app.addHook('onClose', async () => {

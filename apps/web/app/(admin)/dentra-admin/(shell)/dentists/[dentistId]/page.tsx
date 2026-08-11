@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { getAdminDentistDetail } from '@/lib/admin-dentists';
 import DentistAffiliationManager from '@/components/admin/DentistAffiliationManager';
+import DentistProfileActions from '@/components/admin/DentistProfileActions';
 
 type DentistDetailPageProps = { params: { dentistId: string } };
 
@@ -47,11 +48,14 @@ export default async function DentistDetailPage({ params }: DentistDetailPagePro
                 <p className="mt-1 text-sm text-slate-500">{dentist.specialty ?? 'General dentistry'} · {dentist.slug}</p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold capitalize text-emerald-700 ring-1 ring-emerald-600/20">
-                {dentist.verificationStatus === 'verified' && <ShieldCheck size={14} />}{dentist.verificationStatus}
-              </span>
-              <span className="rounded-full bg-violet-50 px-3 py-1.5 text-xs font-semibold capitalize text-violet-700 ring-1 ring-violet-600/20">{dentist.publicationStatus}</span>
+            <div>
+              <div className="flex flex-wrap gap-2 sm:justify-end">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold capitalize text-emerald-700 ring-1 ring-emerald-600/20">
+                  {dentist.verificationStatus === 'verified' && <ShieldCheck size={14} />}{dentist.verificationStatus}
+                </span>
+                <span className="rounded-full bg-violet-50 px-3 py-1.5 text-xs font-semibold capitalize text-violet-700 ring-1 ring-violet-600/20">{dentist.publicationStatus}</span>
+              </div>
+              <DentistProfileActions dentistId={dentist.id} verificationStatus={dentist.verificationStatus} publicationStatus={dentist.publicationStatus} />
             </div>
           </div>
         </div>

@@ -18,6 +18,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Complete Super Admin dentist management
+- Added confirmed verify/revoke and publish/unpublish actions with exact Super Admin authorization
+- Enforces verification before public profile publication and uses conditional updates to prevent stale state transitions
+- Appends immutable verification and publication audit events with previous/next state metadata
+- Completed live listing, creation, detail, affiliation, verification, and publication across all five Task 03 steps
+- Verified the completed module with 94 passing API tests, repository-wide typecheck, and web/API production builds
+
 ### ✅ Super Admin dentist affiliation management
 - Added protected add/remove affiliation endpoints and responsive controls on dentist detail
 - Resolves clinic scope from the selected branch instead of accepting a client-supplied tenant ID

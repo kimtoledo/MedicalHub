@@ -143,6 +143,10 @@ export const AuditAction = {
   DENTIST_CREATED: 'dentist.created',
   DENTIST_AFFILIATED: 'dentist.affiliated',
   DENTIST_UNAFFILIATED: 'dentist.unaffiliated',
+  DENTIST_VERIFIED: 'dentist.verified',
+  DENTIST_VERIFICATION_REVOKED: 'dentist.verification_revoked',
+  DENTIST_PUBLISHED: 'dentist.published',
+  DENTIST_UNPUBLISHED: 'dentist.unpublished',
 
   // Membership / roles
   MEMBER_INVITED: 'member.invited',
