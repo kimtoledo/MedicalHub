@@ -145,6 +145,14 @@ export const PaymentMethod = {
 export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod];
 
 // ---------------------------------------------------------------------------
+// Prescription status
+// ---------------------------------------------------------------------------
+export const PrescriptionStatus = {
+  ISSUED: 'issued',
+} as const;
+export type PrescriptionStatus = (typeof PrescriptionStatus)[keyof typeof PrescriptionStatus];
+
+// ---------------------------------------------------------------------------
 // Audit event actions
 // ---------------------------------------------------------------------------
 export const AuditAction = {
@@ -186,6 +194,9 @@ export const AuditAction = {
   INVOICE_PAID:      'invoice.paid',
   INVOICE_VOIDED:    'invoice.voided',
   PAYMENT_RECORDED:  'payment.recorded',
+
+  // Prescriptions
+  PRESCRIPTION_ISSUED: 'prescription.issued',
 
   // Support / admin access
   SUPPORT_ACCESS_GRANTED: 'support_access.granted',
