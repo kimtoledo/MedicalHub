@@ -107,4 +107,4 @@ If the work is a bug fix or a one-line correction with no risk of conflict, use 
 | #7 | Scaffold the Fastify API server (apps/api) | ✅ Done |
 | #8 | Add authentication with Better Auth | ✅ Done |
 | #12 | Let Super Admin see and search all clinics from one table | 📋 Draft |
-| #13 | Replace mock login with real Super Admin session on sign-in | 📋 Draft |
+| #13 | Replace mock login with real Super Admin session on sign-in | ✅ Done |

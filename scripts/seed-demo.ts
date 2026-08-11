@@ -10,14 +10,27 @@
  */
 
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { hashPassword } from '@better-auth/utils/password';
+import dotenv from 'dotenv';
 import postgres from 'postgres';
 import * as schema from '../packages/db/src/schema';
+
+dotenv.config();
 
 // ---------------------------------------------------------------------------
 // DB connection
 // ---------------------------------------------------------------------------
 if (!process.env.DATABASE_URL) {
   console.error('❌  DATABASE_URL is not set. Set it in Replit Secrets first.');
+  process.exit(1);
+}
+
+const SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD;
+
+if (!SUPER_ADMIN_PASSWORD || SUPER_ADMIN_PASSWORD.length < 10) {
+  console.error(
+    '❌  SUPER_ADMIN_PASSWORD must be set to at least 10 characters before seeding.',
+  );
   process.exit(1);
 }
 
@@ -30,6 +43,7 @@ const db = drizzle(sql, { schema });
 
 // Super Admin
 const ADMIN_USER_ID = '00000000-0001-0000-0000-000000000001';
+const ADMIN_ACCOUNT_ID = '00000000-0013-0000-0000-000000000001';
 
 // Packages
 const PKG_STARTER_ID     = '00000000-0002-0000-0000-000000000001';
@@ -279,15 +293,51 @@ async function seed() {
 
   // ── 1. Super Admin user ────────────────────────────────────────────────────
   console.log('  👤  Super Admin user...');
-  await db.insert(schema.users).values({
-    id: ADMIN_USER_ID,
-    email: 'admin@toothhub.ph',
-    firstName: 'ToothHub',
-    lastName: 'Admin',
-    phone: '09171234567',
-    platformRole: 'super_admin',
-    isActive: 'true',
-  }).onConflictDoNothing();
+  await db
+    .insert(schema.users)
+    .values({
+      id: ADMIN_USER_ID,
+      name: 'ToothHub Admin',
+      email: 'admin@toothhub.ph',
+      emailVerified: true,
+      firstName: 'ToothHub',
+      lastName: 'Admin',
+      phone: '09171234567',
+      platformRole: 'super_admin',
+      isActive: 'true',
+    })
+    .onConflictDoUpdate({
+      target: schema.users.email,
+      set: {
+        name: 'ToothHub Admin',
+        emailVerified: true,
+        firstName: 'ToothHub',
+        lastName: 'Admin',
+        platformRole: 'super_admin',
+        isActive: 'true',
+        deletedAt: null,
+        updatedAt: NOW,
+      },
+    });
+
+  const passwordHash = await hashPassword(SUPER_ADMIN_PASSWORD);
+  await db
+    .insert(schema.accounts)
+    .values({
+      id: ADMIN_ACCOUNT_ID,
+      accountId: ADMIN_USER_ID,
+      providerId: 'credential',
+      userId: ADMIN_USER_ID,
+      password: passwordHash,
+    })
+    .onConflictDoUpdate({
+      target: [schema.accounts.providerId, schema.accounts.accountId],
+      set: {
+        userId: ADMIN_USER_ID,
+        password: passwordHash,
+        updatedAt: NOW,
+      },
+    });
 
   // ── 2. Packages ────────────────────────────────────────────────────────────
   console.log('  📦  Packages...');
@@ -828,7 +878,7 @@ async function seed() {
   console.log('\n✅  Seed complete!\n');
   console.log('  Demo accounts:');
   console.log('  ─────────────────────────────────────────────────');
-  console.log('  Super Admin  admin@toothhub.ph');
+  console.log('  Super Admin  admin@toothhub.ph  (password from SUPER_ADMIN_PASSWORD)');
   console.log('  Clinic 1     admin@smilebrightdental.ph  (Professional, Active)');
   console.log('  Clinic 2     admin@brightsmile.ph        (Starter, Trial)');
   console.log('  ─────────────────────────────────────────────────');

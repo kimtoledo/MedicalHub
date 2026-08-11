@@ -91,6 +91,7 @@ Now open `.env` and fill in the values:
 |---|---|
 | `DATABASE_URL` | Replit → your project → Secrets tab → copy `DATABASE_URL` |
 | `BETTER_AUTH_SECRET` | Replit → Secrets → copy, or generate: `openssl rand -hex 32` |
+| `SUPER_ADMIN_PASSWORD` | Set a synthetic demo-only password of at least 10 characters |
 | `NEXT_PUBLIC_APP_URL` | `http://localhost:5000` for local dev |
 | `NEXT_PUBLIC_API_URL` | `http://localhost:3001` for local dev |
 
@@ -164,8 +165,10 @@ All variables are documented in `.env.example`. Here is a summary:
 | `DATABASE_URL` | ✅ Always | PostgreSQL connection string | Replit Secrets |
 | `BETTER_AUTH_SECRET` | ✅ API | Better Auth signing secret (minimum 32 characters) | Replit Secrets / generate locally |
 | `SESSION_SECRET` | Fallback | Legacy fallback when `BETTER_AUTH_SECRET` is omitted | Replit Secrets |
+| `SUPER_ADMIN_PASSWORD` | ✅ Demo seed | Initial/reset password for `admin@toothhub.ph` when running `npm run db:seed` | Local `.env` / Replit Secrets |
 | `NEXT_PUBLIC_APP_URL` | ✅ Frontend | Public URL of the Next.js app | `http://localhost:5000` locally |
 | `NEXT_PUBLIC_API_URL` | ✅ Frontend | Public URL of the Fastify API | `http://localhost:3001` locally |
+| `API_INTERNAL_URL` | Optional | Server-only API URL for the Next.js auth proxy/session guard | Defaults to `NEXT_PUBLIC_API_URL` |
 | `BETTER_AUTH_URL` | ✅ API | Base URL for Better Auth | Same as API URL |
 | `STORAGE_BUCKET` | When storage is wired | Object storage bucket name | Provider dashboard (future) |
 
@@ -272,6 +275,11 @@ The Replit **"Start application"** workflow runs `npm run dev` automatically.
 npm run api:dev      # development server with watch mode, port 3001
 npm run api:start    # run the production bundle after npm run build
 ```
+
+After `npm run db:seed`, sign in at
+[http://localhost:5000/th-admin/login](http://localhost:5000/th-admin/login)
+with `admin@toothhub.ph` and the value of `SUPER_ADMIN_PASSWORD`. Re-running the
+seed updates that credential without creating a duplicate auth account.
 
 ### Database scripts
 

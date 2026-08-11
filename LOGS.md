@@ -74,7 +74,9 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 
 ### ✅ Web app shell (apps/web — Next.js 14)
 **Super Admin section** (`/th-admin`)
-- Login page (mock auth via `localStorage` — `th_admin_session`)
+- Better Auth email/password login with an HTTP-only database session
+- Server-side `super_admin` role enforcement on every admin shell route
+- Real logout with server-side session invalidation
 - Dashboard with sidebar, top bar, mobile tab bar
 - Stub pages: Clinics, Dentists, Packages, Subscriptions, Audit, Settings
 
@@ -105,6 +107,15 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 - Migration `0003_great_zemo.sql` applied and verified on local PostgreSQL
 - API authorization/auth-route test suite expanded to 11 passing tests
 
+### ✅ Real Super Admin sign-in (task #13)
+- Replaced `localStorage.th_admin_session` with Better Auth sign-in and logout
+- Added same-origin Next.js auth/session proxy routes so secure cookies work across the split web/API deployment
+- Protected `/th-admin/(shell)` with a server-rendered backend session and exact `super_admin` role check
+- Seeded Super Admin credentials idempotently from the ignored `SUPER_ADMIN_PASSWORD` environment variable
+- Admin identity in the shell is populated from the authenticated database user rather than hardcoded authorization state
+- Verified the full flow manually: denied before login → successful login → protected page 200 → logout → denied again
+- Added the web workspace to the repository-wide TypeScript check
+
 ### ✅ Scripts & automation
 - `scripts/post-merge.sh` — auto-runs migrations after task merges
 - `scripts/generate-migration.sh` — helper to generate new migration files
@@ -126,14 +137,12 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 |---|-------|-------|
 | #6 | Connect Replit PostgreSQL and apply the first migration | DB is live; `DATABASE_URL` already set by Replit. Task may be redundant — migrations are already applied. |
 | #12 | Let Super Admin see and search all clinics from one table | UI stub exists at `/th-admin/clinics` |
-| #13 | Replace mock Super Admin login with real auth | Backend dependency #8 is complete |
 
 ---
 
 ## Known Gaps / Tech Debt
 
-- **Auth UI still mocked** — Better Auth and backend role resolution are ready, but `/th-admin/login` and `/cl-login` still use `th_admin_session` / `th_clinic_session` until task #13 and the clinic-login task wire them to the API.
-- **No seeded passwords yet** — demo users exist, but Better Auth credential accounts will be created as part of the real-login wiring task; no real password is currently available.
+- **Clinic auth UI still mocked** — `/cl-login` still uses `th_clinic_session`; clinic roles and credentials must be wired to Better Auth in the remaining Platform Foundation work.
 - **No domain API routes yet** — the Fastify server currently exposes operational health and authentication/session endpoints; UI stubs still have no live domain data fetching
 - **Patient number sequencing** — no DB-level sequence generator; race condition possible under concurrent inserts
 - **Clinic prefix required** — schema allows `prefix = ''` as default; admin UI must enforce non-empty unique prefix on clinic creation
@@ -146,7 +155,7 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 ### Demo credentials (after seed)
 | Role | Email | How to log in |
 |------|-------|---------------|
-| Super Admin | `admin@toothhub.ph` | `/th-admin/login` → any password (mock; real credentials pending #13) |
+| Super Admin | `admin@toothhub.ph` | `/th-admin/login` → password from local/Replit `SUPER_ADMIN_PASSWORD` |
 | Clinic Admin (SBD) | `admin@smilebrightdental.ph` | `/cl-login` → select Clinic Admin |
 | Clinic Admin (BSM) | `admin@brightsmile.ph` | `/cl-login` → select Clinic Admin |
 | Dentist | `dr.reyes@smilebrightdental.ph` | `/cl-login` → select Dentist |

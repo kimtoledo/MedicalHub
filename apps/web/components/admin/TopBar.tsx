@@ -1,15 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Menu, X, Bell, Search, LogOut, Stethoscope } from "lucide-react";
+import { Menu, X, Bell, Search, LogOut } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { navItems } from "./Sidebar";
 import Link from "next/link";
-
-function signOut() {
-  localStorage.removeItem("th_admin_session");
-  window.location.href = "/th-admin/login";
-}
+import { signOutAdmin } from "@/lib/admin-auth-client";
+import type { AdminIdentity } from "@/lib/admin-types";
 
 function getPageTitle(pathname: string) {
   const item = navItems.find((n) =>
@@ -18,7 +15,7 @@ function getPageTitle(pathname: string) {
   return item?.label ?? "Super Admin";
 }
 
-export default function TopBar() {
+export default function TopBar({ admin }: { admin: AdminIdentity }) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const title = getPageTitle(pathname);
@@ -124,12 +121,12 @@ export default function TopBar() {
               SA
             </div>
             <div>
-              <p className="text-sm font-semibold text-white">Super Admin</p>
-              <p className="text-xs text-violet-400">admin@toothhub.ph</p>
+              <p className="text-sm font-semibold text-white">{admin.name}</p>
+              <p className="text-xs text-violet-400">{admin.email}</p>
             </div>
           </div>
           <button
-            onClick={signOut}
+            onClick={() => void signOutAdmin()}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-violet-400 hover:bg-violet-800/60 hover:text-white transition-all"
           >
             <LogOut size={16} />

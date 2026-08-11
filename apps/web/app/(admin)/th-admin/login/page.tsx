@@ -1,8 +1,37 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, ShieldCheck, AlertCircle } from "lucide-react";
+import { revokeAdminSession } from "@/lib/admin-auth-client";
+
+type SessionContextPayload = {
+  success?: boolean;
+  data?: {
+    strategies?: string[];
+    user?: {
+      platformRole?: string | null;
+    };
+  };
+};
+
+async function hasSuperAdminSession(): Promise<boolean> {
+  const response = await fetch("/api/session-context", {
+    credentials: "include",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    return false;
+  }
+
+  const payload = (await response.json()) as SessionContextPayload;
+  return Boolean(
+    payload.success &&
+      payload.data?.user?.platformRole === "super_admin" &&
+      payload.data.strategies?.includes("superAdmin")
+  );
+}
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -12,20 +41,26 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    let active = true;
+
+    void hasSuperAdminSession()
+      .then((isSuperAdmin) => {
+        if (active && isSuperAdmin) {
+          router.replace("/th-admin");
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, [router]);
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
-
-    // Simulate network delay
-    await new Promise((r) => setTimeout(r, 1200));
-
-    // Mock auth: any credentials work EXCEPT this bad pair
-    if (email === "wrong@example.com" || password === "wrong") {
-      setError("Invalid email or password. Please try again.");
-      setLoading(false);
-      return;
-    }
 
     if (!email || !password) {
       setError("Please enter your email and password.");
@@ -33,12 +68,32 @@ export default function AdminLoginPage() {
       return;
     }
 
-    // Set mock session
-    localStorage.setItem(
-      "th_admin_session",
-      JSON.stringify({ email, role: "super_admin", ts: Date.now() })
-    );
-    router.push("/th-admin");
+    try {
+      const response = await fetch("/api/auth/sign-in/email", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        setError("Invalid email or password. Please try again.");
+        return;
+      }
+
+      if (!(await hasSuperAdminSession())) {
+        await revokeAdminSession();
+        setError("This account does not have Super Admin access.");
+        return;
+      }
+
+      router.replace("/th-admin");
+      router.refresh();
+    } catch {
+      setError("Unable to reach the authentication service. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -133,10 +188,6 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          {/* Dev hint */}
-          <p className="text-center text-xs text-violet-300 mt-6">
-            Demo: any valid email + any password will sign you in.
-          </p>
         </div>
 
         {/* Back to site */}

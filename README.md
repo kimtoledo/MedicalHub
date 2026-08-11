@@ -81,6 +81,9 @@ cp .env.example .env
 # 3. Apply database migrations
 npm run db:migrate
 
+# Optional: set SUPER_ADMIN_PASSWORD in .env, then load synthetic demo data
+npm run db:seed
+
 # 4. Start the frontend (port 5000)
 npm run dev
 

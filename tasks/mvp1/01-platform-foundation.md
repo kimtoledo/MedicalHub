@@ -1,6 +1,6 @@
 # Platform Foundation
 
-> **Status:** 🔵 Active — project tasks #7 (Fastify API scaffold) and #8 (Better Auth backend) are ✅ Done; #6 and #13 remain pending
+> **Status:** 🔵 Active — project tasks #7, #8, and #13 are ✅ Done; #6 and Clinic login wiring remain pending
 
 ---
 
@@ -38,7 +38,7 @@ Nothing beyond the mock UI shell works until this is done.
 1. **Connect PostgreSQL** — set `DATABASE_URL` in Replit Secrets and verify `drizzle-kit migrate` runs cleanly (#6).
 2. **Scaffold Fastify API** — create `apps/api` with TypeScript, health endpoint, Drizzle client, CORS/cookie config for the Next.js frontend (#7).
 3. **Configure Better Auth** — ✅ Better Auth is mounted on the API with database sessions, `superAdmin` and `clinicMember` authorization strategies, and tenant-scoped membership resolution (#8).
-4. **Wire Super Admin login** — replace the mock at `/th-admin/login` with a real API call; protect all `/th-admin/(shell)` routes with a server-side session check (#13).
+4. **Wire Super Admin login** — ✅ `/th-admin/login` uses Better Auth through a same-origin proxy; all `/th-admin/(shell)` routes enforce a server-side `super_admin` session check (#13).
 5. **Wire Clinic login** — replace the mock at `/cl-login` with a real API call; derive role from the authenticated user's clinic membership returned by the API.
 6. **Remove mock artifacts** — delete `localStorage.th_admin_session`, `localStorage.th_clinic_session`, and the demo hint copy from both login pages.
 
