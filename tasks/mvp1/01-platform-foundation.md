@@ -1,6 +1,6 @@
 # Platform Foundation
 
-> **Status:** 🔵 Active — project tasks #7, #8, and #13 are ✅ Done; Clinic login wiring is done; #6 remains pending
+> **Status:** ✅ Done — PostgreSQL, Fastify, Better Auth, and both protected login surfaces are live
 
 ---
 
@@ -35,7 +35,7 @@ Nothing beyond the mock UI shell works until this is done.
 
 ## Steps
 
-1. **Connect PostgreSQL** — set `DATABASE_URL` in Replit Secrets and verify `drizzle-kit migrate` runs cleanly (#6).
+1. **Connect PostgreSQL** — ✅ `DATABASE_URL` is configured and all Drizzle migrations through `0007_audit_immutability.sql` apply cleanly (#6).
 2. **Scaffold Fastify API** — create `apps/api` with TypeScript, health endpoint, Drizzle client, CORS/cookie config for the Next.js frontend (#7).
 3. **Configure Better Auth** — ✅ Better Auth is mounted on the API with database sessions, `superAdmin` and `clinicMember` authorization strategies, and tenant-scoped membership resolution (#8).
 4. **Wire Super Admin login** — ✅ `/dentra-admin/login` uses Better Auth through a same-origin proxy; all `/dentra-admin/(shell)` routes enforce a server-side `super_admin` session check (#13).
@@ -48,7 +48,7 @@ Nothing beyond the mock UI shell works until this is done.
 
 | Ref | Title |
 |-----|-------|
-| #6 | Connect Replit PostgreSQL and apply the first migration |
+| #6 | Connect Replit PostgreSQL and apply the first migration — ✅ Done |
 | #7 | Scaffold the Fastify API server (apps/api) |
 | #8 | Add authentication with Better Auth |
 | #13 | Replace mock login with real Super Admin session on sign-in |

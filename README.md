@@ -13,7 +13,7 @@ Brand and frontend implementation must follow [`docs/BRANDING.md`](docs/BRANDING
 | Surface | Route | Audience |
 |---|---|---|
 | Company website | `/` | Public |
-| Features & Pricing | `/features`, `/pricing` | Public |
+| Features & Pricing | `/#features`, `/#pricing` | Public |
 | Clinic directory | `/clinics` | Public |
 | Dentist directory | `/dentists` | Public |
 | Clinic microsite | `/clinic/[clinicSlug]` | Public |
@@ -29,12 +29,12 @@ Brand and frontend implementation must follow [`docs/BRANDING.md`](docs/BRANDING
 
 | Layer | Technology |
 |---|---|
-| **Frontend** | Next.js 14 App Router · React 18 · TypeScript · Tailwind CSS · shadcn/ui |
-| **Backend** | Fastify · TypeScript · Zod · OpenAPI · Pino |
-| **Database** | PostgreSQL (Replit) · Drizzle ORM · Drizzle Kit migrations |
+| **Frontend** | Next.js 14 App Router · React 18 · TypeScript · Tailwind CSS |
+| **Backend** | Fastify 5 · TypeScript · Zod · Pino |
+| **Database** | PostgreSQL · Drizzle ORM · Drizzle Kit migrations |
 | **Auth** | Better Auth (behind an `AuthService` boundary) |
 | **Shared** | `@dentra/shared` — Zod schemas, enums, `FeatureKey` constants |
-| **Testing** | Vitest · Playwright |
+| **Testing** | Vitest · TypeScript checks · production builds · Chrome responsive QA |
 
 ---
 
@@ -65,7 +65,7 @@ replit.md       # Replit Agent instructions
 
 | MVP | Focus | Status |
 |---|---|---|
-| **MVP 1** | Foundation — website, booking, patient records, PWA shell | 🚧 In progress |
+| **MVP 1** | Foundation — website, booking, patient records, clinical workflows, PWA | ✅ Complete |
 | **MVP 2** | Clinic business — billing, prescriptions, inventory, reports | Planned |
 | **MVP 3** | Ecosystem — patient portal, reviews, custom domains, API | Planned |
 
@@ -83,7 +83,8 @@ cp .env.example .env
 # 3. Apply database migrations
 npm run db:migrate
 
-# Optional: set SUPER_ADMIN_PASSWORD in .env, then load synthetic demo data
+# Optional: set SUPER_ADMIN_PASSWORD and CLINIC_DEMO_PASSWORD in .env,
+# then load the fully synthetic demo dataset
 npm run db:seed
 
 # 4. Start the frontend (port 5000)
@@ -99,6 +100,21 @@ The API exposes Better Auth under `/v1/auth/*`. Authenticated clients can call
 `GET /v1/session-context` to receive platform roles and active clinic
 memberships resolved by the backend.
 
+Local URLs after startup:
+
+- Website and public directories: `http://localhost:5000`
+- Clinic login/PWA: `http://localhost:5000/cl-login` and `/app`
+- Super Admin: `http://localhost:5000/dentra-admin/login`
+- API health: `http://localhost:3001/health`
+
+## MVP 1 delivered
+
+- Protected Super Admin clinic, dentist, package, subscription, entitlement, and immutable audit management.
+- Publication-safe clinic/dentist directories, microsites, profiles, and conflict-safe public booking.
+- Tenant/branch-scoped Clinic PWA dashboards, appointment status workflows, patient records, versioned histories, encounters, treatment records, and append-only odontogram corrections.
+- Installable PWA shell with an offline fallback and network-only handling for every protected API response.
+- Synthetic demo seed plus automated/live release gates for tenant isolation, entitlement denial, publication boundaries, booking races, audit integrity, and responsive layouts.
+
 ---
 
 ## Documentation
@@ -108,6 +124,9 @@ memberships resolved by the backend.
 | [`DEVELOPER.md`](DEVELOPER.md) | Installation, local DB setup, migration workflow, troubleshooting |
 | [`docs/README.md`](docs/README.md) | Full product spec — domain rules, roles, architecture |
 | [`docs/MVP_1.md`](docs/MVP_1.md) | MVP 1 detailed scope and acceptance criteria |
+| [`docs/MVP1_RELEASE_CHECKLIST.md`](docs/MVP1_RELEASE_CHECKLIST.md) | Verified MVP 1 release gates and evidence |
+| [`tasks/mvp1/00-overview.md`](tasks/mvp1/00-overview.md) | Completed MVP 1 implementation task checklist |
+| [`LOGS.md`](LOGS.md) | Chronological implementation record, current gaps, and operational reference |
 | [`docs/AGENTS.md`](docs/AGENTS.md) | Codex full instructions |
 | [`AGENTS.md`](AGENTS.md) | Codex quick reference |
 | [`CLAUDE.md`](CLAUDE.md) | Claude reviewer checklist |

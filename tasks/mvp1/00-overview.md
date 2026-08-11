@@ -19,7 +19,7 @@
 
 | File | What | Status |
 |------|------|--------|
-| `01-platform-foundation.md` | PostgreSQL, Fastify API, Better Auth, real sessions | 🔵 Active |
+| `01-platform-foundation.md` | PostgreSQL, Fastify API, Better Auth, real sessions | ✅ Done |
 | `02-super-admin-clinic-management.md` | Clinic CRUD, branches, package assignment, entitlements | ✅ Done |
 | `03-super-admin-dentist-management.md` | Dentist CRUD, affiliations, verification | ✅ Done |
 | `04-super-admin-package-management.md` | Plans, feature catalog, overrides | ✅ Done |

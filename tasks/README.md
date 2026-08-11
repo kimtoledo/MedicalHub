@@ -28,6 +28,8 @@ tasks/
     14-clinic-dashboard-live.md
     15-audit-baseline.md
     16-hardening-and-demo-data.md
+    17-dentra-brand-migration.md
+    18-inter-typography.md
   mvp2/              ← Complete Clinic Business Operations
     00-overview.md
     01-treatment-planning.md
@@ -103,7 +105,7 @@ If the work is a bug fix or a one-line correction with no risk of conflict, use 
 | #9 | Super Admin panel — login, dashboard & navigation | ✅ Done |
 | #10 | Clinic & Dentist dashboard variants | ✅ Done |
 | #11 | Update README & add Developer setup guide | ✅ Done |
-| #6 | Connect Replit PostgreSQL and apply the first migration | 📋 Draft |
+| #6 | Connect Replit PostgreSQL and apply the first migration | ✅ Done |
 | #7 | Scaffold the Fastify API server (apps/api) | ✅ Done |
 | #8 | Add authentication with Better Auth | ✅ Done |
 | #12 | Let Super Admin see and search all clinics from one table | ✅ Done |

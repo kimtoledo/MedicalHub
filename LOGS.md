@@ -254,6 +254,7 @@ All Drizzle ORM schema files created:
 | `0004_bored_sumo.sql` | Package display price and unique package-feature mappings |
 | `0005_faithful_azazel.sql` | Structured clinic hero text and branch operating hours |
 | `0006_dazzling_legion.sql` | Tenant-scoped patient-number uniqueness |
+| `0007_audit_immutability.sql` | Database trigger rejecting every audit-event update or delete |
 
 ### ✅ Demo seed data (live in DB)
 Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
@@ -267,11 +268,11 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 | Dentists | 4 | Dr. Reyes, Dr. Santos, Dr. Cruz, Dr. Garcia |
 | Staff users | 6 | 3 per clinic (admin, receptionist, assistant) |
 | Services | 12 | 6 per clinic |
-| Patients | 40 | 20 per clinic, Filipino names + Metro Manila addresses |
-| Appointments | 30 | 15 per clinic, spread ±7 days, mixed statuses |
-| Encounters | 16 | 1 per completed appointment |
-| Treatment records | 16 | 1 per encounter |
-| Odontogram events | 16 | 1 per encounter |
+| Patients | 20 | 10 per clinic on a clean seed, synthetic Filipino names + Metro Manila addresses |
+| Appointments | 50 | 25 per clinic, date spread with mixed statuses |
+| Encounters | 32 | 1 per completed seeded appointment |
+| Treatment records | 32 | 1 per encounter |
+| Odontogram events | 32 | 1 per encounter |
 
 **Patient number format:** `{PREFIX}{NNNNNN}` — e.g. `SBD000001`, `BSM000012`
 
@@ -281,7 +282,7 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 - Server-side `super_admin` role enforcement on every admin shell route
 - Real logout with server-side session invalidation
 - Dashboard with sidebar, top bar, mobile tab bar
-- Stub pages: Clinics, Dentists, Packages, Subscriptions, Audit, Settings
+- Live clinic, dentist, package, subscription, and audit management; platform settings remains a future operations surface
 
 **Clinic / Dentist section** (`/app`)
 - Better Auth email/password login with an HTTP-only database session
@@ -290,7 +291,7 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 - Installable clinic PWA with manifest, app icons, service worker, and safe offline fallback
 - App shell with sidebar, top bar, mobile tabs
 - Dashboard variants for clinic admin vs dentist
-- Stub pages: Appointments, Patients, Staff, Profile, Settings, plus dentist Schedule, Encounters, Odontogram, Patients, and Profile
+- Live dashboards, appointments, patients, clinic settings, dentist schedule, encounters, treatments, and odontogram; staff/team administration remains a follow-up surface
 
 ### ✅ Fastify API foundation (apps/api)
 - Fastify 5 TypeScript workspace with development, build, start, typecheck, and test scripts
@@ -359,18 +360,17 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 
 ## Queued (Proposed Tasks)
 
-| # | Title | Notes |
-|---|-------|-------|
-| #6 | Connect Replit PostgreSQL and apply the first migration | DB is live; `DATABASE_URL` already set by Replit. Task may be redundant — migrations are already applied. |
+No MVP 1 implementation tasks remain queued. The next planned product work is under `tasks/mvp2/`.
 
 ---
 
 ## Known Gaps / Tech Debt
 
 - **Clinic owner invitation delivery** — clinic creation links or creates a pending owner identity and membership, but invite email delivery and password setup remain a separate onboarding step.
-- **Clinic membership selection** — authenticated users currently enter their first active clinic membership; explicit clinic/branch switching remains part of the PWA shell real-data work.
-- **Clinical domain API routes remain queued** — platform administration and public discovery are implemented; patient, encounter, treatment, odontogram, and live dashboard modules remain in Tasks 10–14.
-- **Clinic prefix required** — schema allows `prefix = ''` as default; admin UI must enforce non-empty unique prefix on clinic creation
+- **Multi-clinic workspace selection** — branch switching is live and all API requests remain tenant-scoped, but a user with memberships in multiple clinics still enters the first active clinic; an explicit clinic switcher is future UX work.
+- **Clinic staff/team administration** — the membership schema and authorization resolver are live, but invite, role-change, deactivate, and password-setup delivery workflows remain follow-up work.
+- **Super Admin overview metrics** — management ledgers and audit data are live, while the overview KPI/activity cards still use presentation data and should be wired in a future platform-operations task.
+- **Legacy clinic prefix default** — admin creation requires a non-empty unique prefix, but the database column retains its historical empty-string default for legacy compatibility.
 - **Dependency upgrades pending** — `npm audit` reports 2 high advisories in the existing Next.js/PostCSS stack and 4 moderate build-tool advisories through Drizzle Kit. The runtime Drizzle ORM, new Fastify API, and Vitest test runner were upgraded to patched releases; the remaining fixes require separate tested framework/tooling upgrades.
 
 ---
