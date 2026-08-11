@@ -98,6 +98,7 @@ export type AdminClinicDetail = {
     reason: string | null;
     expiresAt: string | null;
   }>;
+  availableFeatureKeys: string[];
 };
 
 type AdminClinicPackageOptionsResponse = {

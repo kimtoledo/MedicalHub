@@ -1,6 +1,6 @@
 # Super Admin — Clinic Management
 
-> **Status:** 🔵 Active — clinic list, onboarding, detail, status actions, and branch creation are ✅ Done; remaining management steps are queued
+> **Status:** ✅ Done — all eight implementation steps are complete
 
 ---
 
@@ -39,9 +39,9 @@ Super Admin needs to create and manage clinics end-to-end: from onboarding a new
 3. **Clinic detail page** — ✅ `/dentra-admin/clinics/[id]` shows account info, owner, branches, subscription dates, active feature overrides, and effective feature-key entitlements.
 4. **Status actions** — ✅ `/dentra-admin/clinics/[id]` supports confirmed activate, suspend, archive, and reactivate transitions through a protected API; every successful transition writes an immutable audit event.
 5. **Branch management** — ✅ Super Admins can add clinic-scoped branches from the detail page through a reviewed confirmation flow; the first branch becomes main automatically, duplicate active main branches are rejected, and creation is audited.
-6. **Package assignment** — allow changing a clinic's package from the detail page with an effective-date input.
-7. **Feature overrides** — allow adding/removing feature overrides with a reason field; show current effective entitlements.
-8. **Microsite toggle** — publish/unpublish button that updates `clinics.is_public`.
+6. **Package assignment** — ✅ Super Admins can assign an active package with a Manila effective date; subscription history is preserved, current entitlements respect effective periods, and duplicate future assignments are rejected.
+7. **Feature overrides** — ✅ Super Admins can add or remove feature-key overrides with a required reason and optional expiry; previous overrides are expired for history and every change is audited.
+8. **Microsite toggle** — ✅ Super Admins can publish or unpublish with confirmation; publishing requires an operational clinic and the effective `microsite.publish` entitlement, and updates `clinics.publication_status`.
 
 ---
 

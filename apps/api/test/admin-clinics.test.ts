@@ -13,6 +13,10 @@ import {
 } from '../src/admin/clinics-service.js';
 import type { AuthServices, AuthorizationContext } from '../src/auth/types.js';
 import type { ApiConfig } from '../src/config.js';
+import {
+  AdminClinicSettingsError,
+  type AdminClinicSettingsService,
+} from '../src/admin/clinic-settings-service.js';
 
 const config: ApiConfig = {
   nodeEnv: 'test',
@@ -197,6 +201,11 @@ function createClinicDetailService(): AdminClinicDetailService {
           expiresAt: null,
         },
       ],
+      availableFeatureKeys: [
+        'appointments.manage' as const,
+        'reports.advanced' as const,
+        'microsite.publish' as const,
+      ],
     })),
   };
 }
@@ -229,6 +238,36 @@ function createClinicBranchCreationService(): AdminClinicBranchCreationService {
   };
 }
 
+function createClinicSettingsService(): AdminClinicSettingsService {
+  return {
+    assignPackage: vi.fn(async (clinicId, input) => ({
+      id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+      clinicId,
+      packageId: input.packageId,
+      status: 'active' as const,
+      startsAt: input.effectiveAt,
+      expiresAt: null,
+    })),
+    setFeatureOverride: vi.fn(async (_clinicId, input) => ({
+      id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+      featureKey: input.featureKey,
+      isEnabled: input.isEnabled,
+      reason: input.reason,
+      expiresAt: input.expiresAt,
+      createdAt: new Date('2026-08-11T00:00:00.000Z'),
+    })),
+    removeFeatureOverride: vi.fn(async (_clinicId, overrideId) => ({
+      id: overrideId,
+      featureKey: 'microsite.publish',
+    })),
+    updatePublication: vi.fn(async (clinicId, publicationStatus) => ({
+      id: clinicId,
+      publicationStatus,
+      updatedAt: new Date('2026-08-11T00:00:00.000Z'),
+    })),
+  };
+}
+
 async function createApp(
   context: AuthorizationContext | null,
   clinics: AdminClinicListService,
@@ -236,6 +275,7 @@ async function createApp(
   details?: AdminClinicDetailService,
   status?: AdminClinicStatusService,
   branchCreation?: AdminClinicBranchCreationService,
+  settings?: AdminClinicSettingsService,
 ) {
   app = await buildApp({
     config,
@@ -247,6 +287,7 @@ async function createApp(
     adminClinicDetails: details,
     adminClinicStatus: status,
     adminClinicBranchCreation: branchCreation,
+    adminClinicSettings: settings,
   });
 }
 
@@ -798,6 +839,185 @@ describe('POST /v1/admin/clinics/:clinicId/branches', () => {
     });
 
     expect(response.statusCode).toBe(httpStatus);
+    expect(response.json().error.code).toBe(code);
+  });
+});
+
+describe('Super Admin clinic package, override, and publication settings', () => {
+  const clinicId = '00000000-0001-0000-0000-000000000001';
+  const packageId = '00000000-0002-0000-0000-000000000001';
+  const overrideId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+  const effectiveDate = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Asia/Manila',
+  }).format(new Date());
+
+  it('rejects unauthenticated package assignment before writing data', async () => {
+    const settings = createClinicSettingsService();
+    await createApp(
+      null,
+      createClinicService(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      settings,
+    );
+    const response = await app!.inject({
+      method: 'POST',
+      url: `/v1/admin/clinics/${clinicId}/package`,
+      payload: { packageId, effectiveDate },
+    });
+    expect(response.statusCode).toBe(401);
+    expect(settings.assignPackage).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['POST', 'feature-overrides', { featureKey: 'reports.advanced', isEnabled: true, reason: 'Pilot access' }],
+    ['DELETE', `feature-overrides/${overrideId}`, undefined],
+    ['PATCH', 'publication', { publicationStatus: 'published' }],
+  ] as const)('rejects clinic members calling %s %s', async (method, path, payload) => {
+    const settings = createClinicSettingsService();
+    await createApp(
+      clinicMemberContext,
+      createClinicService(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      settings,
+    );
+    const response = await app!.inject({
+      method,
+      url: `/v1/admin/clinics/${clinicId}/${path}`,
+      payload,
+    });
+    expect(response.statusCode).toBe(403);
+  });
+
+  it('validates package dates, feature keys, override IDs, and publication states', async () => {
+    const settings = createClinicSettingsService();
+    await createApp(
+      superAdminContext,
+      createClinicService(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      settings,
+    );
+    const invalidPackage = await app!.inject({
+      method: 'POST',
+      url: `/v1/admin/clinics/${clinicId}/package`,
+      payload: { packageId, effectiveDate: '2000-01-01' },
+    });
+    const invalidFeature = await app!.inject({
+      method: 'POST',
+      url: `/v1/admin/clinics/${clinicId}/feature-overrides`,
+      payload: { featureKey: 'unknown.feature', isEnabled: true, reason: 'Testing' },
+    });
+    const invalidOverride = await app!.inject({
+      method: 'DELETE',
+      url: `/v1/admin/clinics/${clinicId}/feature-overrides/not-a-uuid`,
+    });
+    const invalidPublication = await app!.inject({
+      method: 'PATCH',
+      url: `/v1/admin/clinics/${clinicId}/publication`,
+      payload: { publicationStatus: 'draft' },
+    });
+    expect(invalidPackage.statusCode).toBe(400);
+    expect(invalidFeature.statusCode).toBe(400);
+    expect(invalidOverride.statusCode).toBe(400);
+    expect(invalidPublication.statusCode).toBe(400);
+  });
+
+  it('assigns a package using the route clinic and Manila effective date', async () => {
+    const settings = createClinicSettingsService();
+    await createApp(superAdminContext, createClinicService(), undefined, undefined, undefined, undefined, settings);
+    const response = await app!.inject({
+      method: 'POST',
+      url: `/v1/admin/clinics/${clinicId}/package`,
+      payload: { packageId, effectiveDate },
+    });
+    expect(response.statusCode).toBe(201);
+    expect(settings.assignPackage).toHaveBeenCalledWith(
+      clinicId,
+      expect.objectContaining({
+        packageId,
+        effectiveAt: expect.any(Date),
+      }),
+      expect.objectContaining({ id: superAdminContext.user.id }),
+    );
+  });
+
+  it('sets and removes a validated feature override', async () => {
+    const settings = createClinicSettingsService();
+    await createApp(superAdminContext, createClinicService(), undefined, undefined, undefined, undefined, settings);
+    const createResponse = await app!.inject({
+      method: 'POST',
+      url: `/v1/admin/clinics/${clinicId}/feature-overrides`,
+      payload: {
+        featureKey: 'reports.advanced',
+        isEnabled: true,
+        reason: '  Approved pilot access  ',
+        expiresAt: null,
+      },
+    });
+    const removeResponse = await app!.inject({
+      method: 'DELETE',
+      url: `/v1/admin/clinics/${clinicId}/feature-overrides/${overrideId}`,
+    });
+    expect(createResponse.statusCode).toBe(201);
+    expect(settings.setFeatureOverride).toHaveBeenCalledWith(
+      clinicId,
+      {
+        featureKey: 'reports.advanced',
+        isEnabled: true,
+        reason: 'Approved pilot access',
+        expiresAt: null,
+      },
+      expect.objectContaining({ id: superAdminContext.user.id }),
+    );
+    expect(removeResponse.statusCode).toBe(200);
+    expect(settings.removeFeatureOverride).toHaveBeenCalledWith(
+      clinicId,
+      overrideId,
+      expect.objectContaining({ id: superAdminContext.user.id }),
+    );
+  });
+
+  it('publishes the route clinic as a Super Admin', async () => {
+    const settings = createClinicSettingsService();
+    await createApp(superAdminContext, createClinicService(), undefined, undefined, undefined, undefined, settings);
+    const response = await app!.inject({
+      method: 'PATCH',
+      url: `/v1/admin/clinics/${clinicId}/publication`,
+      payload: { publicationStatus: 'published' },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(settings.updatePublication).toHaveBeenCalledWith(
+      clinicId,
+      'published',
+      expect.objectContaining({ id: superAdminContext.user.id }),
+    );
+  });
+
+  it.each([
+    ['CLINIC_NOT_FOUND', 404],
+    ['PACKAGE_NOT_AVAILABLE', 400],
+    ['PACKAGE_ALREADY_ASSIGNED', 409],
+    ['FUTURE_ASSIGNMENT_EXISTS', 409],
+  ] as const)('maps package error %s to HTTP %i', async (code, statusCode) => {
+    const settings = createClinicSettingsService();
+    vi.mocked(settings.assignPackage).mockRejectedValueOnce(
+      new AdminClinicSettingsError(code, 'Package assignment rejected'),
+    );
+    await createApp(superAdminContext, createClinicService(), undefined, undefined, undefined, undefined, settings);
+    const response = await app!.inject({
+      method: 'POST',
+      url: `/v1/admin/clinics/${clinicId}/package`,
+      payload: { packageId, effectiveDate },
+    });
+    expect(response.statusCode).toBe(statusCode);
     expect(response.json().error.code).toBe(code);
   });
 });

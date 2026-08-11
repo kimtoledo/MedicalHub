@@ -18,6 +18,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Complete Super Admin clinic management
+- Added effective-dated package assignment with preserved subscription history and current-period entitlement resolution
+- Added reasoned, optionally expiring feature overrides with audited set/remove operations
+- Added audited microsite publish/unpublish controls with operational-status and `FeatureKey.MICROSITE_PUBLISH` enforcement
+- Added confirmation-based responsive controls and same-origin proxy routes for all three workflows
+- Verified authorization, validation, tenant scoping, effective-date rules, audit behavior, entitlement enforcement, 68 API tests, typecheck, and web/API production builds
+
 ### ✅ Super Admin clinic branch creation
 - Added protected `POST /v1/admin/clinics/:clinicId/branches` with strict normalized validation and route-owned tenant scope
 - Serializes branch creation per clinic, automatically makes the first branch main, and rejects a second active main branch
@@ -206,7 +213,7 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 - **Clinic owner invitation delivery** — clinic creation links or creates a pending owner identity and membership, but invite email delivery and password setup remain a separate onboarding step.
 - **Clinic membership selection** — authenticated users currently enter their first active clinic membership; explicit clinic/branch switching remains part of the PWA shell real-data work.
 - **PWA entitlement and branch context remain static** — the required entitlement and branch-listing API endpoints are not implemented yet.
-- **Most domain API routes remain queued** — clinic listing, onboarding, detail, status transitions, and branch creation are now implemented; branch editing, package, feature-override, microsite, and other domain operations still need backend routes.
+- **Most domain API routes remain queued** — Task 02 clinic onboarding and management operations are implemented; branch editing and other domain modules still need backend routes.
 - **Patient number sequencing** — no DB-level sequence generator; race condition possible under concurrent inserts
 - **Clinic prefix required** — schema allows `prefix = ''` as default; admin UI must enforce non-empty unique prefix on clinic creation
 - **Dependency upgrades pending** — `npm audit` reports 2 high advisories in the existing Next.js/PostCSS stack and 4 moderate build-tool advisories through Drizzle Kit. The runtime Drizzle ORM, new Fastify API, and Vitest test runner were upgraded to patched releases; the remaining fixes require separate tested framework/tooling upgrades.

@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { FeatureKey } from '@dentra/shared';
 import { isSuperAdmin } from '../auth/authorization.js';
 import { resolveRequestAuthorization } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
@@ -13,6 +14,10 @@ import {
   type AdminClinicListService,
   type AdminClinicStatusService,
 } from '../admin/clinics-service.js';
+import {
+  AdminClinicSettingsError,
+  type AdminClinicSettingsService,
+} from '../admin/clinic-settings-service.js';
 
 const postgresUuidSchema = z.string().regex(
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
@@ -73,6 +78,79 @@ const createClinicBranchBodySchema = z.object({
   province: optionalText(100),
 }).strict();
 
+function getPhilippineDateString(date = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? '';
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
+
+function isValidDateOnly(value: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day;
+}
+
+const effectiveDateSchema = z.string()
+  .refine(isValidDateOnly, 'Invalid effective date')
+  .refine(
+    (value) => value >= getPhilippineDateString(),
+    'Effective date cannot be in the past',
+  )
+  .transform((value) => new Date(`${value}T00:00:00+08:00`));
+
+const assignClinicPackageBodySchema = z.object({
+  packageId: postgresUuidSchema,
+  effectiveDate: effectiveDateSchema,
+}).strict();
+
+const featureKeyValues = Object.values(FeatureKey) as [
+  (typeof FeatureKey)[keyof typeof FeatureKey],
+  ...(typeof FeatureKey)[keyof typeof FeatureKey][],
+];
+
+const setFeatureOverrideBodySchema = z.object({
+  featureKey: z.enum(featureKeyValues),
+  isEnabled: z.boolean(),
+  reason: z.string().trim().min(3).max(500),
+  expiresAt: z
+    .union([z.string().datetime({ offset: true }), z.null()])
+    .optional()
+    .transform((value) => value ? new Date(value) : null),
+}).strict();
+
+const overrideParamsSchema = clinicParamsSchema.extend({
+  overrideId: postgresUuidSchema,
+});
+
+const updatePublicationBodySchema = z.object({
+  publicationStatus: z.enum(['published', 'unpublished']),
+}).strict();
+
+function getSettingsErrorStatus(error: AdminClinicSettingsError): number {
+  if (error.code === 'CLINIC_NOT_FOUND' || error.code === 'OVERRIDE_NOT_FOUND') {
+    return 404;
+  }
+  if (
+    error.code === 'PACKAGE_NOT_AVAILABLE' ||
+    error.code === 'INVALID_OVERRIDE_EXPIRY'
+  ) {
+    return 400;
+  }
+  return 409;
+}
+
 type RegisterAdminClinicRoutesOptions = {
   auth: AuthServices;
   clinics: AdminClinicListService;
@@ -80,6 +158,7 @@ type RegisterAdminClinicRoutesOptions = {
   details?: AdminClinicDetailService;
   status?: AdminClinicStatusService;
   branchCreation?: AdminClinicBranchCreationService;
+  settings?: AdminClinicSettingsService;
 };
 
 export async function registerAdminClinicRoutes(
@@ -314,6 +393,198 @@ export async function registerAdminClinicRoutes(
             code: error.code,
             message: error.message,
           },
+        });
+      }
+    });
+  }
+
+  const settings = options.settings;
+  if (settings) {
+    app.post('/v1/admin/clinics/:clinicId/package', async (request, reply) => {
+      const authorization = await resolveRequestAuthorization(request, options.auth);
+      if (!authorization) {
+        return reply.status(401).send({
+          success: false,
+          error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' },
+        });
+      }
+      if (!isSuperAdmin(authorization)) {
+        return reply.status(403).send({
+          success: false,
+          error: { code: 'FORBIDDEN', message: 'Super Admin access is required' },
+        });
+      }
+
+      const params = clinicParamsSchema.safeParse(request.params);
+      const body = assignClinicPackageBodySchema.safeParse(request.body);
+      if (!params.success || !body.success) {
+        return reply.status(400).send({
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid package assignment' },
+        });
+      }
+
+      try {
+        const userAgent = request.headers['user-agent'];
+        const subscription = await settings.assignPackage(
+          params.data.clinicId,
+          {
+            packageId: body.data.packageId,
+            effectiveAt: body.data.effectiveDate,
+          },
+          {
+            id: authorization.user.id,
+            email: authorization.user.email,
+            ipAddress: request.ip,
+            userAgent: typeof userAgent === 'string' ? userAgent.slice(0, 500) : undefined,
+          },
+        );
+        return reply.status(201).send({ success: true, data: subscription });
+      } catch (error) {
+        if (!(error instanceof AdminClinicSettingsError)) throw error;
+        return reply.status(getSettingsErrorStatus(error)).send({
+          success: false,
+          error: { code: error.code, message: error.message },
+        });
+      }
+    });
+
+    app.post('/v1/admin/clinics/:clinicId/feature-overrides', async (request, reply) => {
+      const authorization = await resolveRequestAuthorization(request, options.auth);
+      if (!authorization) {
+        return reply.status(401).send({
+          success: false,
+          error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' },
+        });
+      }
+      if (!isSuperAdmin(authorization)) {
+        return reply.status(403).send({
+          success: false,
+          error: { code: 'FORBIDDEN', message: 'Super Admin access is required' },
+        });
+      }
+
+      const params = clinicParamsSchema.safeParse(request.params);
+      const body = setFeatureOverrideBodySchema.safeParse(request.body);
+      if (!params.success || !body.success) {
+        return reply.status(400).send({
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid feature override' },
+        });
+      }
+
+      try {
+        const userAgent = request.headers['user-agent'];
+        const override = await settings.setFeatureOverride(
+          params.data.clinicId,
+          body.data,
+          {
+            id: authorization.user.id,
+            email: authorization.user.email,
+            ipAddress: request.ip,
+            userAgent: typeof userAgent === 'string' ? userAgent.slice(0, 500) : undefined,
+          },
+        );
+        return reply.status(201).send({ success: true, data: override });
+      } catch (error) {
+        if (!(error instanceof AdminClinicSettingsError)) throw error;
+        return reply.status(getSettingsErrorStatus(error)).send({
+          success: false,
+          error: { code: error.code, message: error.message },
+        });
+      }
+    });
+
+    app.delete(
+      '/v1/admin/clinics/:clinicId/feature-overrides/:overrideId',
+      async (request, reply) => {
+        const authorization = await resolveRequestAuthorization(request, options.auth);
+        if (!authorization) {
+          return reply.status(401).send({
+            success: false,
+            error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' },
+          });
+        }
+        if (!isSuperAdmin(authorization)) {
+          return reply.status(403).send({
+            success: false,
+            error: { code: 'FORBIDDEN', message: 'Super Admin access is required' },
+          });
+        }
+
+        const params = overrideParamsSchema.safeParse(request.params);
+        if (!params.success) {
+          return reply.status(400).send({
+            success: false,
+            error: { code: 'VALIDATION_ERROR', message: 'Invalid feature override identifier' },
+          });
+        }
+
+        try {
+          const userAgent = request.headers['user-agent'];
+          const override = await settings.removeFeatureOverride(
+            params.data.clinicId,
+            params.data.overrideId,
+            {
+              id: authorization.user.id,
+              email: authorization.user.email,
+              ipAddress: request.ip,
+              userAgent: typeof userAgent === 'string' ? userAgent.slice(0, 500) : undefined,
+            },
+          );
+          return reply.send({ success: true, data: override });
+        } catch (error) {
+          if (!(error instanceof AdminClinicSettingsError)) throw error;
+          return reply.status(getSettingsErrorStatus(error)).send({
+            success: false,
+            error: { code: error.code, message: error.message },
+          });
+        }
+      },
+    );
+
+    app.patch('/v1/admin/clinics/:clinicId/publication', async (request, reply) => {
+      const authorization = await resolveRequestAuthorization(request, options.auth);
+      if (!authorization) {
+        return reply.status(401).send({
+          success: false,
+          error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' },
+        });
+      }
+      if (!isSuperAdmin(authorization)) {
+        return reply.status(403).send({
+          success: false,
+          error: { code: 'FORBIDDEN', message: 'Super Admin access is required' },
+        });
+      }
+
+      const params = clinicParamsSchema.safeParse(request.params);
+      const body = updatePublicationBodySchema.safeParse(request.body);
+      if (!params.success || !body.success) {
+        return reply.status(400).send({
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid publication update' },
+        });
+      }
+
+      try {
+        const userAgent = request.headers['user-agent'];
+        const clinic = await settings.updatePublication(
+          params.data.clinicId,
+          body.data.publicationStatus,
+          {
+            id: authorization.user.id,
+            email: authorization.user.email,
+            ipAddress: request.ip,
+            userAgent: typeof userAgent === 'string' ? userAgent.slice(0, 500) : undefined,
+          },
+        );
+        return reply.send({ success: true, data: clinic });
+      } catch (error) {
+        if (!(error instanceof AdminClinicSettingsError)) throw error;
+        return reply.status(getSettingsErrorStatus(error)).send({
+          success: false,
+          error: { code: error.code, message: error.message },
         });
       }
     });
