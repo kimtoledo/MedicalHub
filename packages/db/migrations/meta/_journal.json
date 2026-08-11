@@ -50,6 +50,13 @@
       "when": 1786468077401,
       "tag": "0006_dazzling_legion",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786470578567,
+      "tag": "0007_audit_immutability",
+      "breakpoints": true
     }
   ]
 }
