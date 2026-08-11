@@ -1,6 +1,7 @@
 import { and, countDistinct, desc, eq, gt, inArray, isNull, lte, or } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
-import { auditEvents, clinicSubscriptions, packageFeatures, packages } from '@dentra/db/schema';
+import { writeAudit } from '@dentra/db/audit';
+import { clinicSubscriptions, packageFeatures, packages } from '@dentra/db/schema';
 import { AuditAction, FeatureKey } from '@dentra/shared';
 
 export type AdminPackageItem = {
@@ -63,7 +64,7 @@ export function createAdminPackageService(database: DB): AdminPackageService {
         const action = packageId
           ? (wasActive && !input.isActive ? AuditAction.PACKAGE_DEACTIVATED : AuditAction.PACKAGE_UPDATED)
           : AuditAction.PACKAGE_CREATED;
-        await transaction.insert(auditEvents).values({ actorId: actor.id, actorEmail: actor.email, entityType: 'package', entityId: id, action, metadata: JSON.stringify({ featureKeys: input.featureKeys, isActive: input.isActive }), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
+        await writeAudit(transaction, { actorId: actor.id, actorEmail: actor.email, entityType: 'package', entityId: id, action, metadata: JSON.stringify({ featureKeys: input.featureKeys, isActive: input.isActive }), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
         return id!;
       });
       const item = (await list()).find((candidate) => candidate.id === savedId);

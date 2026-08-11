@@ -11,8 +11,8 @@ import {
   or,
 } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
+import { writeAudit } from '@dentra/db/audit';
 import {
-  auditEvents,
   branches,
   clinicFeatureOverrides,
   clinicMemberships,
@@ -645,7 +645,7 @@ export function createAdminClinicStatusService(
           );
         }
 
-        await transaction.insert(auditEvents).values({
+        await writeAudit(transaction, {
           actorId: actor.id,
           actorEmail: actor.email,
           clinicId,
@@ -731,7 +731,7 @@ export function createAdminClinicBranchCreationService(
             createdAt: branches.createdAt,
           });
 
-        await transaction.insert(auditEvents).values({
+        await writeAudit(transaction, {
           actorId: actor.id,
           actorEmail: actor.email,
           clinicId,
@@ -895,7 +895,7 @@ export function createAdminClinicCreationService(
             })
             .returning({ id: clinicSubscriptions.id });
 
-          await transaction.insert(auditEvents).values([
+          await writeAudit(transaction, [
             {
               actorId: actor.id,
               actorEmail: actor.email,

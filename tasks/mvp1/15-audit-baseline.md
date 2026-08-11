@@ -1,6 +1,6 @@
 # Audit Baseline
 
-> **Status:** 🔲 Queued — no project task yet
+> **Status:** ✅ Done
 
 ---
 
@@ -35,7 +35,7 @@ The Super Admin audit log page (`/dentra-admin/audit`) shows a paginated, filter
 
 ## Steps
 
-1. **Audit service** — create a shared `writeAudit(actor, action, entityType, entityId, meta)` helper in `packages/db` used by all API routes.
-2. **Instrument sensitive routes** — add `writeAudit` calls to every route listed in the "Done looks like" section above.
-3. **Admin audit page** — wire `/dentra-admin/audit` to `GET /v1/admin/audit` with date range, action type, and actor filters.
-4. **Audit integrity** — ensure audit rows can never be updated or deleted; enforce this with a DB constraint or RLS policy.
+1. ✅ **Audit service** — added the shared transaction-aware `writeAudit` helper in `packages/db` and routed all API audit writes through it.
+2. ✅ **Instrument sensitive routes** — clinic lifecycle/settings, dentist state/affiliation, packages/entitlements, booking/appointment status, patients, encounters, treatments, and odontogram mutations append scoped audit events atomically.
+3. ✅ **Admin audit page** — wired `/dentra-admin/audit` to the Super Admin-only `GET /v1/admin/audit` with actor, action, Manila date-range, and pagination filters.
+4. ✅ **Audit integrity** — migration `0007_audit_immutability.sql` adds a PostgreSQL trigger that rejects every update or delete against `audit_events`.

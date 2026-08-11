@@ -12,8 +12,8 @@ import {
   sql,
 } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
+import { writeAudit } from '@dentra/db/audit';
 import {
-  auditEvents,
   branches,
   clinics,
   dentistBranchAssignments,
@@ -352,7 +352,7 @@ export function createAdminDentistCreationService(
               createdAt: dentists.createdAt,
             });
 
-          await transaction.insert(auditEvents).values({
+          await writeAudit(transaction, {
             actorId: actor.id,
             actorEmail: actor.email,
             entityType: 'dentist',
@@ -528,7 +528,7 @@ export function createAdminDentistAffiliationService(
             isActive: dentistBranchAssignments.isActive,
           });
 
-        await transaction.insert(auditEvents).values({
+        await writeAudit(transaction, {
           actorId: actor.id,
           actorEmail: actor.email,
           clinicId: branch.clinicId,
@@ -591,7 +591,7 @@ export function createAdminDentistAffiliationService(
           );
         }
 
-        await transaction.insert(auditEvents).values({
+        await writeAudit(transaction, {
           actorId: actor.id,
           actorEmail: actor.email,
           clinicId: existing.clinicId,
@@ -621,7 +621,7 @@ export function createAdminDentistProfileStateService(
           .where(and(eq(dentists.id, dentistId), eq(dentists.verificationStatus, current.status), isNull(dentists.deletedAt)))
           .returning({ id: dentists.id, verificationStatus: dentists.verificationStatus });
         if (!updated) throw new AdminDentistProfileStateError('STATE_UNCHANGED', 'Dentist verification changed before this request completed');
-        await transaction.insert(auditEvents).values({
+        await writeAudit(transaction, {
           actorId: actor.id, actorEmail: actor.email, entityType: 'dentist', entityId: dentistId,
           action: status === 'verified' ? AuditAction.DENTIST_VERIFIED : AuditAction.DENTIST_VERIFICATION_REVOKED,
           metadata: JSON.stringify({ previousStatus: current.status, nextStatus: status }),
@@ -644,7 +644,7 @@ export function createAdminDentistProfileStateService(
           .where(and(eq(dentists.id, dentistId), eq(dentists.publicationStatus, current.publicationStatus), isNull(dentists.deletedAt)))
           .returning({ id: dentists.id, publicationStatus: dentists.publicationStatus });
         if (!updated) throw new AdminDentistProfileStateError('STATE_UNCHANGED', 'Dentist publication changed before this request completed');
-        await transaction.insert(auditEvents).values({
+        await writeAudit(transaction, {
           actorId: actor.id, actorEmail: actor.email, entityType: 'dentist', entityId: dentistId,
           action: status === 'published' ? AuditAction.DENTIST_PUBLISHED : AuditAction.DENTIST_UNPUBLISHED,
           metadata: JSON.stringify({ previousStatus: current.publicationStatus, nextStatus: status }),

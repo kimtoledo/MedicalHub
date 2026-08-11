@@ -1,7 +1,7 @@
 import { and, desc, eq, gt, isNull, lte, or } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
+import { writeAudit } from '@dentra/db/audit';
 import {
-  auditEvents,
   clinicFeatureOverrides,
   clinics,
   clinicSubscriptions,
@@ -203,7 +203,7 @@ export function createAdminClinicSettingsService(
             expiresAt: clinicSubscriptions.expiresAt,
           });
 
-        await transaction.insert(auditEvents).values({
+        await writeAudit(transaction, {
           actorId: actor.id,
           actorEmail: actor.email,
           clinicId,
@@ -273,7 +273,7 @@ export function createAdminClinicSettingsService(
             createdAt: clinicFeatureOverrides.createdAt,
           });
 
-        await transaction.insert(auditEvents).values({
+        await writeAudit(transaction, {
           actorId: actor.id,
           actorEmail: actor.email,
           clinicId,
@@ -334,7 +334,7 @@ export function createAdminClinicSettingsService(
               activeOverrideAt(now),
             ),
           );
-        await transaction.insert(auditEvents).values({
+        await writeAudit(transaction, {
           actorId: actor.id,
           actorEmail: actor.email,
           clinicId,
@@ -432,7 +432,7 @@ export function createAdminClinicSettingsService(
             publicationStatus: clinics.publicationStatus,
             updatedAt: clinics.updatedAt,
           });
-        await transaction.insert(auditEvents).values({
+        await writeAudit(transaction, {
           actorId: actor.id,
           actorEmail: actor.email,
           clinicId,

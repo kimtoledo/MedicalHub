@@ -18,6 +18,14 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Immutable audit baseline and Super Admin audit log
+- Centralized every API audit append through a shared transaction-aware `writeAudit` helper so domain mutations and their audit records remain atomic
+- Covered clinic lifecycle/settings, dentist state/affiliation, package/entitlement, booking/appointment status, patient history, encounter, treatment, and odontogram actions with identifier/state-only metadata
+- Added protected, paginated `GET /v1/admin/audit` with actor email, action type, and Manila date-range filters plus clinic scope labels
+- Replaced the audit stub with a responsive Super Admin ledger showing timestamp, actor, action, clinic/platform scope, and target entity
+- Added and applied migration `0007_audit_immutability.sql`; PostgreSQL now rejects all updates and deletes against `audit_events`
+- Verified the live authenticated audit endpoint, 151 passing API tests, and repository-wide typecheck
+
 ### ✅ Live clinic and dentist dashboards
 - Added live tenant/branch-scoped summary, appointment list, dentist schedule, and recent-patient APIs with feature and membership enforcement
 - Dentist schedule/list/status access is additionally restricted to the authenticated linked dentist, including direct API calls

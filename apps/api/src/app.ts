@@ -26,6 +26,7 @@ import type {
 } from './admin/dentists-service.js';
 import type { AdminPackageService } from './admin/packages-service.js';
 import type { AdminSubscriptionListService } from './admin/subscriptions-service.js';
+import type { AdminAuditService } from './admin/audit-service.js';
 import type { EntitlementService } from './entitlements/service.js';
 import type { PublicDirectoryService } from './public/directory-service.js';
 import type { PublicBookingService } from './public/booking-service.js';
@@ -41,6 +42,7 @@ import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
 import { registerAdminDentistRoutes } from './routes/admin-dentists.js';
 import { registerAdminPackageRoutes } from './routes/admin-packages.js';
 import { registerAdminSubscriptionRoutes } from './routes/admin-subscriptions.js';
+import { registerAdminAuditRoutes } from './routes/admin-audit.js';
 import { registerEntitlementRoutes } from './routes/entitlements.js';
 import { registerPublicDirectoryRoutes } from './routes/public-directory.js';
 import { registerPublicBookingRoutes } from './routes/public-booking.js';
@@ -70,6 +72,7 @@ export type BuildAppOptions = {
   adminDentistProfileState?: AdminDentistProfileStateService;
   adminPackages?: AdminPackageService;
   adminSubscriptions?: AdminSubscriptionListService;
+  adminAudit?: AdminAuditService;
   entitlements?: EntitlementService;
   publicDirectory?: PublicDirectoryService;
   publicBooking?: PublicBookingService;
@@ -154,6 +157,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (options.adminSubscriptions) {
       await registerAdminSubscriptionRoutes(app, { auth: options.auth, subscriptions: options.adminSubscriptions });
+    }
+    if (options.adminAudit) {
+      await registerAdminAuditRoutes(app, { auth: options.auth, audit: options.adminAudit });
     }
     if (options.entitlements) {
       await registerEntitlementRoutes(app, { auth: options.auth, entitlements: options.entitlements });

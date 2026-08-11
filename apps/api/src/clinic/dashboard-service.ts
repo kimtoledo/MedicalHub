@@ -10,10 +10,10 @@ import {
   lt,
 } from "drizzle-orm";
 import type { DB } from "@dentra/db";
+import { writeAudit } from "@dentra/db/audit";
 import {
   appointments,
   appointmentStatusHistory,
-  auditEvents,
   branches,
   dentists,
   patients,
@@ -293,9 +293,7 @@ export function createClinicDashboardService(
             toStatus: nextStatus,
             changedBy: actor.id,
           });
-        await transaction
-          .insert(auditEvents)
-          .values({
+        await writeAudit(transaction, {
             actorId: actor.id,
             actorEmail: actor.email,
             clinicId,
@@ -311,7 +309,7 @@ export function createClinicDashboardService(
             }),
             ipAddress: actor.ipAddress,
             userAgent: actor.userAgent,
-          });
+        });
         return updated;
       }),
     recentPatients: async (clinicId, dentistId, branchId) => {

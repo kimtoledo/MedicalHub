@@ -33,7 +33,7 @@
 | `12-odontogram.md` | Adult tooth chart, surface selection, history | ✅ Done |
 | `13-treatment-records.md` | Treatment logging per encounter | ✅ Done |
 | `14-clinic-dashboard-live.md` | Dashboard with live data from API | ✅ Done |
-| `15-audit-baseline.md` | Audit entries for all defined sensitive actions | 🔲 Queued |
+| `15-audit-baseline.md` | Audit entries for all defined sensitive actions | ✅ Done |
 | `16-hardening-and-demo-data.md` | Security/entitlement QA, synthetic demo data | 🔲 Queued |
 | `17-dentra-brand-migration.md` | Dentra.ph naming, approved logos, metadata, and PWA branding | ✅ Done |
 | `18-inter-typography.md` | Align Inter typography and Lucide React icons with the updated brand reference | ✅ Done |

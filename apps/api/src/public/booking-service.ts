@@ -1,9 +1,9 @@
 import { and, asc, eq, gt, inArray, isNull, lt, or } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
+import { writeAudit } from '@dentra/db/audit';
 import {
   appointments,
   appointmentStatusHistory,
-  auditEvents,
   branches,
   clinics,
   dentistBranchAssignments,
@@ -148,7 +148,7 @@ export function createPublicBookingService(database: DB): PublicBookingService {
       if (!selected) throw new PublicBookingError('SLOT_CONFLICT', 'That time was just booked. Please choose another available slot.', 409);
       const [created] = await transaction.insert(appointments).values({ clinicId: context.clinicId, branchId: context.branchId, serviceId: context.serviceId, dentistId: selected.dentistId, status: 'pending', startsAt: new Date(requested.startsAt), endsAt: new Date(requested.endsAt), patientFirstName: input.patientFirstName, patientLastName: input.patientLastName, patientPhone: input.patientPhone, patientEmail: input.patientEmail || null, chiefComplaint: input.chiefComplaint }).returning({ id: appointments.id });
       await transaction.insert(appointmentStatusHistory).values({ appointmentId: created.id, clinicId: context.clinicId, fromStatus: null, toStatus: 'pending', reason: 'Public online booking' });
-      await transaction.insert(auditEvents).values({ actorId: null, actorEmail: null, clinicId: context.clinicId, entityType: 'appointment', entityId: created.id, action: AuditAction.APPOINTMENT_CREATED, metadata: JSON.stringify({ source: 'public_booking', branchId: context.branchId, serviceId: context.serviceId, dentistId: selected.dentistId }), ipAddress: request.ipAddress, userAgent: request.userAgent });
+      await writeAudit(transaction, { actorId: null, actorEmail: null, clinicId: context.clinicId, entityType: 'appointment', entityId: created.id, action: AuditAction.APPOINTMENT_CREATED, metadata: JSON.stringify({ source: 'public_booking', branchId: context.branchId, serviceId: context.serviceId, dentistId: selected.dentistId }), ipAddress: request.ipAddress, userAgent: request.userAgent });
       const stamp = input.date.replaceAll('-', '');
       return { appointmentId: created.id, confirmationNumber: `DNT-${stamp}-${created.id.slice(0, 8).toUpperCase()}`, clinicName: context.clinicName, branchName: context.branchName, serviceName: context.serviceName, dentistName: `Dr. ${selected.firstName} ${selected.lastName}`, startsAt: requested.startsAt, endsAt: requested.endsAt, status: 'pending' as const };
     }),

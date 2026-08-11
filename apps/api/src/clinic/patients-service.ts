@@ -1,6 +1,7 @@
 import { and, asc, count, desc, eq, ilike, inArray, isNull, or } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
-import { appointments, auditEvents, branches, clinics, dentists, encounters, patientDentalHistories, patientMedicalHistories, patients, services, users } from '@dentra/db/schema';
+import { writeAudit } from '@dentra/db/audit';
+import { appointments, branches, clinics, dentists, encounters, patientDentalHistories, patientMedicalHistories, patients, services, users } from '@dentra/db/schema';
 import { AuditAction } from '@dentra/shared';
 
 export type PatientActor = { id: string; email: string; ipAddress?: string; userAgent?: string };
@@ -37,7 +38,7 @@ export function createClinicPatientsService(database: DB): ClinicPatientsService
       const highest = existing.reduce((max, row) => { const match = row.patientNumber.match(new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\d+)$`)); return Math.max(max, match ? Number(match[1]) : 0); }, 0);
       const patientNumber = `${prefix}${String(highest + 1).padStart(6, '0')}`;
       const [created] = await transaction.insert(patients).values({ clinicId, patientNumber, ...input }).returning({ id: patients.id, patientNumber: patients.patientNumber });
-      await transaction.insert(auditEvents).values({ actorId: actor.id, actorEmail: actor.email, clinicId, entityType: 'patient', entityId: created.id, action: AuditAction.PATIENT_CREATED, metadata: JSON.stringify({ patientNumber: created.patientNumber }), ipAddress: actor.ipAddress, userAgent: actor.userAgent }); return created;
+      await writeAudit(transaction, { actorId: actor.id, actorEmail: actor.email, clinicId, entityType: 'patient', entityId: created.id, action: AuditAction.PATIENT_CREATED, metadata: JSON.stringify({ patientNumber: created.patientNumber }), ipAddress: actor.ipAddress, userAgent: actor.userAgent }); return created;
     }),
     detail: async (clinicId, patientId, sort) => {
       const [patient] = await database.select().from(patients).where(and(eq(patients.id, patientId), eq(patients.clinicId, clinicId), isNull(patients.deletedAt))).limit(1); if (!patient) return null;
@@ -49,7 +50,7 @@ export function createClinicPatientsService(database: DB): ClinicPatientsService
       ]);
       return { patient, appointments: appointmentRows, medicalHistory: { current: medicalRows[0] ?? null, versions: medicalRows }, dentalHistory: { current: dentalRows[0] ?? null, versions: dentalRows } };
     },
-    addMedicalHistory: async (clinicId, patientId, input, actor) => { await ensurePatient(clinicId, patientId); return database.transaction(async (transaction) => { const [created] = await transaction.insert(patientMedicalHistories).values({ clinicId, patientId, ...input, recordedBy: actor.id }).returning({ id: patientMedicalHistories.id, createdAt: patientMedicalHistories.createdAt }); await transaction.insert(auditEvents).values({ actorId: actor.id, actorEmail: actor.email, clinicId, entityType: 'patient_medical_history', entityId: created.id, action: AuditAction.MEDICAL_HISTORY_RECORDED, metadata: JSON.stringify({ patientId }), ipAddress: actor.ipAddress, userAgent: actor.userAgent }); return created; }); },
-    addDentalHistory: async (clinicId, patientId, input, actor) => { await ensurePatient(clinicId, patientId); return database.transaction(async (transaction) => { const [created] = await transaction.insert(patientDentalHistories).values({ clinicId, patientId, ...input, recordedBy: actor.id }).returning({ id: patientDentalHistories.id, createdAt: patientDentalHistories.createdAt }); await transaction.insert(auditEvents).values({ actorId: actor.id, actorEmail: actor.email, clinicId, entityType: 'patient_dental_history', entityId: created.id, action: AuditAction.DENTAL_HISTORY_RECORDED, metadata: JSON.stringify({ patientId }), ipAddress: actor.ipAddress, userAgent: actor.userAgent }); return created; }); },
+    addMedicalHistory: async (clinicId, patientId, input, actor) => { await ensurePatient(clinicId, patientId); return database.transaction(async (transaction) => { const [created] = await transaction.insert(patientMedicalHistories).values({ clinicId, patientId, ...input, recordedBy: actor.id }).returning({ id: patientMedicalHistories.id, createdAt: patientMedicalHistories.createdAt }); await writeAudit(transaction, { actorId: actor.id, actorEmail: actor.email, clinicId, entityType: 'patient_medical_history', entityId: created.id, action: AuditAction.MEDICAL_HISTORY_RECORDED, metadata: JSON.stringify({ patientId }), ipAddress: actor.ipAddress, userAgent: actor.userAgent }); return created; }); },
+    addDentalHistory: async (clinicId, patientId, input, actor) => { await ensurePatient(clinicId, patientId); return database.transaction(async (transaction) => { const [created] = await transaction.insert(patientDentalHistories).values({ clinicId, patientId, ...input, recordedBy: actor.id }).returning({ id: patientDentalHistories.id, createdAt: patientDentalHistories.createdAt }); await writeAudit(transaction, { actorId: actor.id, actorEmail: actor.email, clinicId, entityType: 'patient_dental_history', entityId: created.id, action: AuditAction.DENTAL_HISTORY_RECORDED, metadata: JSON.stringify({ patientId }), ipAddress: actor.ipAddress, userAgent: actor.userAgent }); return created; }); },
   };
 }
