@@ -1,7 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../src/app.js';
-import type { AdminClinicListService } from '../src/admin/clinics-service.js';
+import {
+  AdminClinicCreationError,
+  type AdminClinicCreationService,
+  type AdminClinicListService,
+} from '../src/admin/clinics-service.js';
 import type { AuthServices, AuthorizationContext } from '../src/auth/types.js';
 import type { ApiConfig } from '../src/config.js';
 
@@ -90,9 +94,32 @@ function createClinicService(): AdminClinicListService {
   };
 }
 
+function createClinicCreationService(): AdminClinicCreationService {
+  return {
+    listPackageOptions: vi.fn(async () => [
+      {
+        id: '00000000-0002-0000-0000-000000000001',
+        name: 'Professional',
+        slug: 'professional',
+      },
+    ]),
+    create: vi.fn(async (input) => ({
+      id: '66666666-6666-4666-8666-666666666666',
+      name: input.name,
+      slug: input.slug,
+      prefix: input.prefix,
+      status: 'trial' as const,
+      ownerUserId: '77777777-7777-4777-8777-777777777777',
+      packageId: input.packageId,
+      createdAt: new Date('2026-08-11T00:00:00.000Z'),
+    })),
+  };
+}
+
 async function createApp(
   context: AuthorizationContext | null,
   clinics: AdminClinicListService,
+  creation?: AdminClinicCreationService,
 ) {
   app = await buildApp({
     config,
@@ -100,6 +127,7 @@ async function createApp(
     logger: false,
     auth: createAuth(context),
     adminClinics: clinics,
+    adminClinicCreation: creation,
   });
 }
 
@@ -160,5 +188,138 @@ describe('GET /v1/admin/clinics', () => {
     expect(response.statusCode).toBe(400);
     expect(response.json().error.code).toBe('VALIDATION_ERROR');
     expect(clinics.list).not.toHaveBeenCalled();
+  });
+});
+
+describe('Super Admin clinic onboarding', () => {
+  it('returns active package options to a Super Admin', async () => {
+    const creation = createClinicCreationService();
+    await createApp(superAdminContext, createClinicService(), creation);
+
+    const response = await app!.inject({
+      method: 'GET',
+      url: '/v1/admin/packages/options',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(creation.listPackageOptions).toHaveBeenCalledOnce();
+    expect(response.json().data).toEqual([
+      {
+        id: '00000000-0002-0000-0000-000000000001',
+        name: 'Professional',
+        slug: 'professional',
+      },
+    ]);
+  });
+
+  it('rejects unauthenticated clinic creation before writing data', async () => {
+    const creation = createClinicCreationService();
+    await createApp(null, createClinicService(), creation);
+
+    const response = await app!.inject({
+      method: 'POST',
+      url: '/v1/admin/clinics',
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(creation.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects clinic members attempting to create another tenant', async () => {
+    const creation = createClinicCreationService();
+    await createApp(clinicMemberContext, createClinicService(), creation);
+
+    const response = await app!.inject({
+      method: 'POST',
+      url: '/v1/admin/clinics',
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(creation.create).not.toHaveBeenCalled();
+  });
+
+  it('validates and normalizes clinic creation input', async () => {
+    const creation = createClinicCreationService();
+    await createApp(superAdminContext, createClinicService(), creation);
+
+    const response = await app!.inject({
+      method: 'POST',
+      url: '/v1/admin/clinics',
+      payload: {
+        name: '  Pearl Dental Studio  ',
+        slug: 'PEARL-DENTAL',
+        prefix: 'pds',
+        ownerEmail: 'OWNER@EXAMPLE.COM',
+        packageId: '00000000-0002-0000-0000-000000000001',
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(creation.create).toHaveBeenCalledWith(
+      {
+        name: 'Pearl Dental Studio',
+        slug: 'pearl-dental',
+        prefix: 'PDS',
+        ownerEmail: 'owner@example.com',
+        packageId: '00000000-0002-0000-0000-000000000001',
+      },
+      {
+        id: superAdminContext.user.id,
+        email: superAdminContext.user.email,
+      },
+    );
+    expect(response.json().data).toMatchObject({
+      name: 'Pearl Dental Studio',
+      status: 'trial',
+    });
+  });
+
+  it('rejects malformed clinic fields before writing data', async () => {
+    const creation = createClinicCreationService();
+    await createApp(superAdminContext, createClinicService(), creation);
+
+    const response = await app!.inject({
+      method: 'POST',
+      url: '/v1/admin/clinics',
+      payload: {
+        name: 'A',
+        slug: 'not a slug',
+        prefix: '!',
+        ownerEmail: 'not-an-email',
+        packageId: 'not-a-uuid',
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error.code).toBe('VALIDATION_ERROR');
+    expect(creation.create).not.toHaveBeenCalled();
+  });
+
+  it('returns a conflict for an existing clinic slug', async () => {
+    const creation = createClinicCreationService();
+    vi.mocked(creation.create).mockRejectedValueOnce(
+      new AdminClinicCreationError(
+        'SLUG_TAKEN',
+        'That clinic slug is already in use',
+      ),
+    );
+    await createApp(superAdminContext, createClinicService(), creation);
+
+    const response = await app!.inject({
+      method: 'POST',
+      url: '/v1/admin/clinics',
+      payload: {
+        name: 'Pearl Dental Studio',
+        slug: 'pearl-dental',
+        prefix: 'PDS',
+        ownerEmail: 'owner@example.com',
+        packageId: '00000000-0002-0000-0000-000000000001',
+      },
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json().error.code).toBe('SLUG_TAKEN');
   });
 });

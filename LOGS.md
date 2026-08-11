@@ -18,6 +18,12 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Super Admin clinic onboarding
+- Added the create-clinic page, live active-package options, and protected `POST /v1/admin/clinics`
+- Clinic, pending owner membership, initial trial subscription, and audit events are written atomically
+- Kept owner login email separate from public clinic contact information
+- Verified Super Admin authorization, local package options, authenticated page rendering, 21 API tests, typecheck, and web/API production builds
+
 ### ✅ Inter typography and icon alignment
 - Aligned the app, Tailwind/global font tokens, brand guidance, and editable wordmarks with Inter
 - Applied Next.js's generated Inter class directly to the document body with a safe CSS fallback
@@ -177,6 +183,7 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 
 ## Known Gaps / Tech Debt
 
+- **Clinic owner invitation delivery** — clinic creation links or creates a pending owner identity and membership, but invite email delivery and password setup remain a separate onboarding step.
 - **Clinic membership selection** — authenticated users currently enter their first active clinic membership; explicit clinic/branch switching remains part of the PWA shell real-data work.
 - **PWA entitlement and branch context remain static** — the required entitlement and branch-listing API endpoints are not implemented yet.
 - **Most domain API routes remain queued** — clinic listing is now live, while create/detail/status/branch/package/override operations and other UI stubs still need backend routes.

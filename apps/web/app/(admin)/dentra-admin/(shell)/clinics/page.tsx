@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import {
   Building2,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   MapPin,
+  Plus,
   Search,
 } from 'lucide-react';
 import {
@@ -16,6 +18,7 @@ type ClinicsPageProps = {
     search?: string | string[];
     status?: string | string[];
     page?: string | string[];
+    created?: string | string[];
   };
 };
 
@@ -57,6 +60,7 @@ export default async function ClinicsPage({ searchParams }: ClinicsPageProps) {
     : undefined;
   const requestedPage = Number.parseInt(getString(searchParams?.page), 10);
   const page = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const wasCreated = getString(searchParams?.created) === '1';
 
   let result;
   try {
@@ -100,11 +104,26 @@ export default async function ClinicsPage({ searchParams }: ClinicsPageProps) {
               </div>
             </div>
           </div>
-          <div className="text-sm text-slate-500">
-            <span className="font-semibold text-slate-800">{pagination.total}</span>{' '}
-            total clinic{pagination.total === 1 ? '' : 's'}
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-slate-500">
+              <span className="font-semibold text-slate-800">{pagination.total}</span>{' '}
+              total clinic{pagination.total === 1 ? '' : 's'}
+            </div>
+            <Link
+              href="/dentra-admin/clinics/new"
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-violet-600 px-4 text-sm font-semibold text-white transition hover:bg-violet-700"
+            >
+              <Plus size={17} /> Add clinic
+            </Link>
           </div>
         </div>
+
+        {wasCreated && (
+          <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            <CheckCircle2 size={18} className="shrink-0" />
+            Clinic created successfully with its owner and initial package.
+          </div>
+        )}
 
         <form
           action="/dentra-admin/clinics"

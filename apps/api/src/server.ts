@@ -2,17 +2,22 @@ import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
 import { createDatabaseServices } from './database.js';
 import { createAuthServices } from './auth/service.js';
-import { createAdminClinicListService } from './admin/clinics-service.js';
+import {
+  createAdminClinicCreationService,
+  createAdminClinicListService,
+} from './admin/clinics-service.js';
 
 const config = loadConfig();
 const database = await createDatabaseServices();
 const auth = createAuthServices(config, database.db);
 const adminClinics = createAdminClinicListService(database.db);
+const adminClinicCreation = createAdminClinicCreationService(database.db);
 const app = await buildApp({
   config,
   checkDatabase: database.check,
   auth,
   adminClinics,
+  adminClinicCreation,
 });
 
 app.addHook('onClose', async () => {

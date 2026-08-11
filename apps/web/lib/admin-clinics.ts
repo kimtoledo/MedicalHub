@@ -31,6 +31,17 @@ type AdminClinicListResponse = {
   data: AdminClinicListResult;
 };
 
+export type AdminClinicPackageOption = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+type AdminClinicPackageOptionsResponse = {
+  success: true;
+  data: AdminClinicPackageOption[];
+};
+
 export async function getAdminClinics(filters: {
   search: string;
   status?: ClinicStatus;
@@ -57,5 +68,26 @@ export async function getAdminClinics(filters: {
   }
 
   const payload = (await response.json()) as AdminClinicListResponse;
+  return payload.data;
+}
+
+export async function getAdminClinicPackageOptions(): Promise<
+  AdminClinicPackageOption[]
+> {
+  const response = await fetch(
+    getBackendUrl('/v1/admin/packages/options'),
+    {
+      headers: { cookie: cookies().toString() },
+      cache: 'no-store',
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Clinic package options request failed with status ${response.status}`,
+    );
+  }
+
+  const payload = (await response.json()) as AdminClinicPackageOptionsResponse;
   return payload.data;
 }

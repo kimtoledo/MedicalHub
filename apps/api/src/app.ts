@@ -9,7 +9,10 @@ import Fastify, {
 } from 'fastify';
 import type { ApiConfig } from './config.js';
 import type { AuthServices } from './auth/types.js';
-import type { AdminClinicListService } from './admin/clinics-service.js';
+import type {
+  AdminClinicCreationService,
+  AdminClinicListService,
+} from './admin/clinics-service.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
 import { registerHealthRoutes } from './routes/health.js';
@@ -19,6 +22,7 @@ export type BuildAppOptions = {
   checkDatabase: () => Promise<void>;
   auth?: AuthServices;
   adminClinics?: AdminClinicListService;
+  adminClinicCreation?: AdminClinicCreationService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -62,6 +66,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       await registerAdminClinicRoutes(app, {
         auth: options.auth,
         clinics: options.adminClinics,
+        creation: options.adminClinicCreation,
       });
     }
   }
