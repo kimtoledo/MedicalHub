@@ -116,6 +116,14 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 - Verified the full flow manually: denied before login → successful login → protected page 200 → logout → denied again
 - Added the web workspace to the repository-wide TypeScript check
 
+### ✅ Live Super Admin clinic list (task #12)
+- Added protected `GET /v1/admin/clinics` with validated search, status, and pagination filters
+- Enforced an exact database-resolved `super_admin` role before any clinic query runs
+- Returned clinic account metadata with latest package name and active branch count; no patient or clinical data is exposed
+- Replaced the `/th-admin/clinics` stub with a responsive server-rendered table
+- Added search by clinic name/slug/prefix, status filtering, pagination, loading, empty, and API error states
+- Added API denial and success coverage; API suite now has 15 passing tests
+
 ### ✅ Scripts & automation
 - `scripts/post-merge.sh` — auto-runs migrations after task merges
 - `scripts/generate-migration.sh` — helper to generate new migration files
@@ -136,14 +144,13 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 | # | Title | Notes |
 |---|-------|-------|
 | #6 | Connect Replit PostgreSQL and apply the first migration | DB is live; `DATABASE_URL` already set by Replit. Task may be redundant — migrations are already applied. |
-| #12 | Let Super Admin see and search all clinics from one table | UI stub exists at `/th-admin/clinics` |
 
 ---
 
 ## Known Gaps / Tech Debt
 
 - **Clinic auth UI still mocked** — `/cl-login` still uses `th_clinic_session`; clinic roles and credentials must be wired to Better Auth in the remaining Platform Foundation work.
-- **No domain API routes yet** — the Fastify server currently exposes operational health and authentication/session endpoints; UI stubs still have no live domain data fetching
+- **Most domain API routes remain queued** — clinic listing is now live, while create/detail/status/branch/package/override operations and other UI stubs still need backend routes.
 - **Patient number sequencing** — no DB-level sequence generator; race condition possible under concurrent inserts
 - **Clinic prefix required** — schema allows `prefix = ''` as default; admin UI must enforce non-empty unique prefix on clinic creation
 - **Dependency upgrades pending** — `npm audit` reports 2 high advisories in the existing Next.js/PostCSS stack and 4 moderate build-tool advisories through Drizzle Kit. The runtime Drizzle ORM, new Fastify API, and Vitest test runner were upgraded to patched releases; the remaining fixes require separate tested framework/tooling upgrades.

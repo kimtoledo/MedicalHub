@@ -1,7 +1,8 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { fromNodeHeaders } from 'better-auth/node';
 import type { ApiConfig } from '../config.js';
-import type { AuthServices, AuthorizationContext } from '../auth/types.js';
+import type { AuthServices } from '../auth/types.js';
+import { resolveRequestAuthorization } from '../auth/request.js';
 
 type RegisterAuthRoutesOptions = {
   auth: AuthServices;
@@ -20,19 +21,6 @@ function toWebRequest(request: FastifyRequest, baseUrl: string): Request {
     headers,
     body: hasBody ? JSON.stringify(request.body) : undefined,
   });
-}
-
-async function resolveRequestAuthorization(
-  request: FastifyRequest,
-  auth: AuthServices,
-): Promise<AuthorizationContext | null> {
-  const session = await auth.getSession(fromNodeHeaders(request.headers));
-
-  if (!session) {
-    return null;
-  }
-
-  return auth.resolveAuthorization(session.user.id);
 }
 
 export async function registerAuthRoutes(

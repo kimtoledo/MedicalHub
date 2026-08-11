@@ -1,6 +1,6 @@
 # Super Admin — Clinic Management
 
-> **Status:** 📋 Draft — partly covered by project task #12
+> **Status:** 🔵 Active — clinic list covered by project task #12 is ✅ Done; remaining management steps are queued
 
 ---
 
@@ -34,7 +34,7 @@ Super Admin needs to create and manage clinics end-to-end: from onboarding a new
 
 ## Steps
 
-1. **Clinic list page** — wire `/th-admin/clinics` to `GET /v1/admin/clinics` with search, status filter, and pagination (#12).
+1. **Clinic list page** — ✅ `/th-admin/clinics` is wired to `GET /v1/admin/clinics` with search, status filter, pagination, package name, and branch count (#12).
 2. **Create clinic form** — build the create-clinic slide-over/page with validation; call `POST /v1/admin/clinics`.
 3. **Clinic detail page** — build `/th-admin/clinics/[id]` showing all clinic info, branches, and package details.
 4. **Status actions** — implement activate/suspend/archive/reactivate buttons that call the appropriate API endpoints and require confirmation.

@@ -122,7 +122,8 @@ The API listens on [http://localhost:3001](http://localhost:3001). Use
 `GET /health` for process liveness and `GET /v1/health` to verify the API can
 reach PostgreSQL. Better Auth is mounted at `/v1/auth/*`; `GET
 /v1/session-context` returns the signed-in user's server-resolved platform role
-and active clinic memberships.
+and active clinic memberships. `GET /v1/admin/clinics` is restricted to Super
+Admin and supports `search`, `status`, `page`, and `pageSize` query parameters.
 
 ---
 

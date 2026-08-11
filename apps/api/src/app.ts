@@ -9,13 +9,16 @@ import Fastify, {
 } from 'fastify';
 import type { ApiConfig } from './config.js';
 import type { AuthServices } from './auth/types.js';
+import type { AdminClinicListService } from './admin/clinics-service.js';
 import { registerAuthRoutes } from './routes/auth.js';
+import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
 import { registerHealthRoutes } from './routes/health.js';
 
 export type BuildAppOptions = {
   config: ApiConfig;
   checkDatabase: () => Promise<void>;
   auth?: AuthServices;
+  adminClinics?: AdminClinicListService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -55,6 +58,12 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   await registerHealthRoutes(app, { checkDatabase: options.checkDatabase });
   if (options.auth) {
     await registerAuthRoutes(app, { auth: options.auth, config: options.config });
+    if (options.adminClinics) {
+      await registerAdminClinicRoutes(app, {
+        auth: options.auth,
+        clinics: options.adminClinics,
+      });
+    }
   }
 
   app.setNotFoundHandler(async (_request, reply) => reply.status(404).send({
