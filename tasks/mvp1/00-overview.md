@@ -31,7 +31,7 @@
 | `10-patient-management.md` | Patient list, profile, medical/dental history | ✅ Done |
 | `11-clinical-encounter.md` | Encounter form, chief complaint, findings, procedures | ✅ Done |
 | `12-odontogram.md` | Adult tooth chart, surface selection, history | ✅ Done |
-| `13-treatment-records.md` | Treatment logging per encounter | 🔲 Queued |
+| `13-treatment-records.md` | Treatment logging per encounter | ✅ Done |
 | `14-clinic-dashboard-live.md` | Dashboard with live data from API | 🔲 Queued |
 | `15-audit-baseline.md` | Audit entries for all defined sensitive actions | 🔲 Queued |
 | `16-hardening-and-demo-data.md` | Security/entitlement QA, synthetic demo data | 🔲 Queued |

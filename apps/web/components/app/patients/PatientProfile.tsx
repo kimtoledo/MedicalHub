@@ -10,6 +10,7 @@ import {
   UserRound,
 } from "lucide-react";
 import type { PatientDetail } from "@/lib/clinic-patients";
+import type { TreatmentRecord } from "@/lib/clinic-treatments";
 import HistoryEditor from "./HistoryEditor";
 const show = (value: string | null | undefined) => value || "—";
 const when = (value: string) =>
@@ -23,11 +24,13 @@ export default function PatientProfile({
   data,
   basePath,
   sort,
+  treatments,
 }: {
   clinicId: string;
   data: PatientDetail;
   basePath: string;
   sort: "asc" | "desc";
+  treatments: TreatmentRecord[];
 }) {
   const patient = data.patient;
   const name = [patient.firstName, patient.middleName, patient.lastName]
@@ -72,7 +75,7 @@ export default function PatientProfile({
               `/app/dentist/odontogram?patientId=${patient.id}`,
               Grid3X3,
             ],
-            ["Treatments", `#appointments`, Stethoscope],
+            ["Treatments", `#treatments`, Stethoscope],
           ].map(([label, href, Icon]) => (
             <Link
               key={String(label)}
@@ -203,6 +206,10 @@ export default function PatientProfile({
           patientId={patient.id}
           current={data.dentalHistory.current}
         />
+      </section>
+      <section id="treatments" className="mt-7 rounded-2xl border border-violet-100 bg-white p-5 shadow-sm sm:p-6">
+        <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900"><Stethoscope className="text-violet-600" />Treatment history</h2>
+        {treatments.length ? <div className="mt-5 divide-y divide-slate-100">{treatments.map((item) => <article key={item.id} className="grid gap-2 py-4 text-sm sm:grid-cols-4"><div><p className="font-bold text-slate-900">{item.serviceName ?? "Dental procedure"}</p><p className="text-xs text-slate-500">{item.performedAt ? when(item.performedAt) : "Date unavailable"}</p></div><p className="text-slate-600">Tooth/area: {item.toothRef ?? "General"}</p><p className="text-slate-600">{item.dentistFirstName ? `Dr. ${item.dentistFirstName} ${item.dentistLastName}` : "Dentist"}</p><Link href={`/app/dentist/encounters/${item.encounterId}`} className="font-semibold text-violet-600">Open encounter →</Link></article>)}</div> : <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-500">No treatment records.</p>}
       </section>
       <section
         id="appointments"

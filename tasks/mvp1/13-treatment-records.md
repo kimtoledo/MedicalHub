@@ -1,6 +1,6 @@
 # Treatment Records
 
-> **Status:** 🔲 Queued — no project task yet
+> **Status:** ✅ Done
 
 ---
 
@@ -28,6 +28,6 @@ Treatment records document procedures that have already been performed. They are
 
 ## Steps
 
-1. **Treatment record API** — `POST /v1/clinic/encounters/[id]/treatments`, `GET /v1/clinic/patients/[id]/treatments`.
-2. **Treatment form** — inline add-treatment form within the encounter editor; pull procedure options from the clinic's service catalog.
-3. **Patient treatment history** — list all treatments for a patient in their clinical profile tab.
+1. **Treatment record API** — ✅ Protected create, patient-history, and active service-catalog endpoints enforce tenant, feature, dentist, encounter, patient, and service boundaries.
+2. **Treatment form** — ✅ Draft encounters include an inline service/tooth/date/notes form; finalized encounters and their treatments remain read-only.
+3. **Patient treatment history** — ✅ Patient profiles and encounter details list performed services, tooth/area, dentist, date, notes, and encounter links.

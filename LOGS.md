@@ -18,6 +18,14 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Encounter treatment records
+- Added feature-protected active service catalog, patient treatment history, and encounter treatment creation APIs
+- Treatment creation locks and validates the tenant encounter, derives its patient and performing dentist server-side, and rejects inactive services or finalized encounters
+- Added inline draft-encounter treatment entry with service, tooth/area, performed date, and notes; finalized encounter treatments render read-only
+- Added treatment timelines to patient clinical profiles with dentist, procedure, tooth/area, date, notes, and encounter navigation
+- Writes immutable `treatment.recorded` audits with identifiers only and no treatment-note content
+- Verified live seeded service/treatment APIs and finalized encounter rendering, 142 API tests, repository-wide typecheck, and production builds
+
 ### ✅ Append-only adult odontogram
 - Confirmed the existing event schema covers surface-aware conditions/procedures, encounter links, and self-referencing corrections without a migration
 - Added feature-protected history, append-event, and correction APIs with exact clinic/patient/dentist/encounter validation

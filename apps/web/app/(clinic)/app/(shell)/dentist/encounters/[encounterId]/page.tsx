@@ -1,8 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 import EncounterForm from "@/components/app/encounters/EncounterForm";
+import TreatmentPanel from "@/components/app/encounters/TreatmentPanel";
 import { getClinicSession, getClinicShellContext } from "@/lib/clinic-session";
 import { getClinicPatientOptions } from "@/lib/clinic-patients";
 import { getEncounter } from "@/lib/clinic-encounters";
+import { getClinicServices, getPatientTreatments } from "@/lib/clinic-treatments";
 export default async function EncounterPage({
   params,
 }: {
@@ -16,6 +18,7 @@ export default async function EncounterPage({
     getEncounter(identity.clinicId, params.encounterId).catch(() => null),
   ]);
   if (!encounter) notFound();
+  const [services, patientTreatments] = await Promise.all([getClinicServices(identity.clinicId), getPatientTreatments(identity.clinicId, encounter.patientId)]);
   return (
     <div className="p-4 sm:p-8">
       <div className="mx-auto max-w-4xl">
@@ -33,6 +36,7 @@ export default async function EncounterPage({
             encounter={encounter}
           />
         </div>
+        <TreatmentPanel clinicId={identity.clinicId} encounterId={encounter.id} isFinal={encounter.status === "final"} services={services} treatments={patientTreatments.filter((item) => item.encounterId === encounter.id)} />
       </div>
     </div>
   );
