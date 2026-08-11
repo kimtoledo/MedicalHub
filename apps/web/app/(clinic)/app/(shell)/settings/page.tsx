@@ -1,12 +1,2 @@
-import AppStubPage from "@/components/app/AppStubPage";
-import { Settings } from "lucide-react";
-
-export default function ClinicSettingsPage() {
-  return (
-    <AppStubPage
-      title="Clinic Settings"
-      description="Manage clinic details, branch information, operating hours, service catalog, and public microsite content."
-      icon={<Settings size={28} className="text-violet-500" />}
-    />
-  );
-}
+import { Settings } from 'lucide-react'; import ClinicMicrositeSettings from '@/components/app/ClinicMicrositeSettings'; import { getClinicSession } from '@/lib/clinic-session'; import { getClinicSettings } from '@/lib/clinic-settings';
+export default async function ClinicSettingsPage() { const identity = await getClinicSession(); const settings = identity ? await getClinicSettings(identity.clinicId) : null; if (!identity || !settings) return <div className="p-6"><div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-800"><h1 className="font-semibold">Clinic settings unavailable</h1><p className="mt-1 text-sm">Clinic Owner or Admin access is required.</p></div></div>; return <div className="p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-6xl space-y-6"><div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-100"><Settings className="text-violet-600" size={22} /></div><div><h1 className="text-2xl font-bold text-slate-900">Clinic Settings</h1><p className="text-sm text-slate-500">Update structured microsite content and operating hours.</p></div></div><ClinicMicrositeSettings clinicId={identity.clinicId} settings={settings} /></div></div>; }

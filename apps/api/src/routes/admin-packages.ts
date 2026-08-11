@@ -5,6 +5,7 @@ import { AdminPackageError, type AdminPackageService } from '../admin/packages-s
 import { isSuperAdmin } from '../auth/authorization.js';
 import { resolveRequestAuthorization } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
+import { postgresUuidSchema } from '../validation.js';
 
 const featureValues = Object.values(FeatureKey) as [FeatureKey, ...FeatureKey[]];
 const savePackageSchema = z.object({
@@ -15,7 +16,7 @@ const savePackageSchema = z.object({
   isActive: z.boolean(),
   featureKeys: z.array(z.enum(featureValues)).max(featureValues.length),
 }).strict();
-const paramsSchema = z.object({ packageId: z.string().uuid() });
+const paramsSchema = z.object({ packageId: postgresUuidSchema });
 
 export async function registerAdminPackageRoutes(app: FastifyInstance, options: { auth: AuthServices; packages: AdminPackageService }) {
   async function authorize(request: FastifyRequest, reply: FastifyReply) {

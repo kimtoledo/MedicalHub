@@ -13,6 +13,7 @@ import {
 import { isSuperAdmin } from '../auth/authorization.js';
 import { resolveRequestAuthorization } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
+import { postgresUuidSchema } from '../validation.js';
 
 const listDentistsQuerySchema = z.object({
   search: z.string().trim().max(100).default(''),
@@ -44,15 +45,15 @@ const createDentistBodySchema = z.object({
 }).strict();
 
 const dentistParamsSchema = z.object({
-  dentistId: z.string().uuid(),
+  dentistId: postgresUuidSchema,
 });
 
 const affiliationParamsSchema = dentistParamsSchema.extend({
-  affiliationId: z.string().uuid(),
+  affiliationId: postgresUuidSchema,
 });
 
 const createAffiliationBodySchema = z.object({
-  branchId: z.string().uuid(),
+  branchId: postgresUuidSchema,
 }).strict();
 const updateVerificationBodySchema = z.object({ verificationStatus: z.enum(['unverified', 'verified']) }).strict();
 const updatePublicationBodySchema = z.object({ publicationStatus: z.enum(['published', 'unpublished']) }).strict();

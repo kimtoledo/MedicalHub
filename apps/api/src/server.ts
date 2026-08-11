@@ -21,6 +21,7 @@ import { createAdminPackageService } from './admin/packages-service.js';
 import { createAdminSubscriptionListService } from './admin/subscriptions-service.js';
 import { createEntitlementService } from './entitlements/service.js';
 import { createPublicDirectoryService } from './public/directory-service.js';
+import { createClinicSettingsService } from './clinic/settings-service.js';
 
 const config = loadConfig();
 const database = await createDatabaseServices();
@@ -40,6 +41,7 @@ const adminPackages = createAdminPackageService(database.db);
 const adminSubscriptions = createAdminSubscriptionListService(database.db);
 const entitlements = createEntitlementService(database.db);
 const publicDirectory = createPublicDirectoryService(database.db);
+const clinicSettings = createClinicSettingsService(database.db);
 const app = await buildApp({
   config,
   checkDatabase: database.check,
@@ -59,6 +61,7 @@ const app = await buildApp({
   adminSubscriptions,
   entitlements,
   publicDirectory,
+  clinicSettings,
 });
 
 app.addHook('onClose', async () => {

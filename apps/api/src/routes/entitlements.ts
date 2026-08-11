@@ -4,8 +4,9 @@ import type { EntitlementService } from '../entitlements/service.js';
 import { hasClinicAccess, isSuperAdmin } from '../auth/authorization.js';
 import { resolveRequestAuthorization } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
+import { postgresUuidSchema } from '../validation.js';
 
-const paramsSchema = z.object({ clinicId: z.string().uuid() });
+const paramsSchema = z.object({ clinicId: postgresUuidSchema });
 export async function registerEntitlementRoutes(app: FastifyInstance, options: { auth: AuthServices; entitlements: EntitlementService }) {
   app.get('/v1/entitlements/:clinicId', async (request, reply) => {
     const authorization = await resolveRequestAuthorization(request, options.auth);

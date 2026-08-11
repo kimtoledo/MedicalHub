@@ -1,6 +1,6 @@
 # Clinic Public Microsite
 
-> **Status:** 🔲 Queued — no project task yet
+> **Status:** ✅ Done — all five implementation steps are complete
 
 ---
 
@@ -30,8 +30,8 @@ Each clinic gets a public-facing page at `/clinic/[clinicSlug]` that patients ca
 
 ## Steps
 
-1. **Public clinic API endpoint** — `GET /v1/public/clinics/[slug]` returning only publishable fields.
-2. **Microsite page** — build `apps/web/app/clinic/[clinicSlug]/page.tsx` with all content sections.
-3. **Booking CTA link** — link the "Book Appointment" button to the public booking flow (task `08`).
-4. **Clinic settings content editor** — build the microsite content form in `/app/settings` so clinic admin can update text, hours, and social links.
-5. **Publish/unpublish toggle** — clinic admin can request publication; Super Admin approves (or auto-approves if policy allows).
+1. **Public clinic API endpoint** — ✅ `GET /v1/public/clinics/[slug]` applies the operational/published boundary and returns only public profile, branch, service, and published dentist fields.
+2. **Microsite page** — ✅ Server-rendered `/clinic/[clinicSlug]` includes hero, description, contact/social links, maps, branches/hours, services, dentist cards, and dynamic SEO metadata.
+3. **Booking CTA link** — ✅ Hero and closing CTA link to `/clinic/[clinicSlug]/appointment` for Task 08's booking flow.
+4. **Clinic settings content editor** — ✅ Clinic Owners/Admins can update structured hero/profile/contact/social content and per-branch weekly hours from `/app/settings`; changes are tenant-scoped and audited.
+5. **Publish/unpublish toggle** — ✅ Clinic Owners/Admins use a confirmed auto-approval policy backed by the existing operational-status and effective microsite-entitlement enforcement; every transition remains audited.

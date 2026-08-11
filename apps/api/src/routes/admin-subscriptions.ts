@@ -4,11 +4,12 @@ import type { AdminSubscriptionListService } from '../admin/subscriptions-servic
 import { isSuperAdmin } from '../auth/authorization.js';
 import { resolveRequestAuthorization } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
+import { postgresUuidSchema } from '../validation.js';
 
 const querySchema = z.object({
   search: z.string().trim().max(100).default(''),
   status: z.enum(['trial', 'active', 'past_due', 'cancelled', 'expired']).optional(),
-  packageId: z.string().uuid().optional(),
+  packageId: postgresUuidSchema.optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(10),
 });

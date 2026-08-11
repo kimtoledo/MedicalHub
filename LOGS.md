@@ -18,6 +18,14 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Public clinic microsite and clinic-managed content
+- Added structured clinic hero text and per-branch weekly operating hours through migration `0005_faithful_azazel.sql`
+- Added a publication-safe clinic detail API and server-rendered microsite with profile, contact/social, map, branch/hour, service, and published dentist sections
+- Replaced Clinic Settings stub with tenant-scoped, role-protected profile/hours editing and confirmed entitlement-aware publication controls
+- Audits clinic profile, branch-hour, and publication mutations without storing content values in audit metadata
+- Standardized PostgreSQL UUID validation so deterministic seeded IDs remain valid while malformed identifiers are rejected
+- Verified unpublished clinic 404 behavior, live seeded API/page rendering, 114 API tests, repository-wide typecheck, and production builds
+
 ### ✅ Public discovery directories and landing refinement
 - Added public clinic and dentist APIs with a server-owned publication boundary: clinics must be operational/published and dentists verified/published
 - Added responsive, server-rendered `/clinics` and `/dentists` directories with filtering and pagination
