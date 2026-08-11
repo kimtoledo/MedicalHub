@@ -33,6 +33,7 @@ import type { ClinicSettingsService } from './clinic/settings-service.js';
 import type { ClinicWorkspaceService } from './clinic/workspace-service.js';
 import type { ClinicPatientsService } from './clinic/patients-service.js';
 import type { ClinicEncountersService } from './clinic/encounters-service.js';
+import type { ClinicOdontogramService } from './clinic/odontogram-service.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
 import { registerAdminDentistRoutes } from './routes/admin-dentists.js';
@@ -45,6 +46,7 @@ import { registerClinicSettingsRoutes } from './routes/clinic-settings.js';
 import { registerClinicWorkspaceRoutes } from './routes/clinic-workspace.js';
 import { registerClinicPatientRoutes } from './routes/clinic-patients.js';
 import { registerClinicEncounterRoutes } from './routes/clinic-encounters.js';
+import { registerClinicOdontogramRoutes } from './routes/clinic-odontogram.js';
 import { registerHealthRoutes } from './routes/health.js';
 
 export type BuildAppOptions = {
@@ -71,6 +73,7 @@ export type BuildAppOptions = {
   clinicWorkspace?: ClinicWorkspaceService;
   clinicPatients?: ClinicPatientsService;
   clinicEncounters?: ClinicEncountersService;
+  clinicOdontogram?: ClinicOdontogramService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -164,6 +167,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (options.clinicEncounters && options.entitlements) {
       await registerClinicEncounterRoutes(app, { auth: options.auth, entitlements: options.entitlements, encounters: options.clinicEncounters });
+    }
+    if (options.clinicOdontogram && options.entitlements) {
+      await registerClinicOdontogramRoutes(app, { auth: options.auth, entitlements: options.entitlements, odontogram: options.clinicOdontogram });
     }
   }
 

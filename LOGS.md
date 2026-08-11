@@ -18,6 +18,14 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Append-only adult odontogram
+- Confirmed the existing event schema covers surface-aware conditions/procedures, encounter links, and self-referencing corrections without a migration
+- Added feature-protected history, append-event, and correction APIs with exact clinic/patient/dentist/encounter validation
+- Added an interactive responsive SVG showing all 32 permanent teeth in FDI notation, surface selection, validated condition/procedure vocabularies, and visual current states
+- Correction actions append a new event referencing the original; no update or delete endpoint exists and the full per-tooth history remains available
+- Current-state projection excludes superseded events and resolves the latest effective event per tooth/surface key
+- Verified live dentist rendering, 139 API tests including correction and tenant-isolation cases, and repository-wide typecheck
+
 ### ✅ Dentist clinical encounters
 - Added feature-protected encounter list, create, detail, and update APIs with exact clinic scoping and dentist-derived identity
 - Validates the patient tenant, active dentist-branch assignment, and optional appointment linkage before clinical record creation

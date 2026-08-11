@@ -1,6 +1,6 @@
 # Odontogram
 
-> **Status:** 🔲 Queued — no project task yet
+> **Status:** ✅ Done
 
 ---
 
@@ -32,9 +32,9 @@ The adult tooth chart lets dentists record conditions and procedures per tooth a
 
 ## Steps
 
-1. **Odontogram data model** — confirm the schema covers all required fields; add a migration if any are missing.
-2. **Odontogram API** — `GET /v1/clinic/patients/[id]/odontogram` (event history), `POST /v1/clinic/patients/[id]/odontogram` (add event), `POST /v1/clinic/patients/[id]/odontogram/[eventId]/correct` (correction).
-3. **Tooth chart component** — build an SVG or canvas-based 32-tooth chart; support tooth selection and surface selection.
-4. **Record event form** — slide-over or inline form to select condition/procedure and add a note.
-5. **Event history panel** — expandable per-tooth history list showing all past events.
-6. **Current-state projection** — derive current tooth states from event history and render them on the chart.
+1. **Odontogram data model** — ✅ Existing append-only event, surface, encounter, and self-referencing correction fields cover the MVP requirements; no migration was needed.
+2. **Odontogram API** — ✅ Protected history, append, and correction endpoints enforce tenant, feature, dentist, patient, and encounter boundaries.
+3. **Tooth chart component** — ✅ Responsive SVG charts render all 32 permanent teeth in FDI upper/lower arches with tooth and surface selection.
+4. **Record event form** — ✅ The inline panel records validated condition/procedure vocabulary, surfaces, encounter link, and note.
+5. **Event history panel** — ✅ Selecting a tooth reveals its complete reverse-chronological event and correction history.
+6. **Current-state projection** — ✅ The API resolves superseded corrections and latest tooth/surface states; the SVG reflects condition/procedure/missing status without deleting history.

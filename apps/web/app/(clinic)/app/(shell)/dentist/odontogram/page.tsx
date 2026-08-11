@@ -1,12 +1,2 @@
-import AppStubPage from "@/components/app/AppStubPage";
-import { Grid3X3 } from "lucide-react";
-
-export default function OdontogramPage() {
-  return (
-    <AppStubPage
-      title="Odontogram"
-      description="Interactive adult dental chart for recording tooth conditions, surfaces, procedures, and treatment history per patient."
-      icon={<Grid3X3 size={28} className="text-violet-500" />}
-    />
-  );
-}
+import Link from 'next/link'; import { redirect } from 'next/navigation'; import OdontogramChart from '@/components/app/odontogram/OdontogramChart'; import { getClinicSession } from '@/lib/clinic-session'; import { getClinicPatientOptions } from '@/lib/clinic-patients'; import { getOdontogram } from '@/lib/clinic-odontogram';
+export default async function OdontogramPage({ searchParams }: { searchParams: { patientId?: string } }) { const identity = await getClinicSession(); if (!identity) redirect('/cl-login'); const patients = (await getClinicPatientOptions(identity.clinicId)).items; const patient = patients.find((item) => item.id === searchParams.patientId); const data = patient ? await getOdontogram(identity.clinicId, patient.id) : null; return <div className="p-4 sm:p-8"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-sm font-semibold text-violet-500">Append-only dental chart</p><h1 className="mt-1 text-3xl font-bold text-violet-950">Odontogram</h1><p className="mt-1 text-sm text-slate-500">32 permanent teeth · FDI notation · full event history</p></div><form><label className="text-sm font-semibold text-slate-700">Patient<select name="patientId" defaultValue={patient?.id ?? ''} className="ml-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"><option value="">Select a patient</option>{patients.map((item) => <option key={item.id} value={item.id}>{item.patientNumber} · {item.lastName}, {item.firstName}</option>)}</select></label><button className="ml-2 rounded-xl bg-violet-600 px-3 py-2 text-sm font-bold text-white">Open chart</button></form></div>{patient && data ? <div className="mt-7"><div className="mb-4 rounded-xl bg-violet-50 px-4 py-3 text-sm text-violet-800"><Link href={`/app/dentist/patients/${patient.id}`} className="font-bold">{patient.firstName} {patient.lastName}</Link> · {patient.patientNumber} · {data.events.length} recorded event(s)</div><OdontogramChart clinicId={identity.clinicId} patientId={patient.id} initial={data} /></div> : <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white py-20 text-center text-slate-500">Select a patient to view and update the tooth chart.</div>}</div>; }

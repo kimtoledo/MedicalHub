@@ -30,7 +30,7 @@
 | `09-clinic-pwa-shell.md` | PWA manifest, installable, offline fallback | ✅ Done |
 | `10-patient-management.md` | Patient list, profile, medical/dental history | ✅ Done |
 | `11-clinical-encounter.md` | Encounter form, chief complaint, findings, procedures | ✅ Done |
-| `12-odontogram.md` | Adult tooth chart, surface selection, history | 🔲 Queued |
+| `12-odontogram.md` | Adult tooth chart, surface selection, history | ✅ Done |
 | `13-treatment-records.md` | Treatment logging per encounter | 🔲 Queued |
 | `14-clinic-dashboard-live.md` | Dashboard with live data from API | 🔲 Queued |
 | `15-audit-baseline.md` | Audit entries for all defined sensitive actions | 🔲 Queued |

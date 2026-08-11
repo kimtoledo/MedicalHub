@@ -26,6 +26,7 @@ import { createClinicSettingsService } from './clinic/settings-service.js';
 import { createClinicWorkspaceService } from './clinic/workspace-service.js';
 import { createClinicPatientsService } from './clinic/patients-service.js';
 import { createClinicEncountersService } from './clinic/encounters-service.js';
+import { createClinicOdontogramService } from './clinic/odontogram-service.js';
 
 const config = loadConfig();
 const database = await createDatabaseServices();
@@ -50,6 +51,7 @@ const clinicSettings = createClinicSettingsService(database.db);
 const clinicWorkspace = createClinicWorkspaceService(database.db);
 const clinicPatients = createClinicPatientsService(database.db);
 const clinicEncounters = createClinicEncountersService(database.db);
+const clinicOdontogram = createClinicOdontogramService(database.db);
 const app = await buildApp({
   config,
   checkDatabase: database.check,
@@ -74,6 +76,7 @@ const app = await buildApp({
   clinicWorkspace,
   clinicPatients,
   clinicEncounters,
+  clinicOdontogram,
 });
 
 app.addHook('onClose', async () => {
