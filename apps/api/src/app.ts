@@ -25,6 +25,7 @@ import type { ClinicPrescriptionService } from './clinic/prescription-service.js
 import type { ClinicFilesService } from './clinic/clinical-files-service.js';
 import type { AiAssistanceService } from './clinic/ai-service.js';
 import type { RemoteConsultsService } from './clinic/remote-consults-service.js';
+import type { HmoService } from './clinic/hmo-service.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
 import { registerClinicBillingRoutes } from './routes/clinic-billing.js';
@@ -34,6 +35,7 @@ import { registerClinicEncounterRoutes } from './routes/clinic-encounters.js';
 import { registerClinicPatientRoutes } from './routes/clinic-patients.js';
 import { registerClinicAiRoutes } from './routes/clinic-ai.js';
 import { registerRemoteConsultRoutes } from './routes/remote-consults.js';
+import { registerHmoRoutes } from './routes/hmo.js';
 import { registerHealthRoutes } from './routes/health.js';
 
 export type BuildAppOptions = {
@@ -51,6 +53,7 @@ export type BuildAppOptions = {
   clinicFiles?: ClinicFilesService;
   clinicAi?: AiAssistanceService;
   remoteConsults?: RemoteConsultsService;
+  hmo?: HmoService;
   db?: import('@dentra/db').DB;
   logger?: FastifyServerOptions['logger'];
 };
@@ -142,6 +145,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         auth: options.auth,
         rcService: options.remoteConsults,
       });
+    }
+    if (options.hmo) {
+      await registerHmoRoutes(app, { auth: options.auth, hmo: options.hmo });
     }
   }
 

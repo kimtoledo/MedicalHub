@@ -22,6 +22,7 @@ import {
   Stethoscope,
   FileText,
   Camera,
+  Shield,
 } from "lucide-react";
 import { type ClinicRole } from "@/lib/clinic-types";
 import { signOutClinic } from "@/lib/clinic-auth-client";
@@ -34,6 +35,7 @@ const clinicNavItems = [
   { label: "Encounters",       href: "/app/encounters",       icon: ClipboardList },
   { label: "Prescriptions",    href: "/app/prescriptions",    icon: FileText      },
   { label: "Billing",          href: "/app/billing",          icon: Receipt       },
+  { label: "HMO Claims",       href: "/app/billing/hmo-claims", icon: Shield        },
   { label: "Staff",            href: "/app/staff",            icon: UserCog       },
   { label: "Clinic Settings",  href: "/app/settings",         icon: Settings      },
   { label: "My Profile",       href: "/app/profile",          icon: UserCircle    },

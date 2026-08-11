@@ -18,6 +18,7 @@ import { createClinicFilesService } from './clinic/clinical-files-service.js';
 import { createAiAssistanceService } from './clinic/ai-service.js';
 import { createLLMProvider } from './ai/provider.js';
 import { createRemoteConsultsService } from './clinic/remote-consults-service.js';
+import { createHmoService } from './clinic/hmo-service.js';
 
 const config = loadConfig();
 const database = await createDatabaseServices();
@@ -34,6 +35,7 @@ const clinicFiles = createClinicFilesService(database.db);
 const llmProvider = createLLMProvider();
 const clinicAi = createAiAssistanceService(database.db, llmProvider);
 const remoteConsults = createRemoteConsultsService(database.db);
+const hmo = createHmoService(database.db);
 const app = await buildApp({
   config,
   checkDatabase: database.check,
@@ -49,6 +51,7 @@ const app = await buildApp({
   clinicFiles,
   clinicAi,
   remoteConsults,
+  hmo,
   db: database.db,
 });
 

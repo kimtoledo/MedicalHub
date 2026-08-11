@@ -1,4 +1,4 @@
-import { Settings, DollarSign, Building2, Users, Globe } from "lucide-react";
+import { Settings, DollarSign, Building2, Users, Globe, Shield } from "lucide-react";
 import Link from "next/link";
 
 const settingsCards = [
@@ -7,6 +7,13 @@ const settingsCards = [
     icon: DollarSign,
     label: "Service Pricing",
     description: "Set the price for each dental service offered by your clinic.",
+    available: true,
+  },
+  {
+    href: "/app/settings/hmo-payers",
+    icon: Shield,
+    label: "HMO Payers",
+    description: "Configure HMO providers your clinic is accredited with.",
     available: true,
   },
   {

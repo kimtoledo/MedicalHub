@@ -15,4 +15,5 @@ export * from './prescriptions';
 export * from './clinical-files';
 export * from './ai-interactions';
 export * from './remote-assessments';
+export * from './hmo';
 export * from './helpers';

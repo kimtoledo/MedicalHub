@@ -117,6 +117,9 @@ export const FeatureKey = {
   // Tele-dentistry (MVP 2)
   TELEDENTISTRY: 'teledentistry',
 
+  // HMO / Insurance (MVP 2)
+  HMO_CLAIMS: 'hmo.claims',
+
   // Reports
   REPORTS_BASIC: 'reports.basic',
   REPORTS_ADVANCED: 'reports.advanced',
@@ -234,6 +237,12 @@ export const AuditAction = {
   REMOTE_ASSESSMENT_SUBMITTED: 'remote_assessment.submitted',
   REMOTE_ASSESSMENT_REVIEWED: 'remote_assessment.reviewed',
   REMOTE_ASSESSMENT_CLOSED: 'remote_assessment.closed',
+
+  // HMO / Insurance claims
+  HMO_PAYER_CREATED: 'hmo_payer.created',
+  HMO_PAYER_UPDATED: 'hmo_payer.updated',
+  HMO_CLAIM_CREATED: 'hmo_claim.created',
+  HMO_CLAIM_STATUS_CHANGED: 'hmo_claim.status_changed',
 
   // Support / admin access
   SUPPORT_ACCESS_GRANTED: 'support_access.granted',
