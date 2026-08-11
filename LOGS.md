@@ -18,6 +18,14 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Clinic PWA shell with live tenant context
+- Added a protected clinic workspace endpoint that returns real clinic metadata and only active branches authorized by the current membership
+- Wired the server-rendered app shell to live clinic, branch, package, and feature-key entitlement data
+- Replaced placeholder clinic/branch/user labels and added a validated, clinic-scoped branch selector for multi-branch memberships
+- Filters desktop, mobile drawer, and bottom-tab navigation using canonical entitlements while keeping baseline profile/settings access available
+- Preserved the installable manifest and network-only API behavior so protected clinical responses are never cached for offline use
+- Verified cross-tenant and branch-scope denials, a live seeded clinic session and rendered shell, 124 API tests, and repository-wide typecheck
+
 ### ✅ Public appointment booking
 - Added public availability resolution using branch operating hours, service duration, active dentist assignments, and all-affiliation schedule conflicts
 - Added a rate-limited anonymous booking endpoint with strict input validation and server-owned clinic scope
@@ -301,7 +309,6 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 
 - **Clinic owner invitation delivery** — clinic creation links or creates a pending owner identity and membership, but invite email delivery and password setup remain a separate onboarding step.
 - **Clinic membership selection** — authenticated users currently enter their first active clinic membership; explicit clinic/branch switching remains part of the PWA shell real-data work.
-- **PWA branch context remains static** — entitlement resolution is implemented, while branch listing and shell integration remain part of Task 09.
 - **Clinical domain API routes remain queued** — platform administration and public discovery are implemented; patient, encounter, treatment, odontogram, and live dashboard modules remain in Tasks 10–14.
 - **Patient number sequencing** — no DB-level sequence generator; race condition possible under concurrent inserts
 - **Clinic prefix required** — schema allows `prefix = ''` as default; admin UI must enforce non-empty unique prefix on clinic creation

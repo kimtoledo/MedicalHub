@@ -10,18 +10,18 @@ import DentraLogo from "@/components/brand/DentraLogo";
 
 const clinicNavItems = [
   { label: "Dashboard",       href: "/app",              icon: Building2,     exact: true },
-  { label: "Appointments",    href: "/app/appointments", icon: CalendarDays  },
-  { label: "Patients",        href: "/app/patients",     icon: Users         },
-  { label: "Staff",           href: "/app/staff",        icon: UserCog       },
+  { label: "Appointments",    href: "/app/appointments", icon: CalendarDays, feature: "appointments.manage" },
+  { label: "Patients",        href: "/app/patients",     icon: Users, feature: "patients.manage" },
+  { label: "Staff",           href: "/app/staff",        icon: UserCog, feature: "staff.manage" },
   { label: "Clinic Settings", href: "/app/settings",     icon: Settings      },
   { label: "My Profile",      href: "/app/profile",      icon: UserCircle    },
 ];
 
 const dentistNavItems = [
-  { label: "My Schedule", href: "/app/dentist",            icon: CalendarCheck, exact: true },
-  { label: "My Patients", href: "/app/dentist/patients",   icon: Users          },
-  { label: "Encounters",  href: "/app/dentist/encounters", icon: ClipboardList  },
-  { label: "Odontogram",  href: "/app/dentist/odontogram", icon: Grid3X3        },
+  { label: "My Schedule", href: "/app/dentist",            icon: CalendarCheck, exact: true, feature: "appointments.calendar" },
+  { label: "My Patients", href: "/app/dentist/patients",   icon: Users, feature: "patients.manage" },
+  { label: "Encounters",  href: "/app/dentist/encounters", icon: ClipboardList, feature: "clinical.encounters" },
+  { label: "Odontogram",  href: "/app/dentist/odontogram", icon: Grid3X3, feature: "clinical.odontogram" },
   { label: "My Profile",  href: "/app/dentist/profile",    icon: UserCircle     },
 ];
 
@@ -36,19 +36,22 @@ function getPageTitle(pathname: string, role: ClinicRole) {
 interface AppTopBarProps {
   role: ClinicRole;
   clinicName?: string;
+  branchName: string;
+  userName: string;
   userEmail?: string;
+  entitlements: Record<string, boolean>;
 }
 
-export default function AppTopBar({ role, clinicName = "Sunshine Dental", userEmail = "staff@clinic.ph" }: AppTopBarProps) {
+export default function AppTopBar({ role, clinicName = "Clinic", branchName, userName, userEmail = "staff@clinic.ph", entitlements }: AppTopBarProps) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const title = getPageTitle(pathname, role);
-  const navItems = role === "dentist" ? dentistNavItems : clinicNavItems;
+  const navItems = (role === "dentist" ? dentistNavItems : clinicNavItems).filter((item) => !("feature" in item) || !item.feature || entitlements[item.feature]);
 
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname === href || pathname.startsWith(href + "/");
 
-  const initials = role === "dentist" ? "Dr" : "ST";
+  const initials = userName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || (role === "dentist" ? "DR" : "ST");
 
   return (
     <>
@@ -63,7 +66,7 @@ export default function AppTopBar({ role, clinicName = "Sunshine Dental", userEm
           </button>
           <div>
             <h1 className="font-bold text-violet-900 text-base leading-tight">{title}</h1>
-            <p className="text-violet-400 text-xs hidden sm:block">{clinicName}</p>
+            <p className="text-violet-400 text-xs hidden sm:block">{clinicName} · {branchName}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -125,7 +128,7 @@ export default function AppTopBar({ role, clinicName = "Sunshine Dental", userEm
           <div className="flex items-center gap-3 mb-3">
             <div className="w-9 h-9 rounded-full bg-violet-600 flex items-center justify-center text-white text-sm font-bold">{initials}</div>
             <div>
-              <p className="text-sm font-semibold text-white">{role === "dentist" ? "Dr. Santos" : "Clinic Staff"}</p>
+              <p className="text-sm font-semibold text-white">{userName}</p>
               <p className="text-xs text-violet-400">{userEmail}</p>
             </div>
           </div>

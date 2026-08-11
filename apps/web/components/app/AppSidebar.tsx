@@ -20,49 +20,59 @@ import {
   ChevronDown,
   Building2,
 } from "lucide-react";
-import { type ClinicRole } from "@/lib/clinic-types";
+import { type ClinicBranchContext, type ClinicRole } from "@/lib/clinic-types";
 import { signOutClinic } from "@/lib/clinic-auth-client";
 import DentraLogo from "@/components/brand/DentraLogo";
 
 const clinicNavItems = [
   { label: "Dashboard",        href: "/app",              icon: LayoutDashboard, exact: true },
-  { label: "Appointments",     href: "/app/appointments", icon: CalendarDays  },
-  { label: "Patients",         href: "/app/patients",     icon: Users         },
-  { label: "Staff",            href: "/app/staff",        icon: UserCog       },
+  { label: "Appointments",     href: "/app/appointments", icon: CalendarDays, feature: "appointments.manage" },
+  { label: "Patients",         href: "/app/patients",     icon: Users, feature: "patients.manage" },
+  { label: "Staff",            href: "/app/staff",        icon: UserCog, feature: "staff.manage" },
   { label: "Clinic Settings",  href: "/app/settings",     icon: Settings      },
   { label: "My Profile",       href: "/app/profile",      icon: UserCircle    },
 ];
 
 const dentistNavItems = [
-  { label: "My Schedule",  href: "/app/dentist",              icon: CalendarCheck, exact: true },
-  { label: "My Patients",  href: "/app/dentist/patients",     icon: Users          },
-  { label: "Encounters",   href: "/app/dentist/encounters",   icon: ClipboardList  },
-  { label: "Odontogram",   href: "/app/dentist/odontogram",   icon: Grid3X3        },
+  { label: "My Schedule",  href: "/app/dentist",              icon: CalendarCheck, exact: true, feature: "appointments.calendar" },
+  { label: "My Patients",  href: "/app/dentist/patients",     icon: Users, feature: "patients.manage" },
+  { label: "Encounters",   href: "/app/dentist/encounters",   icon: ClipboardList, feature: "clinical.encounters" },
+  { label: "Odontogram",   href: "/app/dentist/odontogram",   icon: Grid3X3, feature: "clinical.odontogram" },
   { label: "My Profile",   href: "/app/dentist/profile",      icon: UserCircle     },
 ];
 
 interface AppSidebarProps {
   role: ClinicRole;
   clinicName?: string;
-  branchName?: string;
+  branches: ClinicBranchContext[];
+  branchId: string | null;
+  onBranchChange: (branchId: string) => void;
+  entitlements: Record<string, boolean>;
+  packageName: string | null;
+  userName: string;
   userEmail?: string;
 }
 
 export default function AppSidebar({
   role,
-  clinicName = "Sunshine Dental",
-  branchName = "Main Branch",
+  clinicName = "Clinic",
+  branches,
+  branchId,
+  onBranchChange,
+  entitlements,
+  packageName,
+  userName,
   userEmail = "staff@clinic.ph",
 }: AppSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
-  const navItems = role === "dentist" ? dentistNavItems : clinicNavItems;
+  const navItems = (role === "dentist" ? dentistNavItems : clinicNavItems).filter((item) => !("feature" in item) || !item.feature || entitlements[item.feature]);
 
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname === href || pathname.startsWith(href + "/");
 
-  const initials = role === "dentist" ? "Dr" : "ST";
+  const initials = userName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || (role === "dentist" ? "DR" : "ST");
 
   return (
     <aside
@@ -88,13 +98,14 @@ export default function AppSidebar({
               </div>
             </div>
             {/* Branch selector */}
-            <button className="w-full flex items-center justify-between bg-violet-900/60 hover:bg-violet-800/60 px-2.5 py-1.5 rounded-lg transition-colors">
+            <label className="relative flex w-full items-center bg-violet-900/60 px-2.5 py-1.5 rounded-lg">
               <div className="flex items-center gap-1.5 min-w-0">
                 <Building2 size={13} className="text-violet-400 flex-shrink-0" />
-                <span className="text-violet-200 text-xs font-medium truncate">{branchName}</span>
+                <span className="sr-only">Active branch</span>
+                <select aria-label="Active branch" value={branchId ?? ''} onChange={(event) => onBranchChange(event.target.value)} disabled={branches.length < 2} className="min-w-0 flex-1 appearance-none bg-transparent pr-5 text-xs font-medium text-violet-200 outline-none disabled:cursor-default">{branches.length ? branches.map((branch) => <option key={branch.id} value={branch.id} className="text-slate-900">{branch.name}</option>) : <option value="">No active branch</option>}</select>
               </div>
-              <ChevronDown size={13} className="text-violet-400 flex-shrink-0" />
-            </button>
+              {branches.length > 1 && <ChevronDown size={13} className="pointer-events-none absolute right-2 text-violet-400" />}
+            </label>
           </>
         )}
       </div>
@@ -110,6 +121,7 @@ export default function AppSidebar({
             {role === "dentist" ? <Stethoscope size={10} /> : null}
             {role === "dentist" ? "Dentist view" : "Clinic staff"}
           </span>
+          {packageName && <p className="mt-2 text-[10px] font-medium uppercase tracking-wide text-violet-500">{packageName} package</p>}
         </div>
       )}
 
@@ -148,7 +160,7 @@ export default function AppSidebar({
             </div>
             <div className="min-w-0">
               <p className="text-xs font-semibold text-white truncate">
-                {role === "dentist" ? "Dr. Santos" : "Clinic Staff"}
+                {userName}
               </p>
               <p className="text-xs text-violet-400 truncate">{userEmail}</p>
             </div>

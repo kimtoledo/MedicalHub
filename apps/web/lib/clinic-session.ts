@@ -1,7 +1,7 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { getBackendUrl } from './backend';
-import type { ClinicIdentity } from './clinic-types';
+import type { ClinicIdentity, ClinicShellContext } from './clinic-types';
 
 type ClinicMembership = {
   clinicId: string;
@@ -55,4 +55,19 @@ export async function getClinicSession(): Promise<ClinicIdentity | null> {
   } catch {
     return null;
   }
+}
+
+export async function getClinicShellContext(identity: ClinicIdentity): Promise<ClinicShellContext> {
+  const cookieHeader = cookies().toString();
+  const headers = { cookie: cookieHeader };
+  const [contextResponse, entitlementResponse] = await Promise.all([
+    fetch(getBackendUrl(`/v1/clinic/${encodeURIComponent(identity.clinicId)}/context`), { headers, cache: 'no-store' }),
+    fetch(getBackendUrl(`/v1/entitlements/${encodeURIComponent(identity.clinicId)}`), { headers, cache: 'no-store' }),
+  ]);
+  if (!contextResponse.ok || !entitlementResponse.ok) throw new Error('Clinic workspace context is unavailable');
+  const contextPayload = await contextResponse.json() as { success: true; data: { clinic: { id: string; name: string }; branches: ClinicShellContext['branches'] } };
+  const entitlementPayload = await entitlementResponse.json() as { success: true; data: { subscription: { package: { name: string } } | null; entitlements: Array<{ featureKey: string; isEnabled: boolean }> } };
+  const entitlements = Object.fromEntries(entitlementPayload.data.entitlements.map((item) => [item.featureKey, item.isEnabled]));
+  const initialBranchId = contextPayload.data.branches.some((branch) => branch.id === identity.branchId) ? identity.branchId : contextPayload.data.branches[0]?.id ?? null;
+  return { ...contextPayload.data, initialBranchId, entitlements, packageName: entitlementPayload.data.subscription?.package.name ?? null };
 }

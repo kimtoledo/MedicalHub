@@ -30,6 +30,7 @@ import type { EntitlementService } from './entitlements/service.js';
 import type { PublicDirectoryService } from './public/directory-service.js';
 import type { PublicBookingService } from './public/booking-service.js';
 import type { ClinicSettingsService } from './clinic/settings-service.js';
+import type { ClinicWorkspaceService } from './clinic/workspace-service.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
 import { registerAdminDentistRoutes } from './routes/admin-dentists.js';
@@ -39,6 +40,7 @@ import { registerEntitlementRoutes } from './routes/entitlements.js';
 import { registerPublicDirectoryRoutes } from './routes/public-directory.js';
 import { registerPublicBookingRoutes } from './routes/public-booking.js';
 import { registerClinicSettingsRoutes } from './routes/clinic-settings.js';
+import { registerClinicWorkspaceRoutes } from './routes/clinic-workspace.js';
 import { registerHealthRoutes } from './routes/health.js';
 
 export type BuildAppOptions = {
@@ -62,6 +64,7 @@ export type BuildAppOptions = {
   publicDirectory?: PublicDirectoryService;
   publicBooking?: PublicBookingService;
   clinicSettings?: ClinicSettingsService;
+  clinicWorkspace?: ClinicWorkspaceService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -146,6 +149,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         settings: options.clinicSettings,
         publication: options.adminClinicSettings,
       });
+    }
+    if (options.clinicWorkspace) {
+      await registerClinicWorkspaceRoutes(app, { auth: options.auth, workspace: options.clinicWorkspace });
     }
   }
 

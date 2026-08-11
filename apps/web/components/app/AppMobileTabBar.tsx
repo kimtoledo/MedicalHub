@@ -7,22 +7,22 @@ import { type ClinicRole } from "@/lib/clinic-types";
 
 const clinicTabs = [
   { label: "Dashboard",     href: "/app",              icon: LayoutDashboard, exact: true },
-  { label: "Appointments",  href: "/app/appointments", icon: CalendarDays   },
-  { label: "Patients",      href: "/app/patients",     icon: Users          },
+  { label: "Appointments",  href: "/app/appointments", icon: CalendarDays, feature: "appointments.manage" },
+  { label: "Patients",      href: "/app/patients",     icon: Users, feature: "patients.manage" },
   { label: "Profile",       href: "/app/profile",      icon: UserCircle     },
 ];
 
 const dentistTabs = [
-  { label: "Schedule",   href: "/app/dentist",            icon: CalendarCheck, exact: true },
-  { label: "Patients",   href: "/app/dentist/patients",   icon: Users         },
-  { label: "Encounters", href: "/app/dentist/encounters", icon: ClipboardList },
-  { label: "Odontogram", href: "/app/dentist/odontogram", icon: Grid3X3       },
+  { label: "Schedule",   href: "/app/dentist",            icon: CalendarCheck, exact: true, feature: "appointments.calendar" },
+  { label: "Patients",   href: "/app/dentist/patients",   icon: Users, feature: "patients.manage" },
+  { label: "Encounters", href: "/app/dentist/encounters", icon: ClipboardList, feature: "clinical.encounters" },
+  { label: "Odontogram", href: "/app/dentist/odontogram", icon: Grid3X3, feature: "clinical.odontogram" },
   { label: "Profile",    href: "/app/dentist/profile",    icon: UserCircle    },
 ];
 
-export default function AppMobileTabBar({ role }: { role: ClinicRole }) {
+export default function AppMobileTabBar({ role, entitlements }: { role: ClinicRole; entitlements: Record<string, boolean> }) {
   const pathname = usePathname();
-  const tabs = role === "dentist" ? dentistTabs : clinicTabs;
+  const tabs = (role === "dentist" ? dentistTabs : clinicTabs).filter((item) => !("feature" in item) || !item.feature || entitlements[item.feature]);
 
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname === href || pathname.startsWith(href + "/");
