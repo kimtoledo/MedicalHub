@@ -1,6 +1,23 @@
-import ClinicAuthGuard from "@/components/app/ClinicAuthGuard";
+import type { Metadata, Viewport } from "next";
+import ServiceWorkerRegistration from "@/components/app/ServiceWorkerRegistration";
 
-/** Auth guard for all /cl-login and /app/* routes. */
+export const metadata: Metadata = {
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#7c3aed",
+};
+
 export default function ClinicGroupLayout({ children }: { children: React.ReactNode }) {
-  return <ClinicAuthGuard>{children}</ClinicAuthGuard>;
+  return (
+    <>
+      <ServiceWorkerRegistration />
+      {children}
+    </>
+  );
 }

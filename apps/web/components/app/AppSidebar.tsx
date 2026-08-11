@@ -20,7 +20,8 @@ import {
   ChevronDown,
   Building2,
 } from "lucide-react";
-import { type ClinicRole, signOut } from "./ClinicAuthGuard";
+import { type ClinicRole } from "@/lib/clinic-types";
+import { signOutClinic } from "@/lib/clinic-auth-client";
 
 const clinicNavItems = [
   { label: "Dashboard",        href: "/app",              icon: LayoutDashboard, exact: true },
@@ -157,7 +158,7 @@ export default function AppSidebar({
           </div>
         )}
         <button
-          onClick={signOut}
+          onClick={() => void signOutClinic()}
           title={collapsed ? "Sign out" : undefined}
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-violet-400 hover:bg-violet-800/60 hover:text-white transition-all ${collapsed ? "justify-center" : ""}`}
         >

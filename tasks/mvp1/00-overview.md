@@ -19,7 +19,7 @@
 
 | File | What | Status |
 |------|------|--------|
-| `01-platform-foundation.md` | PostgreSQL, Fastify API, Better Auth, real sessions | 📋 Draft |
+| `01-platform-foundation.md` | PostgreSQL, Fastify API, Better Auth, real sessions | 🔵 Active |
 | `02-super-admin-clinic-management.md` | Clinic CRUD, branches, package assignment, entitlements | 📋 Draft |
 | `03-super-admin-dentist-management.md` | Dentist CRUD, affiliations, verification | 🔲 Queued |
 | `04-super-admin-package-management.md` | Plans, feature catalog, overrides | 🔲 Queued |
@@ -27,7 +27,7 @@
 | `06-clinic-microsite.md` | `/clinic/[slug]` public page | 🔲 Queued |
 | `07-dentist-profile-page.md` | `/dentists/[slug]` public page | 🔲 Queued |
 | `08-appointment-booking-public.md` | Public booking flows, conflict validation | 🔲 Queued |
-| `09-clinic-pwa-shell.md` | PWA manifest, installable, offline fallback | 🔲 Queued |
+| `09-clinic-pwa-shell.md` | PWA manifest, installable, offline fallback | 🔵 Active |
 | `10-patient-management.md` | Patient list, profile, medical/dental history | 🔲 Queued |
 | `11-clinical-encounter.md` | Encounter form, chief complaint, findings, procedures | 🔲 Queued |
 | `12-odontogram.md` | Adult tooth chart, surface selection, history | 🔲 Queued |

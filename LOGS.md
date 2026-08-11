@@ -81,7 +81,10 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 - Stub pages: Clinics, Dentists, Packages, Subscriptions, Audit, Settings
 
 **Clinic / Dentist section** (`/app`)
-- Role-selector login (`/cl-login`) — mock auth via `th_clinic_session`
+- Better Auth email/password login with an HTTP-only database session
+- Server-side clinic membership enforcement on every app shell route
+- Clinic staff versus dentist navigation derived from database membership
+- Installable clinic PWA with manifest, app icons, service worker, and safe offline fallback
 - App shell with sidebar, top bar, mobile tabs
 - Dashboard variants for clinic admin vs dentist
 - Stub pages: Appointments, Patients, Staff, Profile, Settings, plus dentist Schedule, Encounters, Odontogram, Patients, and Profile
@@ -124,6 +127,18 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 - Added search by clinic name/slug/prefix, status filtering, pagination, loading, empty, and API error states
 - Added API denial and success coverage; API suite now has 15 passing tests
 
+### ✅ Real Clinic and Dentist sign-in
+- Replaced `localStorage.th_clinic_session` and the client-selected role with Better Auth email/password sign-in
+- Added a server-rendered clinic membership guard for `/app/(shell)` routes
+- Derived clinic staff versus dentist access from `/v1/session-context`
+- Added real session invalidation on logout and removed `ClinicAuthGuard.tsx`
+- Seeded idempotent credential accounts for clinic staff and Dr. Maria Reyes using `CLINIC_DEMO_PASSWORD`
+
+### ✅ Clinic PWA static shell
+- Added a clinic-scoped web app manifest and install icons
+- Added a minimal service worker with network-first navigation and an offline fallback
+- Explicitly excluded `/api/*` and `/v1/*` requests from caching so protected clinical data is not served stale
+
 ### ✅ Scripts & automation
 - `scripts/post-merge.sh` — auto-runs migrations after task merges
 - `scripts/generate-migration.sh` — helper to generate new migration files
@@ -149,7 +164,8 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 
 ## Known Gaps / Tech Debt
 
-- **Clinic auth UI still mocked** — `/cl-login` still uses `th_clinic_session`; clinic roles and credentials must be wired to Better Auth in the remaining Platform Foundation work.
+- **Clinic membership selection** — authenticated users currently enter their first active clinic membership; explicit clinic/branch switching remains part of the PWA shell real-data work.
+- **PWA entitlement and branch context remain static** — the required entitlement and branch-listing API endpoints are not implemented yet.
 - **Most domain API routes remain queued** — clinic listing is now live, while create/detail/status/branch/package/override operations and other UI stubs still need backend routes.
 - **Patient number sequencing** — no DB-level sequence generator; race condition possible under concurrent inserts
 - **Clinic prefix required** — schema allows `prefix = ''` as default; admin UI must enforce non-empty unique prefix on clinic creation
@@ -163,9 +179,9 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 | Role | Email | How to log in |
 |------|-------|---------------|
 | Super Admin | `admin@toothhub.ph` | `/th-admin/login` → password from local/Replit `SUPER_ADMIN_PASSWORD` |
-| Clinic Admin (SBD) | `admin@smilebrightdental.ph` | `/cl-login` → select Clinic Admin |
-| Clinic Admin (BSM) | `admin@brightsmile.ph` | `/cl-login` → select Clinic Admin |
-| Dentist | `dr.reyes@smilebrightdental.ph` | `/cl-login` → select Dentist |
+| Clinic Admin (SBD) | `admin@smilebrightdental.ph` | `/cl-login` → password from local/Replit `CLINIC_DEMO_PASSWORD` |
+| Clinic Admin (BSM) | `admin@brightsmile.ph` | `/cl-login` → password from local/Replit `CLINIC_DEMO_PASSWORD` |
+| Dentist | `dr.reyes@smilebrightdental.ph` | `/cl-login` → password from local/Replit `CLINIC_DEMO_PASSWORD` |
 
 ### Clinic prefixes
 | Clinic | Prefix | Status |

@@ -26,10 +26,18 @@ if (!process.env.DATABASE_URL) {
 }
 
 const SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD;
+const CLINIC_DEMO_PASSWORD = process.env.CLINIC_DEMO_PASSWORD;
 
 if (!SUPER_ADMIN_PASSWORD || SUPER_ADMIN_PASSWORD.length < 10) {
   console.error(
     '❌  SUPER_ADMIN_PASSWORD must be set to at least 10 characters before seeding.',
+  );
+  process.exit(1);
+}
+
+if (!CLINIC_DEMO_PASSWORD || CLINIC_DEMO_PASSWORD.length < 10) {
+  console.error(
+    '❌  CLINIC_DEMO_PASSWORD must be set to at least 10 characters before seeding.',
   );
   process.exit(1);
 }
@@ -76,6 +84,9 @@ const USER_SBD_ASST_ID   = '00000000-0006-0000-0000-000000000003';
 const USER_BSM_ADMIN_ID  = '00000000-0006-0000-0000-000000000004';
 const USER_BSM_RECEP_ID  = '00000000-0006-0000-0000-000000000005';
 const USER_BSM_ASST_ID   = '00000000-0006-0000-0000-000000000006';
+
+// Dentist login — Dr. Maria Reyes (linked to the dentists table entry below)
+const USER_DENTIST_REYES_ID = '00000000-0006-0000-0000-000000000007';
 
 // Subscriptions
 const SUB_SBD_ID         = '00000000-0007-0000-0000-000000000001';
@@ -569,7 +580,9 @@ async function seed() {
     // Smile Bright Dental staff
     {
       id: USER_SBD_ADMIN_ID,
+      name: 'Rosario Villanueva',
       email: 'admin@smilebrightdental.ph',
+      emailVerified: true,
       firstName: 'Rosario',
       lastName: 'Villanueva',
       phone: '09171112222',
@@ -577,7 +590,9 @@ async function seed() {
     },
     {
       id: USER_SBD_RECEP_ID,
+      name: 'Lourdes Aquino',
       email: 'reception@smilebrightdental.ph',
+      emailVerified: true,
       firstName: 'Lourdes',
       lastName: 'Aquino',
       phone: '09172223333',
@@ -585,7 +600,9 @@ async function seed() {
     },
     {
       id: USER_SBD_ASST_ID,
+      name: 'Maribel Castillo',
       email: 'assistant@smilebrightdental.ph',
+      emailVerified: true,
       firstName: 'Maribel',
       lastName: 'Castillo',
       phone: '09173334444',
@@ -594,7 +611,9 @@ async function seed() {
     // BrightSmile staff
     {
       id: USER_BSM_ADMIN_ID,
+      name: 'Gina Pascual',
       email: 'admin@brightsmile.ph',
+      emailVerified: true,
       firstName: 'Gina',
       lastName: 'Pascual',
       phone: '09174445555',
@@ -602,7 +621,9 @@ async function seed() {
     },
     {
       id: USER_BSM_RECEP_ID,
+      name: 'Cynthia Manalo',
       email: 'reception@brightsmile.ph',
+      emailVerified: true,
       firstName: 'Cynthia',
       lastName: 'Manalo',
       phone: '09175556666',
@@ -610,13 +631,57 @@ async function seed() {
     },
     {
       id: USER_BSM_ASST_ID,
+      name: 'Josefina Abad',
       email: 'assistant@brightsmile.ph',
+      emailVerified: true,
       firstName: 'Josefina',
       lastName: 'Abad',
       phone: '09176667777',
       isActive: 'true',
     },
+    // Dentist login — Dr. Maria Reyes
+    {
+      id: USER_DENTIST_REYES_ID,
+      name: 'Dr. Maria Reyes',
+      email: 'dr.reyes@smilebrightdental.ph',
+      emailVerified: true,
+      firstName: 'Maria',
+      lastName: 'Reyes',
+      phone: '09181234567',
+      isActive: 'true',
+    },
   ]).onConflictDoNothing();
+
+  // Credential accounts for clinic staff + dentist demo logins
+  console.log('  🔑  Clinic demo passwords...');
+  const clinicDemoPasswordHash = await hashPassword(CLINIC_DEMO_PASSWORD);
+  const clinicAccountUserIds = [
+    USER_SBD_ADMIN_ID,
+    USER_SBD_RECEP_ID,
+    USER_SBD_ASST_ID,
+    USER_BSM_ADMIN_ID,
+    USER_BSM_RECEP_ID,
+    USER_BSM_ASST_ID,
+    USER_DENTIST_REYES_ID,
+  ];
+  await db
+    .insert(schema.accounts)
+    .values(
+      clinicAccountUserIds.map((userId, i) => ({
+        id: `00000000-0013-0000-0000-${String(i + 2).padStart(12, '0')}`,
+        accountId: userId,
+        providerId: 'credential',
+        userId,
+        password: clinicDemoPasswordHash,
+      })),
+    )
+    .onConflictDoUpdate({
+      target: [schema.accounts.providerId, schema.accounts.accountId],
+      set: {
+        password: clinicDemoPasswordHash,
+        updatedAt: NOW,
+      },
+    });
 
   // Clinic memberships
   console.log('  🎫  Clinic memberships...');
@@ -627,6 +692,7 @@ async function seed() {
     { id: '00000000-000b-0004-0000-000000000001', userId: USER_BSM_ADMIN_ID, clinicId: CLINIC_BSM_ID, branchId: BRANCH_BSM_MAIN_ID, role: 'clinic_admin', isActive: 'true' },
     { id: '00000000-000b-0005-0000-000000000001', userId: USER_BSM_RECEP_ID, clinicId: CLINIC_BSM_ID, branchId: BRANCH_BSM_MAIN_ID, role: 'receptionist', isActive: 'true' },
     { id: '00000000-000b-0006-0000-000000000001', userId: USER_BSM_ASST_ID, clinicId: CLINIC_BSM_ID, branchId: BRANCH_BSM_MAIN_ID, role: 'dental_assistant', isActive: 'true' },
+    { id: '00000000-000b-0007-0000-000000000001', userId: USER_DENTIST_REYES_ID, clinicId: CLINIC_SBD_ID, branchId: BRANCH_SBD_MAIN_ID, role: 'dentist', dentistId: DENTIST_REYES_ID, isActive: 'true' },
   ]).onConflictDoNothing();
 
   // ── 7. Subscriptions ───────────────────────────────────────────────────────
@@ -878,9 +944,10 @@ async function seed() {
   console.log('\n✅  Seed complete!\n');
   console.log('  Demo accounts:');
   console.log('  ─────────────────────────────────────────────────');
-  console.log('  Super Admin  admin@toothhub.ph  (password from SUPER_ADMIN_PASSWORD)');
-  console.log('  Clinic 1     admin@smilebrightdental.ph  (Professional, Active)');
-  console.log('  Clinic 2     admin@brightsmile.ph        (Starter, Trial)');
+  console.log('  Super Admin  admin@toothhub.ph          (password from SUPER_ADMIN_PASSWORD)');
+  console.log('  Clinic staff admin@smilebrightdental.ph (password from CLINIC_DEMO_PASSWORD)');
+  console.log('  Clinic staff admin@brightsmile.ph       (password from CLINIC_DEMO_PASSWORD)');
+  console.log('  Dentist      dr.reyes@smilebrightdental.ph (password from CLINIC_DEMO_PASSWORD)');
   console.log('  ─────────────────────────────────────────────────');
   console.log('  Patients: 20 per clinic (40 total)');
   console.log('  Appointments: 15 per clinic (30 total)');

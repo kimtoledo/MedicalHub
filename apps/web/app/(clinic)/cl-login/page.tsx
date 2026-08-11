@@ -1,42 +1,102 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Stethoscope, Users, AlertCircle } from "lucide-react";
-import { type ClinicRole } from "@/components/app/ClinicAuthGuard";
+import { Eye, EyeOff, ShieldCheck, AlertCircle } from "lucide-react";
+import { revokeClinicSession } from "@/lib/clinic-auth-client";
+import { type ClinicRole } from "@/lib/clinic-types";
+
+type SessionContextPayload = {
+  success?: boolean;
+  data?: {
+    strategies?: string[];
+    clinicMemberships?: { role: string }[];
+  };
+};
+
+async function getClinicRole(): Promise<ClinicRole | null> {
+  const response = await fetch("/api/session-context", {
+    credentials: "include",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const payload = (await response.json()) as SessionContextPayload;
+  const membership = payload.data?.clinicMemberships?.[0];
+
+  if (!payload.success || !payload.data?.strategies?.includes("clinicMember") || !membership) {
+    return null;
+  }
+
+  return membership.role === "dentist" ? "dentist" : "clinic_staff";
+}
 
 export default function ClinicLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<ClinicRole>("clinic_staff");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    void getClinicRole()
+      .then((role) => {
+        if (active && role) {
+          router.replace(role === "dentist" ? "/app/dentist" : "/app");
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    await new Promise((r) => setTimeout(r, 1000));
-
-    if (email === "wrong@example.com" || password === "wrong") {
-      setError("Invalid email or password. Please try again.");
-      setLoading(false);
-      return;
-    }
     if (!email || !password) {
       setError("Please enter your email and password.");
       setLoading(false);
       return;
     }
 
-    localStorage.setItem(
-      "th_clinic_session",
-      JSON.stringify({ email, role, ts: Date.now() })
-    );
-    router.push(role === "dentist" ? "/app/dentist" : "/app");
+    try {
+      const response = await fetch("/api/auth/sign-in/email", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        setError("Invalid email or password. Please try again.");
+        return;
+      }
+
+      const role = await getClinicRole();
+
+      if (!role) {
+        await revokeClinicSession();
+        setError("This account does not have clinic access.");
+        return;
+      }
+
+      router.replace(role === "dentist" ? "/app/dentist" : "/app");
+      router.refresh();
+    } catch {
+      setError("Unable to reach the authentication service. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -51,7 +111,7 @@ export default function ClinicLoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-violet-600 rounded-2xl shadow-xl shadow-violet-900/50 mb-4">
-            <span className="text-white font-extrabold text-xl">TH</span>
+            <ShieldCheck size={28} className="text-white" />
           </div>
           <h1 className="text-2xl font-bold text-white">ToothHub PH</h1>
           <p className="text-violet-400 text-sm mt-1 font-medium">Clinic Portal</p>
@@ -61,34 +121,6 @@ export default function ClinicLoginPage() {
         <div className="bg-white rounded-3xl shadow-2xl shadow-violet-950/50 p-8">
           <h2 className="text-xl font-bold text-violet-900 mb-1">Sign in</h2>
           <p className="text-violet-500 text-sm mb-6">Access your clinic workspace.</p>
-
-          {/* Role selector */}
-          <div className="grid grid-cols-2 gap-2 mb-6">
-            <button
-              type="button"
-              onClick={() => setRole("clinic_staff")}
-              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${
-                role === "clinic_staff"
-                  ? "border-violet-500 bg-violet-50 text-violet-700"
-                  : "border-violet-100 text-violet-400 hover:border-violet-200"
-              }`}
-            >
-              <Users size={16} className="flex-shrink-0" />
-              <span>Clinic Staff</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setRole("dentist")}
-              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${
-                role === "dentist"
-                  ? "border-teal-500 bg-teal-50 text-teal-700"
-                  : "border-violet-100 text-violet-400 hover:border-violet-200"
-              }`}
-            >
-              <Stethoscope size={16} className="flex-shrink-0" />
-              <span>I&apos;m a Dentist</span>
-            </button>
-          </div>
 
           {error && (
             <div className="flex items-center gap-2 bg-red-50 text-red-700 text-sm px-4 py-3 rounded-xl mb-5 border border-red-100">
@@ -105,7 +137,7 @@ export default function ClinicLoginPage() {
               <input
                 type="email"
                 autoComplete="email"
-                placeholder={role === "dentist" ? "dr.santos@clinic.ph" : "staff@clinic.ph"}
+                placeholder="staff@clinic.ph"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -140,11 +172,7 @@ export default function ClinicLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm text-white ${
-                role === "dentist"
-                  ? "bg-teal-600 hover:bg-teal-700 disabled:bg-teal-400"
-                  : "bg-violet-600 hover:bg-violet-700 disabled:bg-violet-400"
-              }`}
+              className="w-full bg-violet-600 hover:bg-violet-700 disabled:bg-violet-400 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
             >
               {loading ? (
                 <>
@@ -152,14 +180,10 @@ export default function ClinicLoginPage() {
                   Signing in…
                 </>
               ) : (
-                `Sign in as ${role === "dentist" ? "Dentist" : "Clinic Staff"}`
+                "Sign in"
               )}
             </button>
           </form>
-
-          <p className="text-center text-xs text-violet-300 mt-6">
-            Demo: any valid email + any password will sign you in.
-          </p>
         </div>
 
         <p className="text-center mt-6">

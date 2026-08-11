@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, CalendarDays, Users, UserCircle, CalendarCheck, ClipboardList, Grid3X3 } from "lucide-react";
-import { type ClinicRole } from "./ClinicAuthGuard";
+import { type ClinicRole } from "@/lib/clinic-types";
 
 const clinicTabs = [
   { label: "Dashboard",     href: "/app",              icon: LayoutDashboard, exact: true },

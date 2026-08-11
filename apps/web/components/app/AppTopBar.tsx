@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Menu, X, Bell, Search, LogOut, Building2, CalendarDays, Users, UserCog, Settings, UserCircle, CalendarCheck, ClipboardList, Grid3X3, Stethoscope } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { type ClinicRole, signOut } from "./ClinicAuthGuard";
+import { type ClinicRole } from "@/lib/clinic-types";
+import { signOutClinic } from "@/lib/clinic-auth-client";
 
 const clinicNavItems = [
   { label: "Dashboard",       href: "/app",              icon: Building2,     exact: true },
@@ -130,7 +131,7 @@ export default function AppTopBar({ role, clinicName = "Sunshine Dental", userEm
             </div>
           </div>
           <button
-            onClick={signOut}
+            onClick={() => void signOutClinic()}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-violet-400 hover:bg-violet-800/60 hover:text-white transition-all"
           >
             <LogOut size={16} />Sign out

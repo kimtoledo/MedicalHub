@@ -1,6 +1,6 @@
 # Clinic PWA Shell
 
-> **Status:** 🔲 Queued — navigation shell is ✅ Done (#10 merged); PWA manifest and real-data wiring are pending
+> **Status:** 🔵 Active — navigation shell is ✅ Done (#10 merged); manifest, service worker, and offline fallback are ✅ Done; entitlement gating and branch context (real-data wiring) remain pending on the `/v1/entitlements/:clinicId` and branch endpoints
 
 ---
 
@@ -30,8 +30,8 @@ The Clinic PWA (`/app`) must be installable on mobile and tablet as a Progressiv
 
 ## Steps
 
-1. **PWA manifest** — add `manifest.json` with name, icons, theme color, `standalone` display mode, and `start_url: /app`.
-2. **Service worker** — configure a minimal service worker that caches the app shell only; explicitly excludes all API routes and clinical endpoints from the cache.
-3. **Offline fallback page** — build `/offline` page shown when the device has no connection.
-4. **Entitlement gating** — call `GET /v1/entitlements/:clinicId` on app load and hide/lock nav items for unavailable features.
-5. **Branch context** — display the active branch name in the top bar; allow switching branch from the branch selector dropdown (wired to real data).
+1. **PWA manifest** — ✅ `apps/web/public/manifest.json` (name, icons, theme color, `standalone`, `start_url: /app`), linked from the `(clinic)` route group only so admin/marketing pages stay out of PWA scope.
+2. **Service worker** — ✅ `apps/web/public/sw.js`: caches the static shell only (manifest, icons, `/offline`), network-first for navigations, and explicitly bypasses the cache for any `/api/*` or `/v1/*` request so clinical data is never served stale.
+3. **Offline fallback page** — ✅ `/offline` shown when a navigation fetch fails.
+4. **Entitlement gating** — call `GET /v1/entitlements/:clinicId` on app load and hide/lock nav items for unavailable features. *(blocked — endpoint doesn't exist yet in `apps/api`.)*
+5. **Branch context** — display the active branch name in the top bar; allow switching branch from the branch selector dropdown (wired to real data). *(blocked — no branch-listing endpoint yet; `AppSidebar`'s branch selector is still a static placeholder.)*

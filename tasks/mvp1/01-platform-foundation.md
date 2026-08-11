@@ -1,6 +1,6 @@
 # Platform Foundation
 
-> **Status:** 🔵 Active — project tasks #7, #8, and #13 are ✅ Done; #6 and Clinic login wiring remain pending
+> **Status:** 🔵 Active — project tasks #7, #8, and #13 are ✅ Done; Clinic login wiring is done; #6 remains pending
 
 ---
 
@@ -39,8 +39,8 @@ Nothing beyond the mock UI shell works until this is done.
 2. **Scaffold Fastify API** — create `apps/api` with TypeScript, health endpoint, Drizzle client, CORS/cookie config for the Next.js frontend (#7).
 3. **Configure Better Auth** — ✅ Better Auth is mounted on the API with database sessions, `superAdmin` and `clinicMember` authorization strategies, and tenant-scoped membership resolution (#8).
 4. **Wire Super Admin login** — ✅ `/th-admin/login` uses Better Auth through a same-origin proxy; all `/th-admin/(shell)` routes enforce a server-side `super_admin` session check (#13).
-5. **Wire Clinic login** — replace the mock at `/cl-login` with a real API call; derive role from the authenticated user's clinic membership returned by the API.
-6. **Remove mock artifacts** — delete `localStorage.th_admin_session`, `localStorage.th_clinic_session`, and the demo hint copy from both login pages.
+5. **Wire Clinic login** — ✅ `/cl-login` uses Better Auth through the same-origin proxy; role (clinic staff vs. dentist) is derived from `clinicMemberships` returned by `/v1/session-context`, not a radio button. All `/app/(shell)` routes enforce a server-side `clinicMember` session check.
+6. **Remove mock artifacts** — ✅ `localStorage.th_admin_session`, `localStorage.th_clinic_session`, `AdminAuthGuard.tsx`, `ClinicAuthGuard.tsx`, and the demo hint copy on both login pages are all gone.
 
 ---
 
