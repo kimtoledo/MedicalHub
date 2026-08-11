@@ -10,7 +10,10 @@ import {
   createAdminClinicStatusService,
 } from './admin/clinics-service.js';
 import { createAdminClinicSettingsService } from './admin/clinic-settings-service.js';
-import { createAdminDentistListService } from './admin/dentists-service.js';
+import {
+  createAdminDentistCreationService,
+  createAdminDentistListService,
+} from './admin/dentists-service.js';
 
 const config = loadConfig();
 const database = await createDatabaseServices();
@@ -22,6 +25,7 @@ const adminClinicDetails = createAdminClinicDetailService(database.db);
 const adminClinicStatus = createAdminClinicStatusService(database.db);
 const adminClinicSettings = createAdminClinicSettingsService(database.db);
 const adminDentists = createAdminDentistListService(database.db);
+const adminDentistCreation = createAdminDentistCreationService(database.db);
 const app = await buildApp({
   config,
   checkDatabase: database.check,
@@ -33,6 +37,7 @@ const app = await buildApp({
   adminClinicStatus,
   adminClinicSettings,
   adminDentists,
+  adminDentistCreation,
 });
 
 app.addHook('onClose', async () => {

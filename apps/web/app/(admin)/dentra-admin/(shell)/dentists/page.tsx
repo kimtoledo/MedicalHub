@@ -1,12 +1,14 @@
 import Link from 'next/link';
 import {
   Building2,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Search,
   ShieldCheck,
   Stethoscope,
 } from 'lucide-react';
+import CreateDentistDrawer from '@/components/admin/CreateDentistDrawer';
 import {
   getAdminDentists,
   type DentistVerificationStatus,
@@ -17,6 +19,7 @@ type DentistsPageProps = {
     search?: string | string[];
     verificationStatus?: string | string[];
     page?: string | string[];
+    created?: string | string[];
   };
 };
 
@@ -72,6 +75,7 @@ export default async function DentistsPage({ searchParams }: DentistsPageProps) 
   const page = Number.isFinite(requestedPage) && requestedPage > 0
     ? requestedPage
     : 1;
+  const wasCreated = getString(searchParams?.created) === '1';
 
   let result;
   try {
@@ -113,11 +117,21 @@ export default async function DentistsPage({ searchParams }: DentistsPageProps) 
               </p>
             </div>
           </div>
-          <div className="text-sm text-slate-500">
-            <span className="font-semibold text-slate-800">{pagination.total}</span>{' '}
-            total dentist{pagination.total === 1 ? '' : 's'}
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-slate-500">
+              <span className="font-semibold text-slate-800">{pagination.total}</span>{' '}
+              total dentist{pagination.total === 1 ? '' : 's'}
+            </div>
+            <CreateDentistDrawer />
           </div>
         </div>
+
+        {wasCreated && (
+          <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            <CheckCircle2 size={18} className="shrink-0" />
+            Dentist profile created as an unverified private draft.
+          </div>
+        )}
 
         <form
           action="/dentra-admin/dentists"

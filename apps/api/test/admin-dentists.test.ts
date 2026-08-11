@@ -1,7 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../src/app.js';
-import type { AdminDentistListService } from '../src/admin/dentists-service.js';
+import {
+  AdminDentistCreationError,
+  type AdminDentistCreationService,
+  type AdminDentistListService,
+} from '../src/admin/dentists-service.js';
 import type { AuthServices, AuthorizationContext } from '../src/auth/types.js';
 import type { ApiConfig } from '../src/config.js';
 
@@ -91,9 +95,22 @@ function createDentistService(): AdminDentistListService {
   };
 }
 
+function createDentistCreationService(): AdminDentistCreationService {
+  return {
+    create: vi.fn(async (input) => ({
+      id: '66666666-6666-4666-8666-666666666666',
+      ...input,
+      verificationStatus: 'unverified' as const,
+      publicationStatus: 'draft',
+      createdAt: new Date('2026-08-12T00:00:00.000Z'),
+    })),
+  };
+}
+
 async function createApp(
   context: AuthorizationContext | null,
   dentists: AdminDentistListService,
+  creation?: AdminDentistCreationService,
 ) {
   app = await buildApp({
     config,
@@ -101,6 +118,7 @@ async function createApp(
     logger: false,
     auth: createAuth(context),
     adminDentists: dentists,
+    adminDentistCreation: creation,
   });
 }
 
@@ -168,5 +186,110 @@ describe('GET /v1/admin/dentists', () => {
     expect(response.statusCode).toBe(400);
     expect(response.json().error.code).toBe('VALIDATION_ERROR');
     expect(dentists.list).not.toHaveBeenCalled();
+  });
+});
+
+describe('POST /v1/admin/dentists', () => {
+  const body = {
+    firstName: '  Paolo ',
+    lastName: ' Santos  ',
+    slug: 'DR-PAOLO-SANTOS',
+    licenseNumber: '',
+    specialty: ' Prosthodontics ',
+  };
+
+  it('rejects unauthenticated creation before writing data', async () => {
+    const creation = createDentistCreationService();
+    await createApp(null, createDentistService(), creation);
+
+    const response = await app!.inject({
+      method: 'POST',
+      url: '/v1/admin/dentists',
+      payload: body,
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(creation.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects clinic members before writing data', async () => {
+    const creation = createDentistCreationService();
+    await createApp(clinicMemberContext, createDentistService(), creation);
+
+    const response = await app!.inject({
+      method: 'POST',
+      url: '/v1/admin/dentists',
+      payload: body,
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(creation.create).not.toHaveBeenCalled();
+  });
+
+  it('normalizes and creates an unverified draft for a Super Admin', async () => {
+    const creation = createDentistCreationService();
+    await createApp(superAdminContext, createDentistService(), creation);
+
+    const response = await app!.inject({
+      method: 'POST',
+      url: '/v1/admin/dentists',
+      headers: { 'user-agent': 'Dentra API test' },
+      payload: body,
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(creation.create).toHaveBeenCalledWith(
+      {
+        firstName: 'Paolo',
+        lastName: 'Santos',
+        slug: 'dr-paolo-santos',
+        licenseNumber: null,
+        specialty: 'Prosthodontics',
+      },
+      expect.objectContaining({
+        id: superAdminContext.user.id,
+        email: superAdminContext.user.email,
+        userAgent: 'Dentra API test',
+      }),
+    );
+    expect(response.json().data).toMatchObject({
+      verificationStatus: 'unverified',
+      publicationStatus: 'draft',
+    });
+  });
+
+  it('rejects malformed or client-injected fields', async () => {
+    const creation = createDentistCreationService();
+    await createApp(superAdminContext, createDentistService(), creation);
+
+    const response = await app!.inject({
+      method: 'POST',
+      url: '/v1/admin/dentists',
+      payload: { ...body, clinicId: clinicMemberContext.clinicMemberships[0].clinicId },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error.code).toBe('VALIDATION_ERROR');
+    expect(creation.create).not.toHaveBeenCalled();
+  });
+
+  it('returns a conflict when the public slug is already used', async () => {
+    const creation = createDentistCreationService();
+    vi.mocked(creation.create).mockRejectedValueOnce(
+      new AdminDentistCreationError(
+        'SLUG_TAKEN',
+        'That dentist slug is already in use',
+      ),
+    );
+    await createApp(superAdminContext, createDentistService(), creation);
+
+    const response = await app!.inject({
+      method: 'POST',
+      url: '/v1/admin/dentists',
+      payload: body,
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json().error.code).toBe('SLUG_TAKEN');
   });
 });

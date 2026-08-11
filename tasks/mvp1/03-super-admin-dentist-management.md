@@ -1,6 +1,6 @@
 # Super Admin — Dentist Management
 
-> **Status:** 🔄 In progress — step 1 of 5 complete
+> **Status:** 🔄 In progress — steps 1–2 of 5 complete
 
 ---
 
@@ -31,7 +31,7 @@ Super Admin needs to create dentist accounts, link them to clinics, and manage t
 ## Steps
 
 1. **Dentist list page** — ✅ `/dentra-admin/dentists` is wired to protected `GET /v1/admin/dentists` with search, verification filtering, pagination, distinct active clinic-affiliation counts, and publication status.
-2. **Create dentist form** — slide-over form; call `POST /v1/admin/dentists`.
+2. **Create dentist form** — ✅ An accessible slide-over validates and creates unverified private dentist profiles through protected `POST /v1/admin/dentists`; duplicate slugs are rejected and creation is audited.
 3. **Dentist detail page** — show profile info, clinic affiliations, verification state, and publication status.
 4. **Affiliation management** — add/remove clinic-branch affiliations from the detail page.
 5. **Verification and publication actions** — verify/revoke and publish/unpublish buttons with confirmation dialogs.

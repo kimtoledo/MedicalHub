@@ -139,6 +139,9 @@ export const AuditAction = {
   // Branch lifecycle
   BRANCH_CREATED: 'branch.created',
 
+  // Dentist lifecycle
+  DENTIST_CREATED: 'dentist.created',
+
   // Membership / roles
   MEMBER_INVITED: 'member.invited',
   MEMBER_ROLE_CHANGED: 'member.role_changed',
