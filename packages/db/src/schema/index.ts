@@ -13,4 +13,5 @@ export * from './odontogram';
 export * from './billing';
 export * from './prescriptions';
 export * from './clinical-files';
+export * from './ai-interactions';
 export * from './helpers';

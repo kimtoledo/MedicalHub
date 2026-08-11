@@ -49,6 +49,7 @@ export default async function EncounterDetailPage({
     <EncounterDetailClient
       encounter={json.data}
       clinicId={identity.clinicId}
+      isDentist={identity.role === "dentist" || identity.isAdmin}
     />
   );
 }

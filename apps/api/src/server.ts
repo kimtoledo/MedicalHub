@@ -15,6 +15,8 @@ import {
 } from './clinic/billing-service.js';
 import { createClinicPrescriptionService } from './clinic/prescription-service.js';
 import { createClinicFilesService } from './clinic/clinical-files-service.js';
+import { createAiAssistanceService } from './clinic/ai-service.js';
+import { createLLMProvider } from './ai/provider.js';
 
 const config = loadConfig();
 const database = await createDatabaseServices();
@@ -28,6 +30,8 @@ const clinicBilling = createClinicBillingService(database.db);
 const clinicServiceList = createClinicServiceListService(database.db);
 const clinicPrescription = createClinicPrescriptionService(database.db);
 const clinicFiles = createClinicFilesService(database.db);
+const llmProvider = createLLMProvider();
+const clinicAi = createAiAssistanceService(database.db, llmProvider);
 const app = await buildApp({
   config,
   checkDatabase: database.check,
@@ -41,6 +45,7 @@ const app = await buildApp({
   clinicServiceList,
   clinicPrescription,
   clinicFiles,
+  clinicAi,
   db: database.db,
 });
 

@@ -109,6 +109,11 @@ export const FeatureKey = {
   // Imaging (MVP 2)
   RADIOGRAPHS: 'clinical.radiographs',
 
+  // AI assistance (MVP 2)
+  AI_NOTES: 'ai.notes',
+  AI_RECALL: 'ai.recall',
+  AI_TREATMENT_SEQUENCE: 'ai.treatment_sequence',
+
   // Reports
   REPORTS_BASIC: 'reports.basic',
   REPORTS_ADVANCED: 'reports.advanced',
@@ -216,6 +221,11 @@ export const AuditAction = {
   FILE_UPLOADED: 'file.uploaded',
   FILE_DELETED: 'file.deleted',
   FILE_URL_GENERATED: 'file.url_generated',
+
+  // AI assistance
+  AI_NOTE_SUGGESTED: 'ai.note_suggested',
+  AI_RECALL_SUGGESTED: 'ai.recall_suggested',
+  AI_TREATMENT_SEQUENCE_SUGGESTED: 'ai.treatment_sequence_suggested',
 
   // Support / admin access
   SUPPORT_ACCESS_GRANTED: 'support_access.granted',

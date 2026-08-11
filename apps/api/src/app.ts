@@ -23,6 +23,7 @@ import type {
 import multipart from '@fastify/multipart';
 import type { ClinicPrescriptionService } from './clinic/prescription-service.js';
 import type { ClinicFilesService } from './clinic/clinical-files-service.js';
+import type { AiAssistanceService } from './clinic/ai-service.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
 import { registerClinicBillingRoutes } from './routes/clinic-billing.js';
@@ -30,6 +31,7 @@ import { registerClinicPrescriptionRoutes } from './routes/clinic-prescriptions.
 import { registerClinicFilesRoutes } from './routes/clinic-files.js';
 import { registerClinicEncounterRoutes } from './routes/clinic-encounters.js';
 import { registerClinicPatientRoutes } from './routes/clinic-patients.js';
+import { registerClinicAiRoutes } from './routes/clinic-ai.js';
 import { registerHealthRoutes } from './routes/health.js';
 
 export type BuildAppOptions = {
@@ -45,6 +47,7 @@ export type BuildAppOptions = {
   clinicServiceList?: ClinicServiceListService;
   clinicPrescription?: ClinicPrescriptionService;
   clinicFiles?: ClinicFilesService;
+  clinicAi?: AiAssistanceService;
   db?: import('@dentra/db').DB;
   logger?: FastifyServerOptions['logger'];
 };
@@ -121,6 +124,13 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     if (options.db) {
       await registerClinicEncounterRoutes(app, { auth: options.auth, db: options.db });
       await registerClinicPatientRoutes(app, { auth: options.auth, db: options.db });
+    }
+    if (options.clinicAi && options.db) {
+      await registerClinicAiRoutes(app, {
+        auth: options.auth,
+        aiService: options.clinicAi,
+        db: options.db,
+      });
     }
   }
 

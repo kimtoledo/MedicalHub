@@ -2,25 +2,45 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ClipboardList, ImageIcon } from "lucide-react";
+import { ArrowLeft, ClipboardList, ImageIcon, Sparkles } from "lucide-react";
 import FilesTab from "@/components/app/FilesTab";
+import AINoteSuggest from "@/components/app/ai/AINoteSuggest";
+import AIRecallBanner from "@/components/app/ai/AIRecallBanner";
+import AITreatmentPanel from "@/components/app/ai/AITreatmentPanel";
 import type { EncounterDetail } from "./page";
 
-type Tab = "summary" | "files";
+type Tab = "summary" | "files" | "ai";
 
 export default function EncounterDetailClient({
   encounter,
   clinicId,
+  isDentist,
 }: {
   encounter: EncounterDetail;
   clinicId: string;
+  isDentist: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("summary");
+
+  // Track accepted AI note sections locally (display-only; actual saving
+  // happens when the encounter edit form is built)
+  const [acceptedNotes, setAcceptedNotes] = useState<Record<string, string>>({});
 
   const statusColor =
     encounter.status === "final"
       ? "bg-green-100 text-green-700"
       : "bg-amber-100 text-amber-700";
+
+  const procedures = [
+    encounter.procedures,
+    encounter.assessment,
+  ].filter(Boolean) as string[];
+
+  const tabs = [
+    { id: "summary" as Tab, label: "Summary",     Icon: ClipboardList },
+    { id: "files"   as Tab, label: "Files",       Icon: ImageIcon     },
+    ...(isDentist ? [{ id: "ai" as Tab, label: "AI Assistant", Icon: Sparkles }] : []),
+  ];
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl space-y-5">
@@ -55,34 +75,64 @@ export default function EncounterDetailClient({
         )}
       </div>
 
+      {/* AI Recall Banner — review-only suggestion shown to dentists on finalized encounters */}
+      {isDentist && encounter.status === "final" && procedures.length > 0 && (
+        <AIRecallBanner
+          clinicId={clinicId}
+          encounterId={encounter.id}
+          procedures={procedures}
+          encounterDate={encounter.date}
+        />
+      )}
+
       {/* Tabs */}
       <div className="flex gap-1 bg-violet-50 p-1 rounded-xl w-fit">
-        {(["summary", "files"] as Tab[]).map((t) => (
+        {tabs.map(({ id, label, Icon }) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={id}
+            onClick={() => setTab(id)}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-              tab === t
+              tab === id
                 ? "bg-white text-violet-900 shadow-sm"
                 : "text-violet-500 hover:text-violet-700"
             }`}
           >
-            {t === "summary" ? <ClipboardList size={14} /> : <ImageIcon size={14} />}
-            {t === "summary" ? "Summary" : "Files"}
+            <Icon size={14} />
+            {label}
+            {id === "ai" && (
+              <span className="ml-1 text-[9px] font-bold bg-violet-100 text-violet-500 px-1.5 py-0.5 rounded-full">MVP 2</span>
+            )}
           </button>
         ))}
       </div>
 
-      {/* Tab content */}
-      {tab === "summary" ? (
+      {/* Tab: Summary */}
+      {tab === "summary" && (
         <div className="space-y-4">
+          {/* Show accepted AI notes as a preview banner */}
+          {Object.keys(acceptedNotes).length > 0 && (
+            <div className="bg-violet-50 border border-violet-200 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles size={13} className="text-violet-500" />
+                <p className="text-xs font-semibold text-violet-700">
+                  AI suggestions accepted — save them when you edit this encounter
+                </p>
+              </div>
+              {Object.entries(acceptedNotes).map(([section, text]) => (
+                <div key={section} className="text-xs text-violet-600 mb-1">
+                  <span className="font-semibold capitalize">{section}:</span> {text.slice(0, 80)}{text.length > 80 ? "…" : ""}
+                </div>
+              ))}
+            </div>
+          )}
+
           {[
-            { label: "Chief Complaint", value: encounter.chiefComplaint },
-            { label: "Examination", value: encounter.examination },
-            { label: "Assessment / Diagnosis", value: encounter.assessment },
-            { label: "Procedures Performed", value: encounter.procedures },
-            { label: "Recommendations", value: encounter.recommendations },
-            { label: "Notes", value: encounter.notes },
+            { label: "Chief Complaint",     value: encounter.chiefComplaint },
+            { label: "Examination",          value: encounter.examination    },
+            { label: "Assessment / Diagnosis", value: encounter.assessment   },
+            { label: "Procedures Performed", value: encounter.procedures     },
+            { label: "Recommendations",      value: encounter.recommendations},
+            { label: "Notes",                value: encounter.notes          },
           ]
             .filter((f) => f.value)
             .map((f) => (
@@ -93,13 +143,32 @@ export default function EncounterDetailClient({
                 <p className="text-sm text-violet-800 whitespace-pre-wrap">{f.value}</p>
               </div>
             ))}
-          {![encounter.chiefComplaint, encounter.examination, encounter.assessment, encounter.procedures, encounter.recommendations, encounter.notes].some(Boolean) && (
+
+          {![
+            encounter.chiefComplaint,
+            encounter.examination,
+            encounter.assessment,
+            encounter.procedures,
+            encounter.recommendations,
+            encounter.notes,
+          ].some(Boolean) && (
             <div className="bg-white rounded-2xl border border-violet-100 p-8 text-center text-violet-400 text-sm">
               No clinical notes recorded for this encounter.
+              {isDentist && (
+                <button
+                  onClick={() => setTab("ai")}
+                  className="block mx-auto mt-2 text-violet-500 hover:text-violet-700 text-xs font-semibold underline"
+                >
+                  Use AI Assistant to draft notes →
+                </button>
+              )}
             </div>
           )}
         </div>
-      ) : (
+      )}
+
+      {/* Tab: Files */}
+      {tab === "files" && (
         <FilesTab
           clinicId={clinicId}
           encounterId={encounter.id}
@@ -107,6 +176,35 @@ export default function EncounterDetailClient({
           branchId={encounter.branchId}
           allowUpload
         />
+      )}
+
+      {/* Tab: AI Assistant (dentist only) */}
+      {tab === "ai" && isDentist && (
+        <div className="space-y-6">
+          {/* Note suggestion */}
+          <div>
+            <h2 className="text-base font-bold text-violet-900 mb-3">Note Auto-Fill</h2>
+            <AINoteSuggest
+              clinicId={clinicId}
+              encounterId={encounter.id}
+              initialChiefComplaint={encounter.chiefComplaint ?? undefined}
+              onAccept={(section, text) =>
+                setAcceptedNotes((prev) => ({ ...prev, [section]: text }))
+              }
+            />
+          </div>
+
+          <hr className="border-violet-100" />
+
+          {/* Treatment sequence */}
+          <div>
+            <h2 className="text-base font-bold text-violet-900 mb-1">Treatment Sequence Suggestion</h2>
+            <p className="text-xs text-violet-400 mb-3">
+              Paste or dictate the patient's tooth conditions to get a prioritized treatment sequence. Advisory only.
+            </p>
+            <AITreatmentPanel clinicId={clinicId} encounterId={encounter.id} />
+          </div>
+        </div>
       )}
     </div>
   );
