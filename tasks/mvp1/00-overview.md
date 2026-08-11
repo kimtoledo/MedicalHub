@@ -36,6 +36,7 @@
 | `15-audit-baseline.md` | Audit entries for all defined sensitive actions | 🔲 Queued |
 | `16-hardening-and-demo-data.md` | Security/entitlement QA, synthetic demo data | 🔲 Queued |
 | `17-dentra-brand-migration.md` | Dentra.ph naming, approved logos, metadata, and PWA branding | ✅ Done |
+| `18-inter-typography.md` | Align Inter typography and Lucide React icons with the updated brand reference | ✅ Done |
 
 ---
 

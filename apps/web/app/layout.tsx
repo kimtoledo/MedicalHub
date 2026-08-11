@@ -1,5 +1,14 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: "variable",
+  variable: "--font-inter",
+  display: "swap",
+  adjustFontFallback: false,
+});
 
 export const metadata: Metadata = {
   title: "Dentra.ph — Smarter Dentistry. Better Care.",
@@ -17,7 +26,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="antialiased">{children}</body>
+      <body className={`${inter.variable} ${inter.className} antialiased`}>{children}</body>
     </html>
   );
 }

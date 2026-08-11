@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --font-brand: 'Poppins', Arial, sans-serif;
+  --font-brand: var(--font-inter, Inter), Arial, sans-serif;
   --brand-900: #3B0F7A;
   --brand-800: #4C1D95;
   --brand-600: #7C3AED;

@@ -16,6 +16,6 @@ Brand colors:
 - Dark Text: `#1E1B4B`
 
 Notes:
-- The wordmark uses `Poppins, Arial, sans-serif` and remains editable text.
-- For consistent production rendering, use Poppins in your project.
+- The wordmark uses `Inter, Arial, sans-serif` and remains editable text.
+- For consistent production rendering, use Inter in your project.
 - These SVGs are scalable and can be placed directly in `/public/brand/`.

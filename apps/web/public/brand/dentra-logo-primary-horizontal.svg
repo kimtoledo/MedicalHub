@@ -24,7 +24,6 @@ C32 118, 24 72, 52 44Z" fill="none" stroke="url(#dentraGradient)" stroke-width="
     <rect x="77" y="118" width="42" height="14" rx="3" fill="#7C3AED"/>
     <rect x="91" y="104" width="14" height="42" rx="3" fill="#7C3AED"/>
   </g>
-  <text x="315" y="151" font-family="Poppins, Arial, sans-serif" font-size="108" font-weight="700" fill="#1E1B4B">Dentra</text>
-  <text x="718" y="151" font-family="Poppins, Arial, sans-serif" font-size="108" font-weight="700" fill="#7C3AED">.ph</text>
-  <text x="322" y="214" font-family="Poppins, Arial, sans-serif" font-size="34" font-weight="500" fill="#5B5680" letter-spacing="0.5">Smarter Dentistry. Better Care.</text>
+  <text x="315" y="151" font-family="Inter, Arial, sans-serif" font-size="108" font-weight="700" fill="#1E1B4B">Dentra<tspan fill="#7C3AED">.ph</tspan></text>
+  <text x="322" y="214" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="500" fill="#5B5680" letter-spacing="0.5">Smarter Dentistry. Better Care.</text>
 </svg>

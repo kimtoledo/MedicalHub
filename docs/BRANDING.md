@@ -50,7 +50,7 @@ background: linear-gradient(90deg, #7C3AED 0%, #8B5CF6 100%);
 
 ## 4. Typography
 
-Use **Poppins** as the primary typeface: Regular `400` for body copy, Medium `500` for secondary emphasis, SemiBold `600` for labels/buttons/H3, and Bold `700` for H1/H2. Clinical information, schedules, patient records, billing figures, and form labels must prioritize readability.
+Use **Inter** as the primary typeface: Regular `400` for body copy, Medium `500` for secondary emphasis, SemiBold `600` for labels and buttons, Bold `700` for headings, and ExtraBold `800` for high-impact display headings. Clinical information, schedules, patient records, billing figures, and form labels must prioritize readability.
 
 ## 5. Logo Direction
 
@@ -178,7 +178,7 @@ Prefer semantic component tokens such as `primary`, `primary-hover`, `background
 1. Read and follow this file for Dentra frontend work.
 2. Reuse shared UI components before creating duplicates.
 3. Do not introduce unrelated primary colors or a competing visual system.
-4. Use centralized design tokens and Poppins.
+4. Use centralized design tokens, Inter, and Lucide React icons.
 5. Preserve responsiveness and accessibility.
 6. Implement loading, empty, error, hover, focus, and disabled states.
 7. Keep the public site, Clinic PWA, and Super Admin visually related.
@@ -205,9 +205,9 @@ Dark:        #1E1B4B
 Accent:      #A78BFA
 Success:     #10B981
 Background:  #FFFFFF / #F7F6FB
-Typeface:    Nunito Sans
-Headings:    Nunito Sans 700–800
-Body/UI:     Nunito Sans 400–600
+Typeface:    Inter
+Headings:    Inter 700–800
+Body/UI:     Inter 400–600
 Icons:       Lucide React
 UI Style:    Modern Dental SaaS
 Brand Feel:  Friendly, rounded, confident, digital-first

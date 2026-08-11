@@ -18,6 +18,12 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Inter typography and icon alignment
+- Aligned the app, Tailwind/global font tokens, brand guidance, and editable wordmarks with Inter
+- Applied Next.js's generated Inter class directly to the document body with a safe CSS fallback
+- Confirmed Lucide React as the single UI icon system
+- Verified live port 5050 output, typecheck, all 15 API tests, and web/API production builds
+
 ### ✅ Dentra.ph brand and technical migration
 - Replaced customer-facing naming across the public site, Super Admin, Clinic/Dentist app, metadata, and offline experience
 - Integrated the approved SVG logo pack through a shared logo component and regenerated PWA/Apple-touch icons
