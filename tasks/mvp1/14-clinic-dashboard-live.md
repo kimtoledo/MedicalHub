@@ -1,6 +1,6 @@
 # Clinic Dashboard — Live Data
 
-> **Status:** 🔲 Queued — static mock dashboard is ✅ Done (#10 merged); real data wiring is pending
+> **Status:** ✅ Done
 
 ---
 
@@ -39,9 +39,9 @@ The clinic dashboard (`/app`) and dentist dashboard (`/app/dentist`) currently d
 
 ## Steps
 
-1. **Dashboard summary API** — `GET /v1/clinic/dashboard/summary` returning today's counts, scoped to the authenticated user's clinic and branch.
-2. **Appointments list API** — `GET /v1/clinic/appointments?date=today` with status filter.
-3. **Appointment status update** — `PATCH /v1/clinic/appointments/[id]/status` with allowed status transitions and an audit entry.
-4. **Dentist schedule API** — `GET /v1/clinic/dentist/schedule` scoped to the authenticated dentist.
-5. **Wire clinic dashboard** — replace mock data in `/app/page.tsx` with real API calls; add loading/error states.
-6. **Wire dentist dashboard** — replace mock data in `/app/dentist/page.tsx` with real API calls.
+1. **Dashboard summary API** — ✅ Live counts and appointments are restricted to the authenticated clinic and membership-authorized branch.
+2. **Appointments list API** — ✅ Date (`today` or ISO) and status filters return live branch-scoped appointments; dentist access is additionally dentist-scoped.
+3. **Appointment status update** — ✅ Legal transitions run under a row lock and atomically append status history plus audit events.
+4. **Dentist schedule API** — ✅ Live schedule and recent-patient endpoints derive the linked dentist and enforce branch/tenant scope.
+5. **Wire clinic dashboard** — ✅ Live KPIs, appointment rows/actions, appointments list, loading skeletons, errors, focus refresh, and 60-second refresh replace all mock data.
+6. **Wire dentist dashboard** — ✅ Live next-up, schedule, status actions, recent patients, full schedule, loading/error, and refresh behavior replace all mock data.

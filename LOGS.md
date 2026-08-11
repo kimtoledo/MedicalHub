@@ -18,6 +18,15 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Live clinic and dentist dashboards
+- Added live tenant/branch-scoped summary, appointment list, dentist schedule, and recent-patient APIs with feature and membership enforcement
+- Dentist schedule/list/status access is additionally restricted to the authenticated linked dentist, including direct API calls
+- Added row-locked appointment transition rules with immutable status history and audit events for check-in, start, complete, no-show, and cancel workflows
+- Replaced clinic mock KPIs/table and the appointments stub with live responsive views and immediate status-action refresh
+- Replaced dentist mock next-up, schedule, and recent patients with live data and a full date/status schedule view
+- Both dashboard clients provide loading skeletons, visible error/retry states, 60-second polling, and refresh on document visibility
+- Verified live seeded counts/schedule/recent-patient results, 147 API tests, repository-wide typecheck, and production builds
+
 ### ✅ Encounter treatment records
 - Added feature-protected active service catalog, patient treatment history, and encounter treatment creation APIs
 - Treatment creation locks and validates the tenant encounter, derives its patient and performing dentist server-side, and rejects inactive services or finalized encounters
