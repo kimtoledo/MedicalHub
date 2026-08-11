@@ -12,6 +12,7 @@
 | **Increment 2 — Dentist + scheduling** | Dentists, assignments, services, availability, public clinic/dentist booking, appointment calendar |
 | **Increment 3 — Patient + clinical** | Patients, histories, encounters, treatments, odontogram, audit |
 | **Increment 4 — Hardening/demo** | Permission matrix, entitlement denials, cross-tenant tests, PWA safety, responsive QA, synthetic demo data |
+| **Increment 5 — Business basics** | Billing lite (invoices + receipts), prescription builder (e-Rx), clinical file uploads — promoted from MVP 2 to align with executive proposal's MVP scope |
 
 ---
 
@@ -37,6 +38,9 @@
 | `16-hardening-and-demo-data.md` | Security/entitlement QA, synthetic demo data | 🔲 Queued |
 | `17-dentra-brand-migration.md` | Dentra.ph naming, approved logos, metadata, and PWA branding | ✅ Done |
 | `18-inter-typography.md` | Align Inter typography and Lucide React icons with the updated brand reference | ✅ Done |
+| `19-billing-lite.md` | Service pricing, invoice generation, single-payment, receipt PDF | 🔲 Queued |
+| `20-prescriptions-erx.md` | Prescription builder, immutable snapshot, PDF output | 🔲 Queued |
+| `21-file-uploads-clinical.md` | X-rays, photos, consent forms — private Object Storage, signed URLs | 🔲 Queued |
 
 ---
 
@@ -58,7 +62,7 @@
 ## Explicit exclusions (MVP 1 does NOT include)
 
 - Online payment gateway
-- Full billing/invoicing
+- Full billing (partial payments, refunds, discounts) — lite invoicing included in Increment 5
 - Inventory
 - Automated SMS
 - Patient login/portal
@@ -67,3 +71,5 @@
 - Advanced analytics
 - True offline clinical editing
 - Insurance/HMO claims
+- AI features (MVP 2)
+- Tele-dentistry (MVP 2)

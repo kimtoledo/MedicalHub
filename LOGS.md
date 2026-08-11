@@ -195,9 +195,17 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 
 ## Queued (Proposed Tasks)
 
-| # | Title | Notes |
-|---|-------|-------|
-| #6 | Connect Replit PostgreSQL and apply the first migration | DB is live; `DATABASE_URL` already set by Replit. Task may be redundant — migrations are already applied. |
+> **Proposal alignment review (Aug 2026):** The executive summary PDF was reviewed. Features in the proposal's MVP that were deferred to MVP 2 have been promoted to MVP 1 Increment 5 (tasks #22–24). Three new features not in any task file were added: AI clinical assistance (#25, MVP 2), tele-dentistry (#26, MVP 2), HMO/insurance (#27, MVP 2), plus AI imaging and kiosk check-in added to MVP 3 docs.
+
+| # | Title | Phase | Notes |
+|---|-------|-------|-------|
+| #6 | Connect Replit PostgreSQL and apply the first migration | MVP 1 | DB is live; `DATABASE_URL` already set by Replit. May be redundant — migrations already applied. |
+| #22 | Billing lite — service pricing, invoices & receipts | MVP 1 Increment 5 | Promoted from MVP 2 to align with proposal's MVP scope |
+| #23 | Prescription builder / e-Rx | MVP 1 Increment 5 | Promoted from MVP 2; dentist daily-use feature |
+| #24 | Clinical file uploads — X-rays & photos | MVP 1 Increment 5 | Promoted from MVP 2; Replit Object Storage, signed URLs |
+| #25 | AI clinical assistance — notes, voice-to-text & suggestions | MVP 2 | New; key differentiator per proposal |
+| #26 | Tele-dentistry — remote photo consultations | MVP 2 | New; proposal Phase 2 |
+| #27 | HMO / Insurance claims module | MVP 2 | New; proposal Phase 2 |
 
 ---
 

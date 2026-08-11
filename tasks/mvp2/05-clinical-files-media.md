@@ -1,6 +1,7 @@
 # Clinical Files and Media
 
 > **Status:** 🔜 Future — MVP 2
+> **Note:** Basic clinical file uploads (X-rays, photos, consent forms) were promoted to MVP 1 — see `tasks/mvp1/21-file-uploads-clinical.md`. This task remains for hardening: malware scanning, patient-accessible downloads (patient portal), and video recordings.
 
 ---
 

@@ -20,6 +20,9 @@
 | `10-microsite-customization.md` | Theme presets, brand color, gallery, SEO fields | 🔜 Future |
 | `11-subscription-operations.md` | Upgrade/downgrade, add-ons, usage enforcement | 🔜 Future |
 | `12-new-roles.md` | Cashier, Inventory Staff, granular permissions | 🔜 Future |
+| `13-ai-clinical-assistance.md` | AI note auto-fill, voice-to-text, follow-up & treatment suggestions | 🔜 Future |
+| `14-teledentistry.md` | Remote photo consult requests, dentist review queue | 🔜 Future |
+| `15-hmo-insurance.md` | HMO payer catalog, patient coverage, claim documents & tracker | 🔜 Future |
 
 ---
 
