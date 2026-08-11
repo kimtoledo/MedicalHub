@@ -9,7 +9,7 @@
 Wire the three infrastructure pillars that every other feature depends on:
 1. **PostgreSQL connection** — connect the Replit-managed database and run the first migration.
 2. **Fastify API** — scaffold `apps/api` as the backend service that the Next.js frontend calls.
-3. **Better Auth** — real sessions for both the Super Admin portal (`/th-admin`) and the Clinic PWA (`/app`), replacing the current localStorage mock.
+3. **Better Auth** — real sessions for both the Super Admin portal (`/dentra-admin`) and the Clinic PWA (`/app`), replacing the current localStorage mock.
 
 Nothing beyond the mock UI shell works until this is done.
 
@@ -19,7 +19,7 @@ Nothing beyond the mock UI shell works until this is done.
 
 - `apps/api` exists as an npm workspace with a running Fastify server on its own port.
 - `DATABASE_URL` is set in Replit Secrets; `drizzle-kit migrate` applies cleanly against it.
-- Super Admin logs in at `/th-admin/login` with real credentials; the mock localStorage flag is gone.
+- Super Admin logs in at `/dentra-admin/login` with real credentials; the mock localStorage flag is gone.
 - Clinic staff and dentists log in at `/cl-login` with real credentials; role is derived from the database, not a radio button.
 - Session expiration and logout work on both portals.
 - Backend endpoints check the session and reject unauthenticated/unauthorized requests.
@@ -38,9 +38,9 @@ Nothing beyond the mock UI shell works until this is done.
 1. **Connect PostgreSQL** — set `DATABASE_URL` in Replit Secrets and verify `drizzle-kit migrate` runs cleanly (#6).
 2. **Scaffold Fastify API** — create `apps/api` with TypeScript, health endpoint, Drizzle client, CORS/cookie config for the Next.js frontend (#7).
 3. **Configure Better Auth** — ✅ Better Auth is mounted on the API with database sessions, `superAdmin` and `clinicMember` authorization strategies, and tenant-scoped membership resolution (#8).
-4. **Wire Super Admin login** — ✅ `/th-admin/login` uses Better Auth through a same-origin proxy; all `/th-admin/(shell)` routes enforce a server-side `super_admin` session check (#13).
+4. **Wire Super Admin login** — ✅ `/dentra-admin/login` uses Better Auth through a same-origin proxy; all `/dentra-admin/(shell)` routes enforce a server-side `super_admin` session check (#13).
 5. **Wire Clinic login** — ✅ `/cl-login` uses Better Auth through the same-origin proxy; role (clinic staff vs. dentist) is derived from `clinicMemberships` returned by `/v1/session-context`, not a radio button. All `/app/(shell)` routes enforce a server-side `clinicMember` session check.
-6. **Remove mock artifacts** — ✅ `localStorage.th_admin_session`, `localStorage.th_clinic_session`, `AdminAuthGuard.tsx`, `ClinicAuthGuard.tsx`, and the demo hint copy on both login pages are all gone.
+6. **Remove mock artifacts** — ✅ the legacy Super Admin and Clinic localStorage session flags, `AdminAuthGuard.tsx`, `ClinicAuthGuard.tsx`, and the demo hint copy on both login pages are all gone.
 
 ---
 

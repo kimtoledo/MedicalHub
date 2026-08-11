@@ -1,4 +1,4 @@
-# ToothHub PH — Developer Setup Guide
+# Dentra.ph — Developer Setup Guide
 
 This guide covers getting the project running in three environments: **Replit**, **VS Code / local**, and **Codex**. Read the relevant section for your environment, then refer to the [Database Workflow](#database-workflow) section before making any schema changes.
 
@@ -54,7 +54,7 @@ Migrations also run **automatically** after every task merge via `scripts/post-m
 
 ```bash
 git clone <repo-url>
-cd toothhub-ph
+cd dentra-ph
 ```
 
 ### 2. Install Node.js 20
@@ -167,7 +167,7 @@ All variables are documented in `.env.example`. Here is a summary:
 | `DATABASE_URL` | ✅ Always | PostgreSQL connection string | Replit Secrets |
 | `BETTER_AUTH_SECRET` | ✅ API | Better Auth signing secret (minimum 32 characters) | Replit Secrets / generate locally |
 | `SESSION_SECRET` | Fallback | Legacy fallback when `BETTER_AUTH_SECRET` is omitted | Replit Secrets |
-| `SUPER_ADMIN_PASSWORD` | ✅ Demo seed | Initial/reset password for `admin@toothhub.ph` when running `npm run db:seed` | Local `.env` / Replit Secrets |
+| `SUPER_ADMIN_PASSWORD` | ✅ Demo seed | Initial/reset password for `admin@dentra.ph` when running `npm run db:seed` | Local `.env` / Replit Secrets |
 | `CLINIC_DEMO_PASSWORD` | ✅ Demo seed | Shared synthetic password for seeded clinic staff and dentist demo accounts | Local `.env` / Replit Secrets |
 | `NEXT_PUBLIC_APP_URL` | ✅ Frontend | Public URL of the Next.js app | `http://localhost:5000` locally |
 | `NEXT_PUBLIC_API_URL` | ✅ Frontend | Public URL of the Fastify API | `http://localhost:3001` locally |
@@ -248,7 +248,7 @@ npm run db:studio
 | **Never hand-edit an applied migration file** | Drizzle tracks which migrations have run by file hash — editing breaks the checksum |
 | **Never run raw SQL (`ALTER TABLE`) on the shared DB** | Schema state diverges from migration files; future `db:generate` produces wrong diffs |
 | **Always commit the `.sql` file before merging** | The post-merge script applies migrations from committed files only |
-| **Use `FeatureKey` from `@toothhub/shared` for entitlement checks** | Never use plan/package names (`plan === "pro"`) in authorization logic |
+| **Use `FeatureKey` from `@dentra/shared` for entitlement checks** | Never use plan/package names (`plan === "pro"`) in authorization logic |
 | **Filter every tenant-scoped query by `clinic_id`** | Patient and clinical data must never cross clinic boundaries |
 
 ### How post-merge automation works (Replit)
@@ -280,8 +280,8 @@ npm run api:start    # run the production bundle after npm run build
 ```
 
 After `npm run db:seed`, sign in at
-[http://localhost:5000/th-admin/login](http://localhost:5000/th-admin/login)
-with `admin@toothhub.ph` and the value of `SUPER_ADMIN_PASSWORD`. Re-running the
+[http://localhost:5000/dentra-admin/login](http://localhost:5000/dentra-admin/login)
+with `admin@dentra.ph` and the value of `SUPER_ADMIN_PASSWORD`. Re-running the
 seed updates that credential without creating a duplicate auth account.
 
 Clinic staff and dentists sign in at
@@ -378,9 +378,9 @@ npm run db:generate
 
 ---
 
-### `Cannot find module` on a `@toothhub/*` import
+### `Cannot find module` on a `@dentra/*` import
 
-**Symptom:** TypeScript or Node.js can't resolve `@toothhub/shared` or `@toothhub/db`.
+**Symptom:** TypeScript or Node.js can't resolve `@dentra/shared` or `@dentra/db`.
 
 **Fix:** These packages are in the monorepo and resolved through npm workspaces. Run `npm install` from the repo root to link them:
 ```bash

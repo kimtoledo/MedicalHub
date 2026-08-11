@@ -1,4 +1,4 @@
-# ToothHub PH — Project Logs
+# Dentra.ph — Project Logs
 
 Chronological record of what has been built, what is in progress, and what is next.
 Updated manually after each session or merged task.
@@ -17,6 +17,13 @@ Updated manually after each session or merged task.
 ---
 
 ## Completed
+
+### ✅ Dentra.ph brand and technical migration
+- Replaced customer-facing naming across the public site, Super Admin, Clinic/Dentist app, metadata, and offline experience
+- Integrated the approved SVG logo pack through a shared logo component and regenerated PWA/Apple-touch icons
+- Migrated npm workspaces to `@dentra/*`, the local PostgreSQL target to `dentra_local`, API identifiers to Dentra, and the seeded Super Admin to `admin@dentra.ph`
+- Migrated the Super Admin route to `/dentra-admin`
+- Verified the renamed login, migrations, typecheck, 15 API tests, and production build
 
 ### ✅ Monorepo scaffolding
 - **npm workspaces** set up: `apps/web`, `apps/api` (placeholder), `packages/db`, `packages/shared`
@@ -57,7 +64,7 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 
 | Entity | Count | Notes |
 |--------|-------|-------|
-| Super Admin | 1 | `admin@toothhub.ph` |
+| Super Admin | 1 | `admin@dentra.ph` |
 | Packages | 3 | Starter, Professional, Enterprise |
 | Clinics | 2 | Smile Bright Dental (SBD), BrightSmile Dental (BSM) |
 | Branches | 3 | 2 for SBD, 1 for BSM |
@@ -73,7 +80,7 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 **Patient number format:** `{PREFIX}{NNNNNN}` — e.g. `SBD000001`, `BSM000012`
 
 ### ✅ Web app shell (apps/web — Next.js 14)
-**Super Admin section** (`/th-admin`)
+**Super Admin section** (`/dentra-admin`)
 - Better Auth email/password login with an HTTP-only database session
 - Server-side `super_admin` role enforcement on every admin shell route
 - Real logout with server-side session invalidation
@@ -111,9 +118,9 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 - API authorization/auth-route test suite expanded to 11 passing tests
 
 ### ✅ Real Super Admin sign-in (task #13)
-- Replaced `localStorage.th_admin_session` with Better Auth sign-in and logout
+- Replaced the legacy Super Admin localStorage session flag with Better Auth sign-in and logout
 - Added same-origin Next.js auth/session proxy routes so secure cookies work across the split web/API deployment
-- Protected `/th-admin/(shell)` with a server-rendered backend session and exact `super_admin` role check
+- Protected `/dentra-admin/(shell)` with a server-rendered backend session and exact `super_admin` role check
 - Seeded Super Admin credentials idempotently from the ignored `SUPER_ADMIN_PASSWORD` environment variable
 - Admin identity in the shell is populated from the authenticated database user rather than hardcoded authorization state
 - Verified the full flow manually: denied before login → successful login → protected page 200 → logout → denied again
@@ -123,12 +130,12 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 - Added protected `GET /v1/admin/clinics` with validated search, status, and pagination filters
 - Enforced an exact database-resolved `super_admin` role before any clinic query runs
 - Returned clinic account metadata with latest package name and active branch count; no patient or clinical data is exposed
-- Replaced the `/th-admin/clinics` stub with a responsive server-rendered table
+- Replaced the `/dentra-admin/clinics` stub with a responsive server-rendered table
 - Added search by clinic name/slug/prefix, status filtering, pagination, loading, empty, and API error states
 - Added API denial and success coverage; API suite now has 15 passing tests
 
 ### ✅ Real Clinic and Dentist sign-in
-- Replaced `localStorage.th_clinic_session` and the client-selected role with Better Auth email/password sign-in
+- Replaced the legacy Clinic localStorage session flag and client-selected role with Better Auth email/password sign-in
 - Added a server-rendered clinic membership guard for `/app/(shell)` routes
 - Derived clinic staff versus dentist access from `/v1/session-context`
 - Added real session invalidation on logout and removed `ClinicAuthGuard.tsx`
@@ -178,7 +185,7 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 ### Demo credentials (after seed)
 | Role | Email | How to log in |
 |------|-------|---------------|
-| Super Admin | `admin@toothhub.ph` | `/th-admin/login` → password from local/Replit `SUPER_ADMIN_PASSWORD` |
+| Super Admin | `admin@dentra.ph` | `/dentra-admin/login` → password from local/Replit `SUPER_ADMIN_PASSWORD` |
 | Clinic Admin (SBD) | `admin@smilebrightdental.ph` | `/cl-login` → password from local/Replit `CLINIC_DEMO_PASSWORD` |
 | Clinic Admin (BSM) | `admin@brightsmile.ph` | `/cl-login` → password from local/Replit `CLINIC_DEMO_PASSWORD` |
 | Dentist | `dr.reyes@smilebrightdental.ph` | `/cl-login` → password from local/Replit `CLINIC_DEMO_PASSWORD` |

@@ -8,13 +8,13 @@ import {
   isNull,
   or,
 } from 'drizzle-orm';
-import type { DB } from '@toothhub/db';
+import type { DB } from '@dentra/db';
 import {
   branches,
   clinics,
   clinicSubscriptions,
   packages,
-} from '@toothhub/db/schema';
+} from '@dentra/db/schema';
 
 export type ClinicStatus = typeof clinics.$inferSelect.status;
 

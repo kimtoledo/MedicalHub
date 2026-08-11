@@ -1,7 +1,7 @@
-# MVP 1 - ToothHub Foundation + Core Dental Operations
+# MVP 1 - Dentra.ph Foundation + Core Dental Operations
 
 ## Release objective
-Prove ToothHub as a real product: Super Admin can onboard clinics/dentists, public pages can be published, patients can book valid appointments, and clinic teams can complete basic dental clinical documentation through the PWA.
+Prove Dentra.ph as a real product: Super Admin can onboard clinics/dentists, public pages can be published, patients can book valid appointments, and clinic teams can complete basic dental clinical documentation through the PWA.
 
 ## A. Platform/company website
 ### Included
@@ -17,7 +17,7 @@ Prove ToothHub as a real product: Super Admin can onboard clinics/dentists, publ
 - no protected tenant data appears in public payloads;
 - directories show only published records.
 
-## B. Super Admin - `/th-admin`
+## B. Super Admin - `/dentra-admin`
 ### Dashboard
 - clinic count;
 - active/suspended/trial counts;

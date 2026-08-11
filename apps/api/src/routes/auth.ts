@@ -14,7 +14,7 @@ function toWebRequest(request: FastifyRequest, baseUrl: string): Request {
   const method = request.method.toUpperCase();
   const hasBody = method !== 'GET' && method !== 'HEAD' && request.body !== undefined;
   const headers = fromNodeHeaders(request.headers);
-  headers.set('x-toothhub-client-ip', request.ip);
+  headers.set('x-dentra-client-ip', request.ip);
 
   return new Request(url, {
     method,

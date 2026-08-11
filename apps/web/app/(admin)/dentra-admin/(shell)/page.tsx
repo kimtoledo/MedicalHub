@@ -101,10 +101,10 @@ const clinicStatus = [
 ];
 
 const quickActions = [
-  { label: "Add Clinic",      href: "/th-admin/clinics",       icon: Building2   },
-  { label: "Add Dentist",     href: "/th-admin/dentists",      icon: Stethoscope },
-  { label: "Manage Packages", href: "/th-admin/packages",      icon: Package     },
-  { label: "View Audit Log",  href: "/th-admin/audit",         icon: Clock       },
+  { label: "Add Clinic",      href: "/dentra-admin/clinics",       icon: Building2   },
+  { label: "Add Dentist",     href: "/dentra-admin/dentists",      icon: Stethoscope },
+  { label: "Manage Packages", href: "/dentra-admin/packages",      icon: Package     },
+  { label: "View Audit Log",  href: "/dentra-admin/audit",         icon: Clock       },
 ];
 
 export default function AdminDashboardPage() {
@@ -146,7 +146,7 @@ export default function AdminDashboardPage() {
           <div className="flex items-center justify-between p-5 border-b border-violet-50">
             <h2 className="font-bold text-violet-900">Recent Activity</h2>
             <Link
-              href="/th-admin/audit"
+              href="/dentra-admin/audit"
               className="text-xs text-violet-500 hover:text-violet-700 font-medium flex items-center gap-1 transition-colors"
             >
               View all <ArrowRight size={12} />

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { type ClinicRole } from "@/lib/clinic-types";
 import { signOutClinic } from "@/lib/clinic-auth-client";
+import DentraLogo from "@/components/brand/DentraLogo";
 
 const clinicNavItems = [
   { label: "Dashboard",       href: "/app",              icon: Building2,     exact: true },
@@ -86,9 +87,7 @@ export default function AppTopBar({ role, clinicName = "Sunshine Dental", userEm
       <div className={`fixed inset-y-0 left-0 z-50 w-72 bg-violet-950 text-white flex flex-col transform transition-transform duration-300 lg:hidden ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex items-center justify-between h-16 px-4 border-b border-violet-800">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-violet-500 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-sm">TH</span>
-            </div>
+            <DentraLogo variant="icon" className="h-8 w-8" />
             <div>
               <p className="font-bold text-white text-sm leading-none">{clinicName}</p>
               <p className="text-violet-400 text-xs font-medium flex items-center gap-1">

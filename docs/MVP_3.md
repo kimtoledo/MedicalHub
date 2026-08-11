@@ -1,7 +1,7 @@
-# MVP 3 - ToothHub Ecosystem + Scale
+# MVP 3 - Dentra.ph Ecosystem + Scale
 
 ## Release objective
-Turn ToothHub into a broader patient discovery, engagement, and multi-clinic platform, with mature operations and integrations.
+Turn Dentra.ph into a broader patient discovery, engagement, and multi-clinic platform, with mature operations and integrations.
 
 ## 1. Patient account and portal
 Potential capabilities:
@@ -70,7 +70,7 @@ Ensure analytics minimizes unnecessary clinical detail.
 - SSL/domain verification flow;
 - theme presets;
 - advanced branding;
-- fallback to canonical ToothHub URL;
+- fallback to canonical Dentra.ph URL;
 - redirect/canonical URL policy.
 
 ## 9. Integrations/API

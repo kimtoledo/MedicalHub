@@ -1,5 +1,5 @@
 {
-  "name": "@toothhub/api",
+  "name": "@dentra/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -16,8 +16,8 @@
     "@fastify/cors": "^11.3.0",
     "@fastify/helmet": "^13.1.0",
     "@fastify/rate-limit": "^11.2.0",
-    "@toothhub/db": "*",
-    "@toothhub/shared": "*",
+    "@dentra/db": "*",
+    "@dentra/shared": "*",
     "better-auth": "^1.6.26",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.45.2",

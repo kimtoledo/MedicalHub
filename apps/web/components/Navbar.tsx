@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import DentraLogo from "@/components/brand/DentraLogo";
 
 const links = [
   { label: "Features", href: "#features" },
@@ -17,14 +18,8 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-[#f5f3ff]/80 backdrop-blur-md border-b border-violet-100">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-violet-600 rounded-xl flex items-center justify-center">
-            <span className="text-white font-bold text-sm">TH</span>
-          </div>
-          <span className="font-bold text-violet-800 text-xl tracking-tight">
-            ToothHub
-            <span className="text-violet-500 text-sm font-semibold ml-1">PH</span>
-          </span>
+        <a href="/" aria-label="Dentra.ph home">
+          <DentraLogo className="h-12 w-auto" />
         </a>
 
         {/* Desktop nav */}

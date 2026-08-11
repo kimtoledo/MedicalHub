@@ -1,6 +1,6 @@
 # MVP 2 Overview — Complete Clinic Business Operations
 
-**Release objective:** Expand ToothHub from core clinical workflow into day-to-day clinic business operations while preserving the same tenant, permission, entitlement, and audit architecture from MVP 1.
+**Release objective:** Expand Dentra.ph from core clinical workflow into day-to-day clinic business operations while preserving the same tenant, permission, entitlement, and audit architecture from MVP 1.
 
 ---
 

@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { type ClinicRole } from "@/lib/clinic-types";
 import { signOutClinic } from "@/lib/clinic-auth-client";
+import DentraLogo from "@/components/brand/DentraLogo";
 
 const clinicNavItems = [
   { label: "Dashboard",        href: "/app",              icon: LayoutDashboard, exact: true },
@@ -74,20 +75,16 @@ export default function AppSidebar({
       <div className={`border-b border-violet-800 flex-shrink-0 ${collapsed ? "px-2 py-3" : "px-4 py-3"}`}>
         {collapsed ? (
           <div className="flex justify-center">
-            <div className="w-9 h-9 bg-violet-500 rounded-xl flex items-center justify-center">
-              <Building2 size={18} className="text-white" />
-            </div>
+            <DentraLogo variant="icon" className="h-9 w-9" />
           </div>
         ) : (
           <>
             {/* Clinic name */}
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 bg-violet-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-xs">TH</span>
-              </div>
+              <DentraLogo variant="icon" className="h-8 w-8 flex-shrink-0" />
               <div className="min-w-0">
                 <p className="text-white font-bold text-sm truncate leading-tight">{clinicName}</p>
-                <p className="text-violet-400 text-xs font-medium">ToothHub PH</p>
+                <p className="text-violet-400 text-xs font-medium">Dentra.ph</p>
               </div>
             </div>
             {/* Branch selector */}

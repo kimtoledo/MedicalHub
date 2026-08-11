@@ -3,7 +3,15 @@
 @tailwind utilities;
 
 :root {
-  --font-inter: 'Inter', system-ui, sans-serif;
+  --font-brand: 'Poppins', Arial, sans-serif;
+  --brand-900: #3B0F7A;
+  --brand-800: #4C1D95;
+  --brand-600: #7C3AED;
+  --brand-500: #8B5CF6;
+  --brand-400: #A78BFA;
+  --brand-100: #EDE9FE;
+  --brand-50: #F7F6FB;
+  --navy-900: #1E1B4B;
 }
 
 html {
@@ -13,6 +21,7 @@ html {
 body {
   background-color: #f5f3ff;
   color: #2e1065;
+  font-family: var(--font-brand);
 }
 
 @layer utilities {

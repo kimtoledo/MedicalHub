@@ -1,4 +1,4 @@
-import type { clinicMemberships, users } from '@toothhub/db/schema';
+import type { clinicMemberships, users } from '@dentra/db/schema';
 
 export type PlatformRole = NonNullable<typeof users.$inferSelect.platformRole>;
 export type ClinicRole = typeof clinicMemberships.$inferSelect.role;

@@ -1,6 +1,6 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
-import type { DB } from '@toothhub/db';
-import * as schema from '@toothhub/db/schema';
+import type { DB } from '@dentra/db';
+import * as schema from '@dentra/db/schema';
 import { betterAuth } from 'better-auth';
 import type { ApiConfig } from '../config.js';
 import { createAuthorizationResolver } from './authorization.js';
@@ -8,7 +8,7 @@ import type { AuthServices, BetterAuthSession } from './types.js';
 
 export function createAuthServices(config: ApiConfig, database: DB): AuthServices {
   const auth = betterAuth({
-    appName: 'ToothHub PH',
+    appName: 'Dentra.ph',
     secret: config.authSecret,
     baseURL: config.authBaseUrl,
     basePath: '/v1/auth',
@@ -46,7 +46,7 @@ export function createAuthServices(config: ApiConfig, database: DB): AuthService
     },
     advanced: {
       ipAddress: {
-        ipAddressHeaders: ['x-toothhub-client-ip'],
+        ipAddressHeaders: ['x-dentra-client-ip'],
       },
       database: {
         generateId: 'uuid',

@@ -6,7 +6,7 @@
 
 ## What & Why
 
-Clinics and third-party developers need to connect ToothHub to external tools: accounting software, calendar apps, laboratory portals, and communication providers. A scoped API with webhook support unlocks this ecosystem.
+Clinics and third-party developers need to connect Dentra.ph to external tools: accounting software, calendar apps, laboratory portals, and communication providers. A scoped API with webhook support unlocks this ecosystem.
 
 ---
 

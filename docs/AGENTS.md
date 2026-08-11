@@ -1,7 +1,9 @@
-# ToothHub PH - Codex Repository Instructions
+# Dentra.ph - Codex Repository Instructions
 
 ## Purpose
-These instructions apply to Codex working in the ToothHub PH repository.
+These instructions apply to Codex working in the Dentra.ph repository.
+
+For frontend and PWA work, read and follow `BRANDING.md`. Do not introduce a competing visual system without explicit approval.
 
 Read before major work:
 - `README.md`
@@ -70,7 +72,7 @@ git commit -m "db: <what changed and why>"
 1. **Never hand-edit a migration file** that has been applied to any shared environment.
 2. **Never run raw `ALTER TABLE`** against the shared Replit DB — always go through `drizzle-kit migrate`.
 3. **Always commit the generated `.sql`** before merging. A schema change without its migration file will break the DB on merge.
-4. **Use `FeatureKey` values** from `@toothhub/shared` for entitlement checks — never compare plan names.
+4. **Use `FeatureKey` values** from `@dentra/shared` for entitlement checks — never compare plan names.
 5. **Filter every tenant-scoped query by `clinic_id`** — never return records across clinic boundaries.
 
 ### Getting DATABASE_URL for local dev

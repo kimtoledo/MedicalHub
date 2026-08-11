@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import type { DB } from '@toothhub/db';
+import type { DB } from '@dentra/db';
 
 export type DatabaseServices = {
   db: DB;
@@ -8,7 +8,7 @@ export type DatabaseServices = {
 };
 
 export async function createDatabaseServices(): Promise<DatabaseServices> {
-  const { closeDatabase, db } = await import('@toothhub/db');
+  const { closeDatabase, db } = await import('@dentra/db');
 
   return {
     db,

@@ -1,7 +1,7 @@
 import { CheckCircle2, ArrowRight } from "lucide-react";
 
 const perks = [
-  "Your own public profile page on ToothHub",
+  "Your own public profile page on Dentra.ph",
   "Accept patient bookings online, anytime",
   "Manage your schedule across multiple clinics",
   "Showcase your specializations and credentials",
@@ -24,7 +24,7 @@ export default function ForDentists() {
                 <span className="text-violet-300">your brand.</span>
               </h2>
               <p className="text-violet-200 text-base leading-relaxed mb-8">
-                Whether you run your own clinic or work across multiple branches, ToothHub gives you a professional online presence and the tools to manage your schedule effortlessly.
+                Whether you run your own clinic or work across multiple branches, Dentra.ph gives you a professional online presence and the tools to manage your schedule effortlessly.
               </p>
 
               <ul className="space-y-3 mb-8">

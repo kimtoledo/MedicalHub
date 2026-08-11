@@ -1,6 +1,6 @@
 # MVP 1 Overview — Foundation + Core Dental Operations
 
-**Release objective:** Prove ToothHub as a real product. Super Admin can onboard clinics and dentists, public pages are published, patients can book valid appointments, and clinic teams can complete basic dental clinical documentation through the PWA.
+**Release objective:** Prove Dentra.ph as a real product. Super Admin can onboard clinics and dentists, public pages are published, patients can book valid appointments, and clinic teams can complete basic dental clinical documentation through the PWA.
 
 ---
 
@@ -35,6 +35,7 @@
 | `14-clinic-dashboard-live.md` | Dashboard with live data from API | 🔲 Queued |
 | `15-audit-baseline.md` | Audit entries for all defined sensitive actions | 🔲 Queued |
 | `16-hardening-and-demo-data.md` | Security/entitlement QA, synthetic demo data | 🔲 Queued |
+| `17-dentra-brand-migration.md` | Dentra.ph naming, approved logos, metadata, and PWA branding | ✅ Done |
 
 ---
 

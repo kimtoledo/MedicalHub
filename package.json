@@ -1,13 +1,13 @@
 {
-  "name": "toothhub-ph",
+  "name": "dentra-ph",
   "version": "0.1.0",
   "private": true,
-  "description": "ToothHub PH — Multi-tenant dental SaaS platform for the Philippines",
+  "description": "Dentra.ph — Multi-tenant dental SaaS platform for the Philippines",
   "scripts": {
     "dev": "cd apps/web && npx next dev -p 5000",
-    "api:dev": "npm run dev --workspace @toothhub/api",
-    "api:start": "npm run start --workspace @toothhub/api",
-    "build": "npm run build --workspace @toothhub/web && npm run build --workspace @toothhub/api",
+    "api:dev": "npm run dev --workspace @dentra/api",
+    "api:start": "npm run start --workspace @dentra/api",
+    "build": "npm run build --workspace @dentra/web && npm run build --workspace @dentra/api",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "db:generate": "cd packages/db && npx drizzle-kit generate --config=drizzle.config.ts",

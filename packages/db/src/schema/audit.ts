@@ -25,7 +25,7 @@ export const auditEvents = pgTable(
     entityType: varchar('entity_type', { length: 100 }).notNull(),
     entityId: uuid('entity_id'),
 
-    /** Action code from AuditAction enum in @toothhub/shared */
+    /** Action code from AuditAction enum in @dentra/shared */
     action: varchar('action', { length: 100 }).notNull(),
 
     /**

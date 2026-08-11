@@ -6,7 +6,7 @@
 
 ## What & Why
 
-As ToothHub scales, the platform team needs proper tooling to support clinics, respond to incidents, and maintain compliance — without Super Admin having routine access to patient clinical records.
+As Dentra.ph scales, the platform team needs proper tooling to support clinics, respond to incidents, and maintain compliance — without Super Admin having routine access to patient clinical records.
 
 ---
 

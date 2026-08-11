@@ -1,3 +1,5 @@
+import DentraLogo from "@/components/brand/DentraLogo";
+
 const cols = [
   {
     heading: "Product",
@@ -13,7 +15,7 @@ const cols = [
   },
   {
     heading: "Company",
-    links: ["About ToothHub", "Blog", "Careers", "Contact Us", "Privacy Policy"],
+    links: ["About Dentra.ph", "Blog", "Careers", "Contact Us", "Privacy Policy"],
   },
 ];
 
@@ -24,14 +26,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-violet-500 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-sm">TH</span>
-              </div>
-              <span className="font-bold text-white text-lg tracking-tight">
-                ToothHub <span className="text-violet-400 text-sm">PH</span>
-              </span>
-            </div>
+            <DentraLogo variant="white" className="h-12 w-auto mb-4" />
             <p className="text-sm text-violet-400 leading-relaxed">
               The all-in-one dental practice management platform for the Philippines.
             </p>
@@ -58,7 +53,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-violet-900 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-violet-500">
-          <p>© {new Date().getFullYear()} ToothHub PH. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Dentra.ph. All rights reserved.</p>
           <p>Built with ❤️ for Philippine dental professionals.</p>
         </div>
       </div>

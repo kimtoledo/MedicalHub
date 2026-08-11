@@ -1,6 +1,6 @@
 import { and, eq, isNull } from 'drizzle-orm';
-import type { DB } from '@toothhub/db';
-import { clinicMemberships, users } from '@toothhub/db/schema';
+import type { DB } from '@dentra/db';
+import { clinicMemberships, users } from '@dentra/db/schema';
 import type { AuthorizationContext, ClinicAccess, PlatformRole } from './types.js';
 
 export function isSuperAdmin(context: AuthorizationContext): boolean {

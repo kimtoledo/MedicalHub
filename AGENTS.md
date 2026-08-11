@@ -1,6 +1,8 @@
-# ToothHub PH — Codex Agent Instructions
+# Dentra.ph — Codex Agent Instructions
 
 Read `docs/AGENTS.md` for the full instructions.
+
+For frontend and PWA work, read and follow `docs/BRANDING.md`. Do not introduce a competing visual system without explicit approval.
 
 ## Quick reference
 
@@ -26,7 +28,7 @@ git commit -m "db: <description>"
 1. Never hand-edit an applied migration.
 2. Never run raw SQL against the shared DB — use `drizzle-kit migrate`.
 3. Always commit the `.sql` file before merging.
-4. Use `FeatureKey` from `@toothhub/shared` for entitlement checks.
+4. Use `FeatureKey` from `@dentra/shared` for entitlement checks.
 5. Filter every tenant query by `clinic_id`.
 
 **DATABASE_URL**: copy from Replit Secrets into your local `.env` (never commit it).

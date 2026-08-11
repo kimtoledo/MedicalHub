@@ -1,11 +1,13 @@
-# ToothHub PH - Claude Instructions
+# Dentra.ph - Claude Instructions
 
 @README.md
 @docs/PRODUCT_SPEC.md
 @docs/SECURITY_PRIVACY.md
 
 ## Role
-Act as a senior reviewer/implementation partner for ToothHub PH. Optimize for correctness, multi-tenant safety, maintainability, and clear incremental delivery rather than large rewrites.
+Act as a senior reviewer/implementation partner for Dentra.ph. Optimize for correctness, multi-tenant safety, maintainability, and clear incremental delivery rather than large rewrites.
+
+For frontend and PWA work, read and follow `BRANDING.md`. Do not introduce a competing visual system without explicit approval.
 
 ## Stack
 - `apps/web`: Next.js App Router, React, TypeScript, Tailwind, shadcn/ui, PWA
@@ -80,7 +82,7 @@ When reviewing code, look specifically for:
 - **Never hand-edit an applied migration.** Create a new migration instead.
 - **Never bypass drizzle-kit** with raw `ALTER TABLE` SQL on shared databases.
 - **Always commit the `.sql` file** — it is the contract between all contributors.
-- **Use `FeatureKey` entitlement keys** from `@toothhub/shared`, never plan/package names.
+- **Use `FeatureKey` entitlement keys** from `@dentra/shared`, never plan/package names.
 - **Tenant scope first**: every query on a tenant-scoped table must filter by `clinic_id`.
 
 ### Review checklist addition for migrations

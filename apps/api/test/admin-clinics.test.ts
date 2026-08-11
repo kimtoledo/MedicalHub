@@ -18,8 +18,8 @@ const config: ApiConfig = {
 const superAdminContext: AuthorizationContext = {
   user: {
     id: '11111111-1111-4111-8111-111111111111',
-    email: 'admin@toothhub.ph',
-    name: 'ToothHub Admin',
+    email: 'admin@dentra.ph',
+    name: 'Dentra Admin',
     platformRole: 'super_admin',
   },
   strategies: ['superAdmin'],

@@ -13,7 +13,7 @@ export default async function AdminShellLayout({
   const admin = await getSuperAdminSession();
 
   if (!admin) {
-    redirect("/th-admin/login");
+    redirect("/dentra-admin/login");
   }
 
   return (

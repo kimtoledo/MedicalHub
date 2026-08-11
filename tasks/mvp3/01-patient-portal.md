@@ -12,7 +12,7 @@ Patients want to see their upcoming appointments, past invoices, and treatment s
 
 ## Done looks like
 
-- Patients can sign up for a ToothHub patient account using email or mobile number.
+- Patients can sign up for a Dentra.ph patient account using email or mobile number.
 - A patient account can be linked to existing patient records at one or more clinics — only with the patient's explicit consent per clinic.
 - From their portal, a patient can see: upcoming appointments, appointment history, invoices/receipts (where clinic allows), treatment plan summaries (where clinic policy permits), and profile/contact update requests.
 - Patients can request to reschedule or cancel an appointment (subject to clinic policy).

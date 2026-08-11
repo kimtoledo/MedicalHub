@@ -2,7 +2,8 @@
 
 import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, ShieldCheck, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
+import DentraLogo from "@/components/brand/DentraLogo";
 import { revokeClinicSession } from "@/lib/clinic-auth-client";
 import { type ClinicRole } from "@/lib/clinic-types";
 
@@ -110,10 +111,7 @@ export default function ClinicLoginPage() {
       <div className="relative w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-violet-600 rounded-2xl shadow-xl shadow-violet-900/50 mb-4">
-            <ShieldCheck size={28} className="text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-white">ToothHub PH</h1>
+          <DentraLogo variant="white" className="h-20 w-auto mx-auto mb-2" />
           <p className="text-violet-400 text-sm mt-1 font-medium">Clinic Portal</p>
         </div>
 
@@ -188,7 +186,7 @@ export default function ClinicLoginPage() {
 
         <p className="text-center mt-6">
           <a href="/" className="text-violet-400 hover:text-violet-200 text-sm transition-colors">
-            ← Back to ToothHub PH
+            ← Back to Dentra.ph
           </a>
         </p>
       </div>

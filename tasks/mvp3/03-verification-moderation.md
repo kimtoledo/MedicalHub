@@ -6,7 +6,7 @@
 
 ## What & Why
 
-Trust is critical in healthcare. Patients need to know that dentists and clinics on ToothHub are real and licensed. A formal verification workflow adds a "Verified" badge to profiles that have passed document review.
+Trust is critical in healthcare. Patients need to know that dentists and clinics on Dentra.ph are real and licensed. A formal verification workflow adds a "Verified" badge to profiles that have passed document review.
 
 ---
 

@@ -74,7 +74,7 @@ export default function Hero() {
                 <span className="w-3 h-3 rounded-full bg-green-300" />
               </div>
               <div className="flex-1 mx-4 bg-white rounded-full px-3 py-1 text-xs text-violet-400 border border-violet-100">
-                app.toothhub.ph/clinic/sunshine-dental
+                dentra.ph/clinic/sunshine-dental
               </div>
             </div>
 

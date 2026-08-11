@@ -17,15 +17,16 @@ import {
 } from "lucide-react";
 import { signOutAdmin } from "@/lib/admin-auth-client";
 import type { AdminIdentity } from "@/lib/admin-types";
+import DentraLogo from "@/components/brand/DentraLogo";
 
 export const navItems = [
-  { label: "Dashboard",        href: "/th-admin",              icon: LayoutDashboard },
-  { label: "Clinics",          href: "/th-admin/clinics",      icon: Building2 },
-  { label: "Dentists",         href: "/th-admin/dentists",     icon: Stethoscope },
-  { label: "Packages & Plans", href: "/th-admin/packages",     icon: Package },
-  { label: "Subscriptions",    href: "/th-admin/subscriptions",icon: CreditCard },
-  { label: "Audit Log",        href: "/th-admin/audit",        icon: ScrollText },
-  { label: "Settings",         href: "/th-admin/settings",     icon: Settings },
+  { label: "Dashboard",        href: "/dentra-admin",              icon: LayoutDashboard },
+  { label: "Clinics",          href: "/dentra-admin/clinics",      icon: Building2 },
+  { label: "Dentists",         href: "/dentra-admin/dentists",     icon: Stethoscope },
+  { label: "Packages & Plans", href: "/dentra-admin/packages",     icon: Package },
+  { label: "Subscriptions",    href: "/dentra-admin/subscriptions",icon: CreditCard },
+  { label: "Audit Log",        href: "/dentra-admin/audit",        icon: ScrollText },
+  { label: "Settings",         href: "/dentra-admin/settings",     icon: Settings },
 ];
 
 interface SidebarProps {
@@ -41,7 +42,7 @@ export default function Sidebar({ admin, collapsed: externalCollapsed }: Sidebar
   const isCollapsed = externalCollapsed ?? collapsed;
 
   const isActive = (href: string) =>
-    href === "/th-admin" ? pathname === href : pathname.startsWith(href);
+    href === "/dentra-admin" ? pathname === href : pathname.startsWith(href);
 
   return (
     <aside
@@ -52,15 +53,10 @@ export default function Sidebar({ admin, collapsed: externalCollapsed }: Sidebar
     >
       {/* Logo */}
       <div className={`flex items-center h-16 px-4 border-b border-violet-800 ${isCollapsed ? "justify-center" : "gap-3"}`}>
-        <div className="w-8 h-8 bg-violet-500 rounded-xl flex items-center justify-center flex-shrink-0">
-          <span className="text-white font-bold text-sm">TH</span>
-        </div>
-        {!isCollapsed && (
-          <div>
-            <p className="font-bold text-white text-sm leading-none">ToothHub</p>
-            <p className="text-violet-400 text-xs font-medium">Super Admin</p>
-          </div>
-        )}
+        <DentraLogo
+          variant={isCollapsed ? "icon" : "white"}
+          className={isCollapsed ? "h-9 w-9" : "h-11 w-auto"}
+        />
       </div>
 
       {/* Nav */}

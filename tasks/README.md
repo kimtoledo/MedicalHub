@@ -1,4 +1,4 @@
-# ToothHub PH — Task Folder
+# Dentra.ph — Task Folder
 
 This folder is the **single source of truth** for all planned work across MVP 1, MVP 2, and MVP 3.
 Each markdown file describes one discrete work item: what it is, what "done" looks like, its current status, and which project task in the tracker covers it (if any).

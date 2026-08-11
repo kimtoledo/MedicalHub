@@ -17,8 +17,8 @@ const config: ApiConfig = {
 const superAdminContext: AuthorizationContext = {
   user: {
     id: '11111111-1111-4111-8111-111111111111',
-    email: 'admin@toothhub.ph',
-    name: 'ToothHub Admin',
+    email: 'admin@dentra.ph',
+    name: 'Dentra Admin',
     platformRole: 'super_admin',
   },
   strategies: ['superAdmin'],
@@ -60,7 +60,7 @@ describe('Better Auth routes', () => {
         status: 201,
         headers: {
           'content-type': 'application/json',
-          'set-cookie': 'toothhub.session=fake; HttpOnly; SameSite=Lax',
+          'set-cookie': 'dentra.session=fake; HttpOnly; SameSite=Lax',
         },
       }));
     await createApp(createAuth({ handler }));
@@ -68,7 +68,7 @@ describe('Better Auth routes', () => {
     const response = await app!.inject({
       method: 'POST',
       url: '/v1/auth/sign-in/email',
-      payload: { email: 'admin@toothhub.ph', password: 'not-a-real-password' },
+      payload: { email: 'admin@dentra.ph', password: 'not-a-real-password' },
     });
 
     expect(response.statusCode).toBe(201);
@@ -110,7 +110,7 @@ describe('Better Auth routes', () => {
     const response = await app!.inject({
       method: 'GET',
       url: '/v1/session-context',
-      headers: { cookie: 'toothhub.session=fake' },
+      headers: { cookie: 'dentra.session=fake' },
     });
 
     expect(response.statusCode).toBe(200);

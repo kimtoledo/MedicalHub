@@ -6,13 +6,13 @@
 
 ## What & Why
 
-Super Admin needs to create and manage clinics end-to-end: from onboarding a new clinic, assigning it a package, to suspending or archiving it. The current `/th-admin/clinics` page is a stub. This task turns it into a fully functional management surface backed by the real API.
+Super Admin needs to create and manage clinics end-to-end: from onboarding a new clinic, assigning it a package, to suspending or archiving it. The current `/dentra-admin/clinics` page is a stub. This task turns it into a fully functional management surface backed by the real API.
 
 ---
 
 ## Done looks like
 
-- `/th-admin/clinics` shows a live, searchable, paginated table of all clinics with columns for name, slug, status, package, and branch count (#12).
+- `/dentra-admin/clinics` shows a live, searchable, paginated table of all clinics with columns for name, slug, status, package, and branch count (#12).
 - Super Admin can create a new clinic (name, slug, owner email, package assignment) via a slide-over form or dedicated page.
 - Clinic detail page shows: account info, branches list, assigned package, effective entitlements, feature overrides, and subscription dates.
 - Super Admin can activate, suspend, archive, and reactivate a clinic from the detail page.
@@ -34,9 +34,9 @@ Super Admin needs to create and manage clinics end-to-end: from onboarding a new
 
 ## Steps
 
-1. **Clinic list page** — ✅ `/th-admin/clinics` is wired to `GET /v1/admin/clinics` with search, status filter, pagination, package name, and branch count (#12).
+1. **Clinic list page** — ✅ `/dentra-admin/clinics` is wired to `GET /v1/admin/clinics` with search, status filter, pagination, package name, and branch count (#12).
 2. **Create clinic form** — build the create-clinic slide-over/page with validation; call `POST /v1/admin/clinics`.
-3. **Clinic detail page** — build `/th-admin/clinics/[id]` showing all clinic info, branches, and package details.
+3. **Clinic detail page** — build `/dentra-admin/clinics/[id]` showing all clinic info, branches, and package details.
 4. **Status actions** — implement activate/suspend/archive/reactivate buttons that call the appropriate API endpoints and require confirmation.
 5. **Branch management** — allow adding branches to a clinic from the detail page.
 6. **Package assignment** — allow changing a clinic's package from the detail page with an effective-date input.

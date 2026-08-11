@@ -7,10 +7,11 @@ import { navItems } from "./Sidebar";
 import Link from "next/link";
 import { signOutAdmin } from "@/lib/admin-auth-client";
 import type { AdminIdentity } from "@/lib/admin-types";
+import DentraLogo from "@/components/brand/DentraLogo";
 
 function getPageTitle(pathname: string) {
   const item = navItems.find((n) =>
-    n.href === "/th-admin" ? pathname === n.href : pathname.startsWith(n.href)
+    n.href === "/dentra-admin" ? pathname === n.href : pathname.startsWith(n.href)
   );
   return item?.label ?? "Super Admin";
 }
@@ -21,7 +22,7 @@ export default function TopBar({ admin }: { admin: AdminIdentity }) {
   const title = getPageTitle(pathname);
 
   const isActive = (href: string) =>
-    href === "/th-admin" ? pathname === href : pathname.startsWith(href);
+    href === "/dentra-admin" ? pathname === href : pathname.startsWith(href);
 
   return (
     <>
@@ -72,15 +73,7 @@ export default function TopBar({ admin }: { admin: AdminIdentity }) {
       >
         {/* Drawer header */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-violet-800">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-violet-500 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-sm">TH</span>
-            </div>
-            <div>
-              <p className="font-bold text-white text-sm leading-none">ToothHub</p>
-              <p className="text-violet-400 text-xs font-medium">Super Admin</p>
-            </div>
-          </div>
+          <DentraLogo variant="white" className="h-11 w-auto" />
           <button
             onClick={() => setDrawerOpen(false)}
             className="text-violet-400 hover:text-white transition-colors"

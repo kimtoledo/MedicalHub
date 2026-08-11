@@ -12,8 +12,8 @@ The Clinic PWA (`/app`) must be installable on mobile and tablet as a Progressiv
 
 ## Done looks like
 
-- A user on Chrome/Safari mobile can tap "Add to Home Screen" and install the ToothHub Clinic app as a standalone PWA.
-- The installed app shows the ToothHub icon and name on the home screen.
+- A user on Chrome/Safari mobile can tap "Add to Home Screen" and install the Dentra.ph Clinic app as a standalone PWA.
+- The installed app shows the Dentra.ph icon and name on the home screen.
 - If the device goes offline, the app shows a "You're offline" screen — it does not serve stale patient or clinical data from cache.
 - The app shell (navigation, layout) loads fast on a slow connection.
 - Module navigation respects entitlements: menu items for features not included in the clinic's package are hidden or show an upgrade prompt.

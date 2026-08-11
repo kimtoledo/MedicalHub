@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# ToothHub PH — Post-merge setup script
+# Dentra.ph — Post-merge setup script
 # Runs automatically on Replit after every task merge.
 # Also safe to run manually at any time.
 # =============================================================================

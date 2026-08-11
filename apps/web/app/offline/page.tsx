@@ -9,7 +9,7 @@ export default function OfflinePage() {
         </div>
         <h1 className="text-xl font-bold text-white mb-2">You&apos;re offline</h1>
         <p className="text-violet-400 text-sm">
-          ToothHub can&apos;t reach the network right now. Patient and clinical data is never
+          Dentra.ph can&apos;t reach the network right now. Patient and clinical data is never
           cached for offline use, so please reconnect and try again.
         </p>
       </div>

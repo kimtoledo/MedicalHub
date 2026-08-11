@@ -9,5 +9,5 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   splitting: false,
-  noExternal: ['@toothhub/db', '@toothhub/shared'],
+  noExternal: ['@dentra/db', '@dentra/shared'],
 });

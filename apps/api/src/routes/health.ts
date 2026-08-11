@@ -10,7 +10,7 @@ export async function registerHealthRoutes(
 ): Promise<void> {
   app.get('/health', async () => ({
     status: 'ok' as const,
-    service: 'toothhub-api' as const,
+    service: 'dentra-api' as const,
   }));
 
   app.get('/v1/health', async (request, reply) => {
@@ -19,14 +19,14 @@ export async function registerHealthRoutes(
 
       return {
         status: 'ok' as const,
-        service: 'toothhub-api' as const,
+        service: 'dentra-api' as const,
         database: 'connected' as const,
       };
     } catch {
       request.log.error('Database readiness check failed');
       return reply.status(503).send({
         status: 'unavailable' as const,
-        service: 'toothhub-api' as const,
+        service: 'dentra-api' as const,
         database: 'disconnected' as const,
       });
     }

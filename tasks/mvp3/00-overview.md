@@ -1,6 +1,6 @@
 # MVP 3 Overview — Ecosystem + Scale
 
-**Release objective:** Turn ToothHub into a broader patient discovery, engagement, and multi-clinic platform with mature operations and third-party integrations.
+**Release objective:** Turn Dentra.ph into a broader patient discovery, engagement, and multi-clinic platform with mature operations and third-party integrations.
 
 ---
 

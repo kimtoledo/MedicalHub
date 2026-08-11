@@ -8,7 +8,7 @@ const steps = [
   {
     step: "02",
     title: "Set up your public profile",
-    desc: "Publish your clinic microsite on ToothHub so patients can discover you, read reviews, and book online.",
+    desc: "Publish your clinic microsite on Dentra.ph so patients can discover you, read reviews, and book online.",
     color: "bg-purple-100 text-purple-700",
   },
   {
@@ -34,7 +34,7 @@ export default function HowItWorks() {
             </span>
           </h2>
           <p className="text-lg text-violet-600 max-w-xl mx-auto">
-            Getting your dental clinic onto ToothHub takes less time than a cleaning appointment.
+            Getting your dental clinic onto Dentra.ph takes less time than a cleaning appointment.
           </p>
         </div>
 

@@ -1,8 +1,10 @@
-# ToothHub PH
+# Dentra.ph
 
 **The all-in-one dental practice management platform for the Philippines.**
 
-ToothHub PH is a multi-tenant SaaS product that gives dental clinics a public online presence, online appointment booking, digital patient records, staff management, and a Progressive Web App — all in one place. Independent dentists get their own bookable profile. Platform operators manage everything through a Super Admin panel.
+Dentra.ph is a multi-tenant SaaS product that gives dental clinics a public online presence, online appointment booking, digital patient records, staff management, and a Progressive Web App — all in one place. Independent dentists get their own bookable profile. Platform operators manage everything through a Super Admin panel.
+
+Brand and frontend implementation must follow [`docs/BRANDING.md`](docs/BRANDING.md). Approved SVG assets are stored in [`docs/branding/`](docs/branding/).
 
 ---
 
@@ -19,7 +21,7 @@ ToothHub PH is a multi-tenant SaaS product that gives dental clinics a public on
 | Dentist profile | `/dentists/[dentistSlug]` | Public |
 | Clinic / staff login | `/cl-login` | Auth |
 | Clinic PWA | `/app/*` | Clinic staff & dentists |
-| Super Admin panel | `/th-admin/*` | Platform operators |
+| Super Admin panel | `/dentra-admin/*` | Platform operators |
 
 ---
 
@@ -31,7 +33,7 @@ ToothHub PH is a multi-tenant SaaS product that gives dental clinics a public on
 | **Backend** | Fastify · TypeScript · Zod · OpenAPI · Pino |
 | **Database** | PostgreSQL (Replit) · Drizzle ORM · Drizzle Kit migrations |
 | **Auth** | Better Auth (behind an `AuthService` boundary) |
-| **Shared** | `@toothhub/shared` — Zod schemas, enums, `FeatureKey` constants |
+| **Shared** | `@dentra/shared` — Zod schemas, enums, `FeatureKey` constants |
 | **Testing** | Vitest · Playwright |
 
 ---

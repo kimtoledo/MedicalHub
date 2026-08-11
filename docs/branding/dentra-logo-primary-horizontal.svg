@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-labelledby="title desc">
+  <title id="title">Dentra.ph Primary Logo</title>
+  <desc id="desc">Purple Dentra.ph logo with tooth and D mark.</desc>
+  <defs>
+    <linearGradient id="dentraGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4C1D95"/>
+      <stop offset="55%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(28,24) scale(1.02)">
+    <path d="M52 44
+C78 18, 113 24, 128 37
+C143 24, 178 18, 204 44
+C232 72, 224 118, 211 153
+C199 186, 183 220, 163 220
+C145 220, 143 184, 128 176
+C113 184, 111 220, 93 220
+C73 220, 57 186, 45 153
+C32 118, 24 72, 52 44Z" fill="none" stroke="url(#dentraGradient)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M87 82 H135 C170 82 188 101 188 128 C188 157 170 175 135 175 H87 Z
+             M111 105 V152 H133 C153 152 164 144 164 128 C164 113 153 105 133 105 Z"
+          fill="#4C1D95" fill-rule="evenodd"/>
+    <rect x="77" y="118" width="42" height="14" rx="3" fill="#7C3AED"/>
+    <rect x="91" y="104" width="14" height="42" rx="3" fill="#7C3AED"/>
+  </g>
+
+  <text x="315" y="151" font-family="Poppins, Arial, sans-serif" font-size="108" font-weight="700" fill="#1E1B4B">Dentra</text>
+  <text x="718" y="151" font-family="Poppins, Arial, sans-serif" font-size="108" font-weight="700" fill="#7C3AED">.ph</text>
+  <text x="322" y="214" font-family="Poppins, Arial, sans-serif" font-size="34" font-weight="500" fill="#5B5680" letter-spacing="0.5">Smarter Dentistry. Better Care.</text>
+</svg>

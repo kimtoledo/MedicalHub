@@ -36,7 +36,7 @@ const features = [
     icon: Building2,
     color: "bg-pink-100 text-pink-600",
     title: "Public Clinic Microsite",
-    desc: "Your own branded page on ToothHub — searchable by patients, bookable online, no web dev needed.",
+    desc: "Your own branded page on Dentra.ph — searchable by patients, bookable online, no web dev needed.",
   },
   {
     icon: ShieldCheck,
@@ -62,7 +62,7 @@ export default function Features() {
             </span>
           </h2>
           <p className="text-lg text-violet-600 max-w-xl mx-auto">
-            From the front desk to the dental chair — ToothHub keeps everything connected so you can focus on your patients.
+            From the front desk to the dental chair — Dentra.ph keeps everything connected so you can focus on your patients.
           </p>
         </div>
 

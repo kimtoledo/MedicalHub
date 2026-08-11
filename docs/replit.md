@@ -1,7 +1,9 @@
-# ToothHub PH - Replit Agent Instructions
+# Dentra.ph - Replit Agent Instructions
 
 ## Mission
-Build ToothHub PH as a multi-tenant dental SaaS product and PWA. During the demo stage, the backend API and PostgreSQL database run on Replit while the Next.js frontend may be deployed to Vercel Hobby. The codebase must remain portable so production hosting can change later without rewriting domain logic.
+Build Dentra.ph as a multi-tenant dental SaaS product and PWA. During the demo stage, the backend API and PostgreSQL database run on Replit while the Next.js frontend may be deployed to Vercel Hobby. The codebase must remain portable so production hosting can change later without rewriting domain logic.
+
+For frontend and PWA work, read and follow `BRANDING.md`. Do not introduce a competing visual system without explicit approval.
 
 ## Read first
 Before a major task, read:
@@ -37,7 +39,7 @@ Public frontend:
 Authenticated frontend:
 - `/cl-login`
 - `/app/*`
-- `/th-admin/*`
+- `/dentra-admin/*`
 
 Backend APIs use `/v1/...` and must be versioned.
 
@@ -100,7 +102,7 @@ For each major feature:
 - **Never hand-edit a migration file** that has already been applied to any shared database.
 - **Never apply raw SQL directly** to the shared DB — always go through `drizzle-kit migrate`.
 - **Always commit the generated `.sql` file** before merging — the migrations folder is the source of truth.
-- **Never use package/plan names** (e.g. `plan === "pro"`) as authorization rules — use `FeatureKey` entitlement keys from `@toothhub/shared`.
+- **Never use package/plan names** (e.g. `plan === "pro"`) as authorization rules — use `FeatureKey` entitlement keys from `@dentra/shared`.
 
 ### Getting DATABASE_URL locally (VS Code / Codex)
 1. Go to Replit → Secrets → copy `DATABASE_URL`

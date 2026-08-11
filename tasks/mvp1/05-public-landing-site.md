@@ -7,7 +7,7 @@
 
 ## What & Why
 
-The public site (`/`) is the face of ToothHub PH. It must be responsive, indexable, and show real data from the database once clinics and dentists are onboarded. The current landing page is fully static.
+The public site (`/`) is the face of Dentra.ph. It must be responsive, indexable, and show real data from the database once clinics and dentists are onboarded. The current landing page is fully static.
 
 ---
 

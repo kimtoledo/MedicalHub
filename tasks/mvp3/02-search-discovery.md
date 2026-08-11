@@ -6,7 +6,7 @@
 
 ## What & Why
 
-Patients looking for a dentist or clinic need a searchable, location-aware directory. Good search ranking and SEO-friendly pages drive organic patient acquisition for ToothHub and its member clinics.
+Patients looking for a dentist or clinic need a searchable, location-aware directory. Good search ranking and SEO-friendly pages drive organic patient acquisition for Dentra.ph and its member clinics.
 
 ---
 

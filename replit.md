@@ -1,4 +1,6 @@
-# ToothHub PH
+# Dentra.ph
+
+For frontend and PWA work, read and follow `docs/BRANDING.md`. Do not introduce a competing visual system without explicit approval.
 
 A dental SaaS platform for the Philippine market. Multi-tenant practice management, public clinic/dentist directories, online booking, and an installable PWA.
 
@@ -75,7 +77,7 @@ scripts/      # Migration helpers and post-merge automation
 - **Never hand-edit** a migration file that has already been applied.
 - **Never bypass drizzle-kit** with raw SQL on the shared DB.
 - **Always commit the `.sql` file** alongside the schema change — it is the source of truth.
-- **Use `FeatureKey`** from `@toothhub/shared` for entitlement checks, never plan names.
+- **Use `FeatureKey`** from `@dentra/shared` for entitlement checks, never plan names.
 - **Filter by `clinic_id`** on every tenant-scoped query.
 
 ### Getting DATABASE_URL locally (VS Code / Codex)

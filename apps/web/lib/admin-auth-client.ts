@@ -9,6 +9,6 @@ export async function signOutAdmin(): Promise<void> {
   try {
     await revokeAdminSession();
   } finally {
-    window.location.assign('/th-admin/login');
+    window.location.assign('/dentra-admin/login');
   }
 }

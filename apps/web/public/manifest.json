@@ -1,12 +1,12 @@
 {
-  "name": "ToothHub PH — Clinic",
-  "short_name": "ToothHub",
-  "description": "ToothHub PH clinic workspace for staff and dentists.",
+  "name": "Dentra.ph",
+  "short_name": "Dentra",
+  "description": "Dentra.ph clinic workspace for staff and dentists.",
   "start_url": "/app",
   "scope": "/app",
   "display": "standalone",
-  "background_color": "#0f0a1f",
-  "theme_color": "#7c3aed",
+  "background_color": "#ffffff",
+  "theme_color": "#4c1d95",
   "orientation": "portrait-primary",
   "icons": [
     {

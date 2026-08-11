@@ -5,18 +5,18 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, Building2, Stethoscope, Package, Settings } from "lucide-react";
 
 const tabItems = [
-  { label: "Dashboard", href: "/th-admin",        icon: LayoutDashboard },
-  { label: "Clinics",   href: "/th-admin/clinics", icon: Building2 },
-  { label: "Dentists",  href: "/th-admin/dentists",icon: Stethoscope },
-  { label: "Packages",  href: "/th-admin/packages",icon: Package },
-  { label: "Settings",  href: "/th-admin/settings",icon: Settings },
+  { label: "Dashboard", href: "/dentra-admin",        icon: LayoutDashboard },
+  { label: "Clinics",   href: "/dentra-admin/clinics", icon: Building2 },
+  { label: "Dentists",  href: "/dentra-admin/dentists",icon: Stethoscope },
+  { label: "Packages",  href: "/dentra-admin/packages",icon: Package },
+  { label: "Settings",  href: "/dentra-admin/settings",icon: Settings },
 ];
 
 export default function MobileTabBar() {
   const pathname = usePathname();
 
   const isActive = (href: string) =>
-    href === "/th-admin" ? pathname === href : pathname.startsWith(href);
+    href === "/dentra-admin" ? pathname === href : pathname.startsWith(href);
 
   return (
     <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-violet-100 flex">

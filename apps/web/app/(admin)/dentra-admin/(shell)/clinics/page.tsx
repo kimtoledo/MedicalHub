@@ -46,7 +46,7 @@ function createPageHref(filters: {
   if (filters.search) query.set('search', filters.search);
   if (filters.status) query.set('status', filters.status);
   query.set('page', String(filters.page));
-  return `/th-admin/clinics?${query.toString()}`;
+  return `/dentra-admin/clinics?${query.toString()}`;
 }
 
 export default async function ClinicsPage({ searchParams }: ClinicsPageProps) {
@@ -95,7 +95,7 @@ export default async function ClinicsPage({ searchParams }: ClinicsPageProps) {
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">Clinics</h1>
                 <p className="text-sm text-slate-500">
-                  Search and review every clinic account on ToothHub.
+                  Search and review every clinic account on Dentra.ph.
                 </p>
               </div>
             </div>
@@ -107,7 +107,7 @@ export default async function ClinicsPage({ searchParams }: ClinicsPageProps) {
         </div>
 
         <form
-          action="/th-admin/clinics"
+          action="/dentra-admin/clinics"
           method="get"
           className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[minmax(0,1fr)_180px_auto]"
         >
@@ -150,7 +150,7 @@ export default async function ClinicsPage({ searchParams }: ClinicsPageProps) {
             </button>
             {(search || status) && (
               <Link
-                href="/th-admin/clinics"
+                href="/dentra-admin/clinics"
                 className="flex h-11 items-center rounded-xl border border-slate-200 px-4 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
               >
                 Clear

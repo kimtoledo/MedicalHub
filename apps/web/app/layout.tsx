@@ -2,9 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ToothHub PH — Smart Dental Practice Management",
+  title: "Dentra.ph — Smarter Dentistry. Better Care.",
   description:
-    "ToothHub PH is the all-in-one platform for Philippine dental clinics. Manage appointments, patient records, staff, and grow your practice online.",
+    "Dentra.ph is the all-in-one platform for Philippine dental clinics. Manage appointments, patient records, staff, and grow your practice online.",
+  icons: {
+    icon: "/brand/dentra-logo-icon.svg",
+  },
 };
 
 export default function RootLayout({

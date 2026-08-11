@@ -16,7 +16,7 @@ export default function CTASection() {
               your dental clinic?
             </h2>
             <p className="text-violet-100 text-lg max-w-xl mx-auto mb-10">
-              Be among the first Philippine dental clinics on ToothHub — save time, grow your patient base, and deliver better care.
+              Be among the first Philippine dental clinics on Dentra.ph — save time, grow your patient base, and deliver better care.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

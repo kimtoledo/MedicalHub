@@ -1,5 +1,5 @@
 /**
- * seed-demo.ts — ToothHub PH Demo Data Seeder
+ * seed-demo.ts — Dentra.ph Demo Data Seeder
  *
  * Inserts entirely synthetic, Philippine-flavored data for demonstration.
  * All UUIDs are deterministic constants — running this script twice is safe
@@ -300,7 +300,7 @@ function makeAppointments(opts: {
 // ---------------------------------------------------------------------------
 
 async function seed() {
-  console.log('🌱  ToothHub PH — seeding demo data...\n');
+  console.log('🌱  Dentra.ph — seeding demo data...\n');
 
   // ── 1. Super Admin user ────────────────────────────────────────────────────
   console.log('  👤  Super Admin user...');
@@ -308,10 +308,10 @@ async function seed() {
     .insert(schema.users)
     .values({
       id: ADMIN_USER_ID,
-      name: 'ToothHub Admin',
-      email: 'admin@toothhub.ph',
+      name: 'Dentra Admin',
+      email: 'admin@dentra.ph',
       emailVerified: true,
-      firstName: 'ToothHub',
+      firstName: 'Dentra',
       lastName: 'Admin',
       phone: '09171234567',
       platformRole: 'super_admin',
@@ -320,9 +320,9 @@ async function seed() {
     .onConflictDoUpdate({
       target: schema.users.email,
       set: {
-        name: 'ToothHub Admin',
+        name: 'Dentra Admin',
         emailVerified: true,
-        firstName: 'ToothHub',
+        firstName: 'Dentra',
         lastName: 'Admin',
         platformRole: 'super_admin',
         isActive: 'true',
@@ -887,7 +887,7 @@ async function seed() {
     {
       id: '00000000-0012-0001-0000-000000000001',
       actorId: ADMIN_USER_ID,
-      actorEmail: 'admin@toothhub.ph',
+      actorEmail: 'admin@dentra.ph',
       clinicId: null,
       entityType: 'clinic',
       entityId: CLINIC_SBD_ID,
@@ -898,7 +898,7 @@ async function seed() {
     {
       id: '00000000-0012-0002-0000-000000000001',
       actorId: ADMIN_USER_ID,
-      actorEmail: 'admin@toothhub.ph',
+      actorEmail: 'admin@dentra.ph',
       clinicId: null,
       entityType: 'clinic',
       entityId: CLINIC_BSM_ID,
@@ -909,7 +909,7 @@ async function seed() {
     {
       id: '00000000-0012-0003-0000-000000000001',
       actorId: ADMIN_USER_ID,
-      actorEmail: 'admin@toothhub.ph',
+      actorEmail: 'admin@dentra.ph',
       clinicId: CLINIC_SBD_ID,
       entityType: 'subscription',
       entityId: SUB_SBD_ID,
@@ -920,7 +920,7 @@ async function seed() {
     {
       id: '00000000-0012-0004-0000-000000000001',
       actorId: ADMIN_USER_ID,
-      actorEmail: 'admin@toothhub.ph',
+      actorEmail: 'admin@dentra.ph',
       clinicId: CLINIC_BSM_ID,
       entityType: 'subscription',
       entityId: SUB_BSM_ID,
@@ -944,7 +944,7 @@ async function seed() {
   console.log('\n✅  Seed complete!\n');
   console.log('  Demo accounts:');
   console.log('  ─────────────────────────────────────────────────');
-  console.log('  Super Admin  admin@toothhub.ph          (password from SUPER_ADMIN_PASSWORD)');
+  console.log('  Super Admin  admin@dentra.ph          (password from SUPER_ADMIN_PASSWORD)');
   console.log('  Clinic staff admin@smilebrightdental.ph (password from CLINIC_DEMO_PASSWORD)');
   console.log('  Clinic staff admin@brightsmile.ph       (password from CLINIC_DEMO_PASSWORD)');
   console.log('  Dentist      dr.reyes@smilebrightdental.ph (password from CLINIC_DEMO_PASSWORD)');

@@ -41,7 +41,7 @@ export const packageFeatures = pgTable(
     packageId: uuid('package_id')
       .notNull()
       .references(() => packages.id, { onDelete: 'cascade' }),
-    /** Must be a value from FeatureKey enum in @toothhub/shared */
+    /** Must be a value from FeatureKey enum in @dentra/shared */
     featureKey: varchar('feature_key', { length: 100 }).notNull(),
     isEnabled: boolean('is_enabled').notNull().default(true),
     ...timestamps,

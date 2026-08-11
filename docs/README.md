@@ -1,6 +1,6 @@
-# ToothHub PH
+# Dentra.ph
 
-ToothHub PH is a product software platform for the Philippine dental market. It combines a multi-tenant dental practice management system, public clinic microsites, independent dentist profiles, online appointment booking, subscription/package-based feature access, and an installable Progressive Web App (PWA).
+Dentra.ph is a product software platform for the Philippine dental market. It combines a multi-tenant dental practice management system, public clinic microsites, independent dentist profiles, online appointment booking, subscription/package-based feature access, and an installable Progressive Web App (PWA).
 
 This repository is intended to be the shared source of truth for Replit Agent, Claude, Codex, and human developers.
 
@@ -8,7 +8,7 @@ This repository is intended to be the shared source of truth for Replit Agent, C
 
 | Surface | Primary route | Audience |
 |---|---|---|
-| ToothHub company website | `/` | Public |
+| Dentra.ph company website | `/` | Public |
 | Features | `/features` | Public |
 | Pricing | `/pricing` | Public |
 | Clinic directory | `/clinics` | Public |
@@ -19,7 +19,7 @@ This repository is intended to be the shared source of truth for Replit Agent, C
 | Dentist booking | `/dentists/[dentistSlug]/appointment` | Public |
 | Clinic/staff login | `/cl-login` | Auth |
 | Clinic PWA | `/app` | Clinic users |
-| ToothHub Super Admin | `/th-admin` | Platform users |
+| Dentra.ph Super Admin | `/dentra-admin` | Platform users |
 
 ## 2. Demo deployment architecture
 
@@ -43,8 +43,8 @@ Replit PostgreSQL
 
 Recommended domains:
 
-- Frontend: `https://toothhubph.com`
-- Backend API: `https://api.toothhubph.com`
+- Frontend: `https://dentra.ph`
+- Backend API: `https://api.dentra.ph`
 
 For the demo, Vercel Hobby is treated as temporary hosting only. Before commercial launch, review the current hosting plan terms, capacity, privacy, backups, and production requirements.
 
@@ -129,7 +129,7 @@ replit.md
 pnpm-workspace.yaml
 ```
 
-Do not create separate applications or databases per clinic. ToothHub is one multi-tenant product.
+Do not create separate applications or databases per clinic. Dentra.ph is one multi-tenant product.
 
 ## 5. Core domain rules
 
@@ -248,14 +248,14 @@ Configure the Vercel project root as `apps/web`.
 Use environment variables such as:
 
 ```env
-NEXT_PUBLIC_APP_URL=https://toothhubph.com
-NEXT_PUBLIC_API_URL=https://api.toothhubph.com
+NEXT_PUBLIC_APP_URL=https://dentra.ph
+NEXT_PUBLIC_API_URL=https://api.dentra.ph
 ```
 
 Prefer one of these API patterns:
 
-1. Frontend calls `https://api.toothhubph.com/v1/...` and Replit API uses an explicit CORS allowlist; or
-2. Vercel rewrites `/api/backend/*` to the Replit API so the browser mostly stays on the ToothHub origin.
+1. Frontend calls `https://api.dentra.ph/v1/...` and Replit API uses an explicit CORS allowlist; or
+2. Vercel rewrites `/api/backend/*` to the Replit API so the browser mostly stays on the Dentra.ph origin.
 
 Do not put the PostgreSQL connection string in Vercel client-exposed variables.
 

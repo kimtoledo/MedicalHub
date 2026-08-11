@@ -1,4 +1,4 @@
-const SHELL_CACHE = "toothhub-shell-v1";
+const SHELL_CACHE = "dentra-shell-v2";
 const SHELL_ASSETS = [
   "/offline",
   "/manifest.json",

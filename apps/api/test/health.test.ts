@@ -34,7 +34,7 @@ describe('health routes', () => {
     const response = await app.inject({ method: 'GET', url: '/health' });
 
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({ status: 'ok', service: 'toothhub-api' });
+    expect(response.json()).toEqual({ status: 'ok', service: 'dentra-api' });
     expect(checks).toBe(0);
   });
 
@@ -50,7 +50,7 @@ describe('health routes', () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({
       status: 'ok',
-      service: 'toothhub-api',
+      service: 'dentra-api',
       database: 'connected',
     });
   });
@@ -70,7 +70,7 @@ describe('health routes', () => {
     expect(response.body).not.toContain('secret');
     expect(response.json()).toEqual({
       status: 'unavailable',
-      service: 'toothhub-api',
+      service: 'dentra-api',
       database: 'disconnected',
     });
   });
