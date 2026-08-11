@@ -4,9 +4,9 @@ Verified on **August 12, 2026** against the local Dentra.ph application and conf
 
 | Release gate | Result | Evidence |
 |---|---|---|
-| Cross-tenant protected records | ✅ Pass | Direct Clinic A request for Clinic B patients returned `403`; patient, encounter, odontogram, dashboard, settings, workspace, and entitlement route tests deny before service queries. |
+| Cross-tenant protected records | ✅ Pass | Direct Clinic A request for Clinic B patients returned `403`; patient, encounter, odontogram, dashboard, settings, workspace, billing, prescription, and clinical-file boundaries deny before domain/storage work. |
 | Client tenant/identity injection | ✅ Pass | Strict request schemas reject supplied `clinicId`, patient number, dentist identity, and other server-owned fields. |
-| API entitlement enforcement | ✅ Pass | Direct patient/clinical requests with disabled entitlements return `403 ENTITLEMENT_REQUIRED`. |
+| API entitlement enforcement | ✅ Pass | Direct patient/clinical, invoice, payment, prescription, and clinical-file requests with disabled entitlements return `403 ENTITLEMENT_REQUIRED` before service calls. |
 | Multi-clinic dentist separation | ✅ Pass | Automated test requests each authorized membership independently and confirms the exact clinic scope reaches the service. |
 | Unpublished public records | ✅ Pass | Live unpublished clinic and dentist URLs returned `404`; route tests cover both contracts. |
 | Concurrent booking conflict | ✅ Pass | Two live concurrent requests for one dentist and one slot returned exactly one `201` and one `409`; an automated concurrent HTTP test preserves the gate. |
@@ -14,6 +14,9 @@ Verified on **August 12, 2026** against the local Dentra.ph application and conf
 | PWA protected-data cache safety | ✅ Pass | Service worker bypasses `/api/*` and `/v1/*`; static release test verifies no API route is included in the shell cache. |
 | Sensitive-action auditing | ✅ Pass | Shared transaction-aware audit writer covers MVP 1 mutations; migration `0007_audit_immutability.sql` rejects audit updates/deletes. |
 | Synthetic demo data | ✅ Pass | Clean seed target is 1 Super Admin, 2 clinics, 4 dentists, 20 synthetic patients, and 50 synthetic appointments with generated test contact/license data. |
+| Billing lite completion | ✅ Pass | Finalized treatments generate tenant/branch-scoped invoice snapshots; exact single payments, Manila-day collections, printable receipts, and transactional audit records are implemented. |
+| Prescription completion | ✅ Pass | Dentist-only issuance requires a finalized encounter, preloads the authenticated profile's PRC number, preserves immutable amendments, exposes the patient timeline, and audits each issuance. |
+| Private clinical files | ✅ Pass | Upload validates MIME/size plus clinic-patient-branch-encounter ownership before storage; every API is feature protected and signed access uses a configured 32+ character secret with a 15-minute TTL. |
 | Responsive layouts | ✅ Pass | Chrome DevTools Protocol checks at 375×812, 768×1024, and 1280×900 found no document overflow; clinic PWA, Super Admin audit, and public clinic views were visually inspected. |
 
 ## Verification commands
@@ -26,4 +29,4 @@ npm run typecheck
 npm run build
 ```
 
-The automated release gates are in `apps/api/test/mvp1-release-gates.test.ts` and the relevant route suites. This checklist is a functional MVP gate, not a substitute for a professional security assessment before processing real patient data.
+The automated release gates are in `apps/api/test/mvp1-release-gates.test.ts`, `apps/api/test/mvp1-business-entitlements.test.ts`, and the relevant route suites. The post-merge audit passes 228 API tests, repository-wide typecheck, and all migrations through `0014_merge_history_reconciliation.sql`. This checklist is a functional MVP gate, not a substitute for a professional security assessment before processing real patient data.

@@ -13,6 +13,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { hashPassword } from '@better-auth/utils/password';
 import dotenv from 'dotenv';
 import postgres from 'postgres';
+import { FeatureKey } from '@dentra/shared';
 import * as schema from '../packages/db/src/schema';
 
 dotenv.config();
@@ -116,34 +117,45 @@ function addMinutes(d: Date, mins: number): Date {
 
 // Philippine feature flags per package
 const STARTER_FEATURES = [
-  'appointments.manage',
-  'appointments.calendar',
-  'patients.manage',
-  'staff.manage',
-  'reports.basic',
+  FeatureKey.APPOINTMENTS_MANAGE,
+  FeatureKey.APPOINTMENTS_CALENDAR,
+  FeatureKey.PATIENTS_MANAGE,
+  FeatureKey.STAFF_MANAGE,
+  FeatureKey.REPORTS_BASIC,
 ];
 
-const PRO_FEATURES = [
+const PRO_CORE_FEATURES = [
   ...STARTER_FEATURES,
-  'booking.public',
-  'clinical.records',
-  'clinical.odontogram',
-  'clinical.encounters',
-  'clinical.treatment_records',
-  'roles.manage',
-  'microsite.publish',
-  'branches.multi',
-  'reports.advanced',
+  FeatureKey.BOOKING_PUBLIC,
+  FeatureKey.CLINICAL_RECORDS,
+  FeatureKey.ODONTOGRAM,
+  FeatureKey.ENCOUNTERS,
+  FeatureKey.TREATMENT_RECORDS,
+  FeatureKey.ROLES_MANAGE,
+  FeatureKey.MICROSITE_PUBLISH,
+  FeatureKey.BRANCHES_MULTI,
+  FeatureKey.REPORTS_ADVANCED,
+];
+
+// MVP 1 business basics are available to the primary Professional demo clinic.
+// Appending them preserves all deterministic IDs already issued for core rows.
+const PRO_FEATURES = [
+  ...PRO_CORE_FEATURES,
+  FeatureKey.BILLING_INVOICES,
+  FeatureKey.BILLING_PAYMENTS,
+  FeatureKey.PRESCRIPTIONS,
+  FeatureKey.RADIOGRAPHS,
 ];
 
 const ENTERPRISE_FEATURES = [
-  ...PRO_FEATURES,
-  'billing.invoices',
-  'billing.payments',
-  'clinical.prescriptions',
-  'inventory.manage',
-  'clinical.radiographs',
-  'microsite.customize',
+  // Keep this order stable: deterministic IDs may already exist in a seeded DB.
+  ...PRO_CORE_FEATURES,
+  FeatureKey.BILLING_INVOICES,
+  FeatureKey.BILLING_PAYMENTS,
+  FeatureKey.PRESCRIPTIONS,
+  FeatureKey.INVENTORY_MANAGE,
+  FeatureKey.RADIOGRAPHS,
+  FeatureKey.MICROSITE_CUSTOMIZE,
 ];
 
 // Filipino first/last name pools

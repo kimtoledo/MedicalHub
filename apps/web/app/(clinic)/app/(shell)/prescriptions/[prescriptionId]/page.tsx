@@ -36,7 +36,7 @@ export default async function PrescriptionDetailPage({
   params: { prescriptionId: string };
 }) {
   const identity = await getClinicSession();
-  if (!identity) redirect("/login");
+  if (!identity) redirect("/cl-login");
 
   const cookieHeader = cookies().toString();
   const res = await fetch(

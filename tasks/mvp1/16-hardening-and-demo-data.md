@@ -36,9 +36,9 @@ Every release gate in `docs/MVP_1.md` passes:
 
 ## Steps
 
-1. ✅ **Seed script** — the idempotent seed creates a synthetic Super Admin, 2 clinics, 4 dentists, 20 patients, and 50 appointments on a clean database.
-2. ✅ **Cross-tenant API tests** — direct route suites cover patient, encounter, odontogram, dashboard, settings, workspace, and entitlement isolation plus server-owned scope fields.
-3. ✅ **Entitlement denial tests** — disabled-feature calls return `403 ENTITLEMENT_REQUIRED` before domain queries execute.
+1. ✅ **Seed script** — the idempotent seed creates a synthetic Super Admin, 2 clinics, 4 dentists, 20 patients, and 50 appointments on a clean database; the Professional demo package includes the MVP 1 billing, prescription, and clinical-file entitlements.
+2. ✅ **Cross-tenant API tests** — direct route suites cover patient, encounter, odontogram, dashboard, settings, workspace, billing, prescriptions, and clinical-file isolation plus server-owned scope fields; upload validation verifies the patient, branch, and encounter relationship before storage.
+3. ✅ **Entitlement denial tests** — disabled patient/clinical, billing, payment, prescription, and clinical-file calls return `403 ENTITLEMENT_REQUIRED` before domain queries execute.
 4. ✅ **Conflict booking test** — concurrent same-dentist/same-slot requests produce exactly one success and one conflict in both automated HTTP and live database verification.
 5. ✅ **PWA cache audit** — `/api/*` and `/v1/*` remain network-only and an automated static release test guards the shell cache allowlist.
 6. ✅ **Responsive QA** — clinic PWA, Super Admin audit, and public clinic surfaces were rendered and inspected at 375×812, 768×1024, and 1280×900 with no document overflow.

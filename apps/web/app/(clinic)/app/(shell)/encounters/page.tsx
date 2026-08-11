@@ -20,7 +20,7 @@ export type EncounterListItem = {
 
 export default async function EncountersPage() {
   const identity = await getClinicSession();
-  if (!identity) redirect("/login");
+  if (!identity) redirect("/cl-login");
 
   const cookieHeader = cookies().toString();
   const res = await fetch(

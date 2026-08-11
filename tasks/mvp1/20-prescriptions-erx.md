@@ -1,6 +1,6 @@
 # Prescription Builder (e-Rx)
 
-> **Status:** ✅ Done — MVP 1 (Increment 5)
+> **Status:** ✅ Done — MVP 1 (Increment 5), post-merge acceptance verified August 12, 2026
 > **Proposal alignment:** Executive Summary §3-E — Prescription Builder
 > **Project task:** #23
 
@@ -36,12 +36,12 @@ Dentists issue prescriptions after nearly every consultation — it is daily-use
 
 ## Steps
 
-1. **Schema** — Add `prescriptions` and `prescription_items` tables with `amended_from` self-ref FK; generate and apply migration.
-2. **Prescription form** — Slide-over/drawer accessible from a finalized encounter; repeatable medicine row component.
-3. **Immutability enforcement** — API rejects any update to an issued prescription; "Amend" action creates a new draft linked to the original.
-4. **PDF output** — Printable prescription layout component: clinic header, patient name, date, Rx items, dentist name + PRC number, signature line.
-5. **Patient timeline** — Prescriptions tab on patient profile.
-6. **Audit** — Write `prescription.issued` audit entry on every save.
+1. ✅ **Schema** — migration `0009_prescriptions.sql` adds tenant-scoped prescriptions, repeatable medicine items, immutable snapshots, and the `amended_from` self-reference.
+2. ✅ **Prescription form** — finalized encounter details open a responsive slide-over with the encounter preselected, repeatable medicine rows, and an editable PRC number prefilled from the authenticated dentist profile.
+3. ✅ **Immutability enforcement** — no update route exists for an issued record; the protected dentist-only Amend action creates a new issued snapshot linked to the original while preserving both records.
+4. ✅ **PDF output** — prescription detail renders a standard printable layout with clinic identity/logo/address, patient/date, Rx items, dentist/PRC details, and signature line for browser Print / Save as PDF.
+5. ✅ **Patient timeline** — the entitlement-aware Prescriptions tab lists the patient's prescriptions newest-first with amendment state, encounter navigation, and View / Print links.
+6. ✅ **Audit** — every original or amended issuance appends a tenant-scoped `prescription.issued` audit entry in the same transaction.
 
 ## Relevant files
 

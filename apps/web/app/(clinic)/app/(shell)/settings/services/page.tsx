@@ -4,7 +4,7 @@ import ServicesSettingsClient from "./ServicesSettingsClient";
 
 export default async function ServicesSettingsPage() {
   const identity = await getClinicSession();
-  if (!identity) redirect("/login");
+  if (!identity) redirect("/cl-login");
 
   return <ServicesSettingsClient clinicId={identity.clinicId} isAdmin={identity.isAdmin} />;
 }

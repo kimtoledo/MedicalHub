@@ -1,10 +1,12 @@
 import { notFound, redirect } from "next/navigation";
 import EncounterForm from "@/components/app/encounters/EncounterForm";
 import TreatmentPanel from "@/components/app/encounters/TreatmentPanel";
+import FilesTab from "@/components/app/FilesTab";
 import { getClinicSession, getClinicShellContext } from "@/lib/clinic-session";
 import { getClinicPatientOptions } from "@/lib/clinic-patients";
 import { getEncounter } from "@/lib/clinic-encounters";
 import { getClinicServices, getPatientTreatments } from "@/lib/clinic-treatments";
+import PrescriptionDrawer from "../../../prescriptions/new/PrescriptionDrawer";
 export default async function EncounterPage({
   params,
 }: {
@@ -28,6 +30,11 @@ export default async function EncounterPage({
         <h1 className="mt-1 text-3xl font-bold text-violet-950">
           Encounter · {encounter.date}
         </h1>
+        {encounter.status === "final" && context.entitlements["clinical.prescriptions"] ? (
+          <div className="mt-4 flex justify-end">
+            <PrescriptionDrawer clinicId={identity.clinicId} encounterId={encounter.id} />
+          </div>
+        ) : null}
         <div className="mt-7 rounded-2xl border border-violet-100 bg-white p-5 shadow-sm sm:p-7">
           <EncounterForm
             clinicId={identity.clinicId}
@@ -37,6 +44,18 @@ export default async function EncounterPage({
           />
         </div>
         <TreatmentPanel clinicId={identity.clinicId} encounterId={encounter.id} isFinal={encounter.status === "final"} services={services} treatments={patientTreatments.filter((item) => item.encounterId === encounter.id)} />
+        {context.entitlements["clinical.radiographs"] ? (
+          <section className="mt-6 rounded-2xl border border-violet-100 bg-white p-5 shadow-sm sm:p-7">
+            <h2 className="mb-4 text-lg font-bold text-violet-950">Clinical Files</h2>
+            <FilesTab
+              clinicId={identity.clinicId}
+              encounterId={encounter.id}
+              patientId={encounter.patientId}
+              branchId={encounter.branchId}
+              allowUpload
+            />
+          </section>
+        ) : null}
       </div>
     </div>
   );

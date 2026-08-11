@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Menu, X, Bell, Search, LogOut, Building2, CalendarDays, Users, UserCog, Settings, UserCircle, CalendarCheck, ClipboardList, Grid3X3, Stethoscope } from "lucide-react";
+import { Menu, X, Bell, Search, LogOut, Building2, CalendarDays, Users, UserCog, Settings, UserCircle, CalendarCheck, ClipboardList, Grid3X3, Stethoscope, FileText, Receipt, Shield, Camera } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { type ClinicRole } from "@/lib/clinic-types";
@@ -12,6 +12,10 @@ const clinicNavItems = [
   { label: "Dashboard",       href: "/app",              icon: Building2,     exact: true },
   { label: "Appointments",    href: "/app/appointments", icon: CalendarDays, feature: "appointments.manage" },
   { label: "Patients",        href: "/app/patients",     icon: Users, feature: "patients.manage" },
+  { label: "Encounters",      href: "/app/encounters",   icon: ClipboardList, feature: "clinical.encounters", roles: ["clinic_owner", "clinic_admin", "dental_assistant"] },
+  { label: "Prescriptions",   href: "/app/prescriptions", icon: FileText, feature: "clinical.prescriptions", roles: ["clinic_owner", "clinic_admin", "dental_assistant"] },
+  { label: "Billing",         href: "/app/billing",       icon: Receipt, feature: "billing.invoices", roles: ["clinic_owner", "clinic_admin", "receptionist", "dental_assistant"] },
+  { label: "HMO Claims",      href: "/app/billing/hmo-claims", icon: Shield, feature: "hmo.claims" },
   { label: "Staff",           href: "/app/staff",        icon: UserCog, feature: "staff.manage" },
   { label: "Clinic Settings", href: "/app/settings",     icon: Settings      },
   { label: "My Profile",      href: "/app/profile",      icon: UserCircle    },
@@ -21,7 +25,9 @@ const dentistNavItems = [
   { label: "My Schedule", href: "/app/dentist",            icon: CalendarCheck, exact: true, feature: "appointments.calendar" },
   { label: "My Patients", href: "/app/dentist/patients",   icon: Users, feature: "patients.manage" },
   { label: "Encounters",  href: "/app/dentist/encounters", icon: ClipboardList, feature: "clinical.encounters" },
+  { label: "Prescriptions", href: "/app/prescriptions", icon: FileText, feature: "clinical.prescriptions" },
   { label: "Odontogram",  href: "/app/dentist/odontogram", icon: Grid3X3, feature: "clinical.odontogram" },
+  { label: "Remote Consults", href: "/app/dentist/remote-consults", icon: Camera, feature: "teledentistry" },
   { label: "My Profile",  href: "/app/dentist/profile",    icon: UserCircle     },
 ];
 
@@ -35,6 +41,7 @@ function getPageTitle(pathname: string, role: ClinicRole) {
 
 interface AppTopBarProps {
   role: ClinicRole;
+  membershipRole: string;
   clinicName?: string;
   branchName: string;
   userName: string;
@@ -42,11 +49,15 @@ interface AppTopBarProps {
   entitlements: Record<string, boolean>;
 }
 
-export default function AppTopBar({ role, clinicName = "Clinic", branchName, userName, userEmail = "staff@clinic.ph", entitlements }: AppTopBarProps) {
+export default function AppTopBar({ role, membershipRole, clinicName = "Clinic", branchName, userName, userEmail = "staff@clinic.ph", entitlements }: AppTopBarProps) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const title = getPageTitle(pathname, role);
-  const navItems = (role === "dentist" ? dentistNavItems : clinicNavItems).filter((item) => !("feature" in item) || !item.feature || entitlements[item.feature]);
+  const navItems = (role === "dentist" ? dentistNavItems : clinicNavItems).filter((item) => {
+    const hasFeature = !("feature" in item) || !item.feature || entitlements[item.feature];
+    const hasRole = !("roles" in item) || !item.roles || item.roles.includes(membershipRole);
+    return hasFeature && hasRole;
+  });
 
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname === href || pathname.startsWith(href + "/");

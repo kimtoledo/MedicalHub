@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ClipboardList, ImageIcon, Sparkles } from "lucide-react";
+import { ArrowLeft, ClipboardList, ImageIcon, Sparkles, Receipt } from "lucide-react";
 import FilesTab from "@/components/app/FilesTab";
 import AINoteSuggest from "@/components/app/ai/AINoteSuggest";
 import AIRecallBanner from "@/components/app/ai/AIRecallBanner";
 import AITreatmentPanel from "@/components/app/ai/AITreatmentPanel";
 import type { EncounterDetail } from "./page";
+import PrescriptionDrawer from "../../prescriptions/new/PrescriptionDrawer";
 
 type Tab = "summary" | "files" | "ai";
 
@@ -15,10 +16,16 @@ export default function EncounterDetailClient({
   encounter,
   clinicId,
   isDentist,
+  canPrescribe,
+  canUseFiles,
+  canBill,
 }: {
   encounter: EncounterDetail;
   clinicId: string;
   isDentist: boolean;
+  canPrescribe: boolean;
+  canUseFiles: boolean;
+  canBill: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("summary");
 
@@ -38,7 +45,7 @@ export default function EncounterDetailClient({
 
   const tabs = [
     { id: "summary" as Tab, label: "Summary",     Icon: ClipboardList },
-    { id: "files"   as Tab, label: "Files",       Icon: ImageIcon     },
+    ...(canUseFiles ? [{ id: "files" as Tab, label: "Files", Icon: ImageIcon }] : []),
     ...(isDentist ? [{ id: "ai" as Tab, label: "AI Assistant", Icon: Sparkles }] : []),
   ];
 
@@ -68,6 +75,21 @@ export default function EncounterDetailClient({
             {encounter.status}
           </span>
         </div>
+        {encounter.status === "final" ? (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {isDentist && canPrescribe ? (
+              <PrescriptionDrawer clinicId={clinicId} encounterId={encounter.id} />
+            ) : null}
+            {canBill ? (
+              <Link
+                href={`/app/billing/new?encounterId=${encodeURIComponent(encounter.id)}`}
+                className="inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-white px-4 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-50 focus:outline-none focus:ring-2 focus:ring-violet-500"
+              >
+                <Receipt size={15} /> Generate Invoice
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
         {encounter.dentistFirstName && (
           <p className="text-violet-400 text-xs mt-1">
             Dr. {encounter.dentistFirstName} {encounter.dentistLastName}
@@ -168,7 +190,7 @@ export default function EncounterDetailClient({
       )}
 
       {/* Tab: Files */}
-      {tab === "files" && (
+      {tab === "files" && canUseFiles && (
         <FilesTab
           clinicId={clinicId}
           encounterId={encounter.id}

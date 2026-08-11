@@ -35,8 +35,8 @@ Nothing beyond the mock UI shell works until this is done.
 
 ## Steps
 
-1. **Connect PostgreSQL** — ✅ `DATABASE_URL` is configured and all Drizzle migrations through `0007_audit_immutability.sql` apply cleanly (#6).
-2. **Scaffold Fastify API** — create `apps/api` with TypeScript, health endpoint, Drizzle client, CORS/cookie config for the Next.js frontend (#7).
+1. **Connect PostgreSQL** — ✅ `DATABASE_URL` is configured and all Drizzle migrations through `0014_merge_history_reconciliation.sql` apply in order (#6).
+2. **Scaffold Fastify API** — ✅ `apps/api` provides the TypeScript Fastify server, health endpoint, Drizzle client, CORS/cookie configuration, and independently runnable dev/production scripts (#7).
 3. **Configure Better Auth** — ✅ Better Auth is mounted on the API with database sessions, `superAdmin` and `clinicMember` authorization strategies, and tenant-scoped membership resolution (#8).
 4. **Wire Super Admin login** — ✅ `/dentra-admin/login` uses Better Auth through a same-origin proxy; all `/dentra-admin/(shell)` routes enforce a server-side `super_admin` session check (#13).
 5. **Wire Clinic login** — ✅ `/cl-login` uses Better Auth through the same-origin proxy; role (clinic staff vs. dentist) is derived from `clinicMemberships` returned by `/v1/session-context`, not a radio button. All `/app/(shell)` routes enforce a server-side `clinicMember` session check.

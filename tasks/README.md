@@ -30,6 +30,9 @@ tasks/
     16-hardening-and-demo-data.md
     17-dentra-brand-migration.md
     18-inter-typography.md
+    19-billing-lite.md
+    20-prescriptions-erx.md
+    21-file-uploads-clinical.md
   mvp2/              ← Complete Clinic Business Operations
     00-overview.md
     01-treatment-planning.md
@@ -44,6 +47,9 @@ tasks/
     10-microsite-customization.md
     11-subscription-operations.md
     12-new-roles.md
+    13-ai-clinical-assistance.md
+    14-teledentistry.md
+    15-hmo-insurance.md
   mvp3/              ← Ecosystem + Scale
     00-overview.md
     01-patient-portal.md
@@ -57,6 +63,8 @@ tasks/
     09-integrations-api.md
     10-offline-mode.md
     11-platform-operations.md
+    12-ai-imaging.md
+    13-kiosk-checkin.md
 ```
 
 ---

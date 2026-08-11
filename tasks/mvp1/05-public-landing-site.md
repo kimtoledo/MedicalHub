@@ -1,7 +1,6 @@
 # Public Landing Site
 
 > **Status:** ✅ Done — all five implementation steps are complete
-> The homepage sections exist as static components; clinic/dentist directories need to be wired to real data.
 
 ---
 

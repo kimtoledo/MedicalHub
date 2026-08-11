@@ -1,5 +1,5 @@
 import { redirect, notFound } from "next/navigation";
-import { getClinicSession } from "@/lib/clinic-session";
+import { getClinicSession, getClinicShellContext } from "@/lib/clinic-session";
 import { getBackendUrl } from "@/lib/backend";
 import { cookies } from "next/headers";
 import EncounterDetailClient from "./EncounterDetailClient";
@@ -31,8 +31,10 @@ export default async function EncounterDetailPage({
   params: { encounterId: string };
 }) {
   const identity = await getClinicSession();
-  if (!identity) redirect("/login");
+  if (!identity) redirect("/cl-login");
 
+  const context = await getClinicShellContext(identity).catch(() => null);
+  const hasClinicalRole = ["clinic_owner", "clinic_admin", "dentist", "dental_assistant"].includes(identity.membershipRole);
   const cookieHeader = cookies().toString();
   const res = await fetch(
     getBackendUrl(`/v1/clinic/${identity.clinicId}/encounters/${params.encounterId}`),
@@ -50,6 +52,9 @@ export default async function EncounterDetailPage({
       encounter={json.data}
       clinicId={identity.clinicId}
       isDentist={identity.role === "dentist" || identity.isAdmin}
+      canPrescribe={identity.membershipRole === "dentist" && Boolean(context?.entitlements["clinical.prescriptions"])}
+      canUseFiles={hasClinicalRole && Boolean(context?.entitlements["clinical.radiographs"])}
+      canBill={identity.role !== "dentist" && Boolean(context?.entitlements["billing.invoices"])}
     />
   );
 }

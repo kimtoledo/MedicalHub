@@ -219,22 +219,25 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     if (options.clinicDashboard && options.entitlements) {
       await registerClinicDashboardRoutes(app, { auth: options.auth, entitlements: options.entitlements, dashboard: options.clinicDashboard });
     }
-    if (options.clinicBilling && options.clinicServiceList) {
+    if (options.clinicBilling && options.clinicServiceList && options.entitlements) {
       await registerClinicBillingRoutes(app, {
         auth: options.auth,
+        entitlements: options.entitlements,
         billingService: options.clinicBilling,
         serviceListService: options.clinicServiceList,
       });
     }
-    if (options.clinicPrescription) {
+    if (options.clinicPrescription && options.entitlements) {
       await registerClinicPrescriptionRoutes(app, {
         auth: options.auth,
+        entitlements: options.entitlements,
         prescriptionService: options.clinicPrescription,
       });
     }
-    if (options.clinicFiles) {
+    if (options.clinicFiles && options.entitlements) {
       await registerClinicFilesRoutes(app, {
         auth: options.auth,
+        entitlements: options.entitlements,
         filesService: options.clinicFiles,
       });
     }

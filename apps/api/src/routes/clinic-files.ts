@@ -1,8 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { getClinicAccess, hasClinicAccess, isSuperAdmin } from '../auth/authorization.js';
-import { resolveRequestAuthorization } from '../auth/request.js';
+import { FeatureKey } from '@dentra/shared';
+import { getClinicAccess } from '../auth/authorization.js';
 import type { AuthorizationContext, AuthServices } from '../auth/types.js';
+import { requireClinicFeature } from '../clinic/access.js';
+import type { EntitlementService } from '../entitlements/service.js';
 import {
   ClinicalFileError,
   verifySignedToken,
@@ -40,17 +42,7 @@ const uploadMetaSchema = z.object({
 // Auth helpers (same pattern as billing / prescriptions)
 // ---------------------------------------------------------------------------
 
-function checkClinicAuth(
-  authorization: AuthorizationContext,
-  clinicId: string,
-  allowedRoles?: Parameters<typeof hasClinicAccess>[2],
-): boolean {
-  if (isSuperAdmin(authorization)) return true;
-  return hasClinicAccess(authorization, clinicId, allowedRoles);
-}
-
 function getCallerBranchIds(authorization: AuthorizationContext, clinicId: string): string[] | null {
-  if (isSuperAdmin(authorization)) return null;
   const memberships = getClinicAccess(authorization, clinicId);
   if (memberships.some((m) => m.branchId === null)) return null;
   const ids = memberships.map((m) => m.branchId).filter((id): id is string => id !== null);
@@ -63,8 +55,11 @@ function getCallerBranchIds(authorization: AuthorizationContext, clinicId: strin
 
 export type ClinicFilesRoutesOptions = {
   auth: AuthServices;
+  entitlements: EntitlementService;
   filesService: ClinicFilesService;
 };
+
+const clinicalRoles = ['clinic_owner', 'clinic_admin', 'dentist', 'dental_assistant'] as const;
 
 // ---------------------------------------------------------------------------
 // Register routes
@@ -74,7 +69,7 @@ export async function registerClinicFilesRoutes(
   app: FastifyInstance,
   options: ClinicFilesRoutesOptions,
 ): Promise<void> {
-  const { auth, filesService } = options;
+  const { auth, entitlements, filesService } = options;
 
   function fileErrorStatus(err: ClinicalFileError): number {
     return err.code === 'NOT_FOUND'      ? 404
@@ -93,9 +88,8 @@ export async function registerClinicFilesRoutes(
     const params = clinicParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid clinic ID' } });
 
-    const authorization = await resolveRequestAuthorization(request, auth);
-    if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!checkClinicAuth(authorization, params.data.clinicId)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic access required' } });
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.RADIOGRAPHS, [...clinicalRoles]);
+    if (!authorization) return;
 
     const callerBranchIds = getCallerBranchIds(authorization, params.data.clinicId);
 
@@ -162,9 +156,8 @@ export async function registerClinicFilesRoutes(
     const params = clinicParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid clinic ID' } });
 
-    const authorization = await resolveRequestAuthorization(request, auth);
-    if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!checkClinicAuth(authorization, params.data.clinicId)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic access required' } });
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.RADIOGRAPHS, [...clinicalRoles]);
+    if (!authorization) return;
 
     const query = listFilesQuerySchema.safeParse(request.query);
     if (!query.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid query params' } });
@@ -181,9 +174,8 @@ export async function registerClinicFilesRoutes(
     const params = fileParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid params' } });
 
-    const authorization = await resolveRequestAuthorization(request, auth);
-    if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!checkClinicAuth(authorization, params.data.clinicId)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic access required' } });
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.RADIOGRAPHS, [...clinicalRoles]);
+    if (!authorization) return;
 
     const callerBranchIds = getCallerBranchIds(authorization, params.data.clinicId);
     const file = await filesService.getFile(params.data.clinicId, params.data.fileId, callerBranchIds);
@@ -198,9 +190,8 @@ export async function registerClinicFilesRoutes(
     const params = fileParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid params' } });
 
-    const authorization = await resolveRequestAuthorization(request, auth);
-    if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!checkClinicAuth(authorization, params.data.clinicId)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic access required' } });
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.RADIOGRAPHS, [...clinicalRoles]);
+    if (!authorization) return;
 
     const callerBranchIds = getCallerBranchIds(authorization, params.data.clinicId);
 
@@ -262,9 +253,8 @@ export async function registerClinicFilesRoutes(
     const params = fileParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid params' } });
 
-    const authorization = await resolveRequestAuthorization(request, auth);
-    if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!checkClinicAuth(authorization, params.data.clinicId)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic access required' } });
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.RADIOGRAPHS, [...clinicalRoles]);
+    if (!authorization) return;
 
     const callerBranchIds = getCallerBranchIds(authorization, params.data.clinicId);
 

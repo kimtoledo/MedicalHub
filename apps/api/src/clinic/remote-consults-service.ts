@@ -44,7 +44,11 @@ export class RemoteConsultError extends Error {
 // ---------------------------------------------------------------------------
 
 function getSecret(): string {
-  return process.env.SESSION_SECRET ?? 'dentra-default-secret';
+  const secret = process.env.BETTER_AUTH_SECRET ?? process.env.SESSION_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error('Remote consultation signing requires BETTER_AUTH_SECRET or SESSION_SECRET');
+  }
+  return secret;
 }
 
 export function generatePhotoToken(assessmentId: string, clinicId: string, photoIndex: number): string {

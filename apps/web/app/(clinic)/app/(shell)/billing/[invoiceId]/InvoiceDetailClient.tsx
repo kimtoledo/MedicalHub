@@ -21,6 +21,15 @@ const METHOD_LABELS: Record<string, string> = {
   other: "Other",
 };
 
+function todayManila() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
 // ---------------------------------------------------------------------------
 // Record Payment modal
 // ---------------------------------------------------------------------------
@@ -36,7 +45,7 @@ function RecordPaymentModal({
   onSuccess: () => void;
 }) {
   const [method, setMethod] = useState("cash");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayManila());
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

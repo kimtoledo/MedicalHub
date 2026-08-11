@@ -32,9 +32,9 @@ const clinicNavItems = [
   { label: "Dashboard",       href: "/app",                    icon: LayoutDashboard, exact: true },
   { label: "Appointments",    href: "/app/appointments",       icon: CalendarDays, feature: "appointments.manage" },
   { label: "Patients",        href: "/app/patients",           icon: Users, feature: "patients.manage" },
-  { label: "Encounters",      href: "/app/encounters",         icon: ClipboardList, feature: "clinical.encounters" },
-  { label: "Prescriptions",   href: "/app/prescriptions",      icon: FileText, feature: "clinical.prescriptions" },
-  { label: "Billing",         href: "/app/billing",            icon: Receipt, feature: "billing.invoices" },
+  { label: "Encounters",      href: "/app/encounters",         icon: ClipboardList, feature: "clinical.encounters", roles: ["clinic_owner", "clinic_admin", "dental_assistant"] },
+  { label: "Prescriptions",   href: "/app/prescriptions",      icon: FileText, feature: "clinical.prescriptions", roles: ["clinic_owner", "clinic_admin", "dental_assistant"] },
+  { label: "Billing",         href: "/app/billing",            icon: Receipt, feature: "billing.invoices", roles: ["clinic_owner", "clinic_admin", "receptionist", "dental_assistant"] },
   { label: "HMO Claims",      href: "/app/billing/hmo-claims", icon: Shield, feature: "hmo.claims" },
   { label: "Staff",           href: "/app/staff",              icon: UserCog, feature: "staff.manage" },
   { label: "Clinic Settings", href: "/app/settings",           icon: Settings },
@@ -53,6 +53,7 @@ const dentistNavItems = [
 
 interface AppSidebarProps {
   role: ClinicRole;
+  membershipRole: string;
   clinicName?: string;
   branches: ClinicBranchContext[];
   branchId: string | null;
@@ -65,6 +66,7 @@ interface AppSidebarProps {
 
 export default function AppSidebar({
   role,
+  membershipRole,
   clinicName = "Clinic",
   branches,
   branchId,
@@ -77,7 +79,11 @@ export default function AppSidebar({
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
-  const navItems = (role === "dentist" ? dentistNavItems : clinicNavItems).filter((item) => !("feature" in item) || !item.feature || entitlements[item.feature]);
+  const navItems = (role === "dentist" ? dentistNavItems : clinicNavItems).filter((item) => {
+    const hasFeature = !("feature" in item) || !item.feature || entitlements[item.feature];
+    const hasRole = !("roles" in item) || !item.roles || item.roles.includes(membershipRole);
+    return hasFeature && hasRole;
+  });
 
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname === href || pathname.startsWith(href + "/");

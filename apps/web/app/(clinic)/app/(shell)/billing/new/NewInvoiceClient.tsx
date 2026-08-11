@@ -16,14 +16,19 @@ export default function NewInvoiceClient({
   encounters,
   clinicId,
   branchId,
+  initialEncounterId,
 }: {
   encounters: UnbilledEncounter[];
   clinicId: string;
   branchId: string;
+  initialEncounterId?: string;
 }) {
   const router = useRouter();
   const [generating, setGenerating] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const orderedEncounters = initialEncounterId
+    ? [...encounters].sort((a, b) => Number(b.id === initialEncounterId) - Number(a.id === initialEncounterId))
+    : encounters;
 
   async function generate(enc: UnbilledEncounter) {
     setGenerating(enc.id);
@@ -77,16 +82,22 @@ export default function NewInvoiceClient({
           </div>
         ) : (
           <ul className="divide-y divide-violet-50">
-            {encounters.map((enc) => {
+            {orderedEncounters.map((enc) => {
               const isGenerating = generating === enc.id;
+              const isSelected = enc.id === initialEncounterId;
               return (
-                <li key={enc.id} className="px-5 py-4 flex items-center gap-4">
+                <li key={enc.id} className={`px-5 py-4 flex items-center gap-4 ${isSelected ? "bg-violet-50" : ""}`}>
                   <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
                     <FileText size={18} className="text-violet-600" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-violet-900 text-sm">
                       {enc.patientFirstName} {enc.patientLastName}
+                      {isSelected ? (
+                        <span className="ml-2 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-600">
+                          Selected encounter
+                        </span>
+                      ) : null}
                     </p>
                     <p className="text-xs text-violet-400 mt-0.5 font-mono">{enc.patientNumber}</p>
                     <div className="flex items-center gap-3 mt-1">

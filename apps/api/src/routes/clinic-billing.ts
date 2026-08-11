@@ -1,8 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { getClinicAccess, hasClinicAccess, isSuperAdmin } from '../auth/authorization.js';
-import { resolveRequestAuthorization } from '../auth/request.js';
-import type { AuthorizationContext, AuthServices } from '../auth/types.js';
+import { FeatureKey } from '@dentra/shared';
+import { getClinicAccess } from '../auth/authorization.js';
+import type { AuthServices, AuthorizationContext } from '../auth/types.js';
+import { requireClinicFeature } from '../clinic/access.js';
+import type { EntitlementService } from '../entitlements/service.js';
 import {
   BillingError,
   type ClinicBillingService,
@@ -58,30 +60,14 @@ const updateServicePriceBodySchema = z.object({
 // ---------------------------------------------------------------------------
 
 /**
- * Allow super admins (platform-wide role) OR clinic members.
- * hasClinicAccess only looks at clinic memberships, so super admins would
- * otherwise be denied; we must check isSuperAdmin first.
- */
-function checkClinicAuth(
-  authorization: AuthorizationContext,
-  clinicId: string,
-  allowedRoles?: Parameters<typeof hasClinicAccess>[2],
-): boolean {
-  if (isSuperAdmin(authorization)) return true;
-  return hasClinicAccess(authorization, clinicId, allowedRoles);
-}
-
-/**
  * Returns the set of branch IDs the caller is permitted to access.
  *
- * - null  → caller has clinic-wide access (no branch restriction).
- *           This includes super admins and members with at least one
- *           clinic-wide (branchId=null) membership row.
+ * - null  → caller has clinic-wide access (no branch restriction) through
+ *           at least one clinic-wide (branchId=null) membership row.
  * - string[] → caller may only access these specific branches.
  *              Multi-branch membership is fully supported.
  */
 function getCallerBranchIds(authorization: AuthorizationContext, clinicId: string): string[] | null {
-  if (isSuperAdmin(authorization)) return null;
   const memberships = getClinicAccess(authorization, clinicId);
   // Any membership with branchId=null grants clinic-wide access.
   if (memberships.some((m) => m.branchId === null)) return null;
@@ -95,19 +81,19 @@ function getCallerBranchIds(authorization: AuthorizationContext, clinicId: strin
 
 export type ClinicBillingRoutesOptions = {
   auth: AuthServices;
+  entitlements: EntitlementService;
   billingService: ClinicBillingService;
   serviceListService: ClinicServiceListService;
 };
+
+const financeRoles = ['clinic_owner', 'clinic_admin', 'receptionist', 'dental_assistant'] as const;
 
 export async function registerClinicBillingRoutes(
   app: FastifyInstance,
   options: ClinicBillingRoutesOptions,
 ): Promise<void> {
-  const { auth, billingService, serviceListService } = options;
+  const { auth, entitlements, billingService, serviceListService } = options;
 
-  // -----------------------------------------------------------------------
-  // GET /v1/clinic/:clinicId/services
-  // -----------------------------------------------------------------------
   // -----------------------------------------------------------------------
   // GET /v1/clinic/:clinicId/services
   // -----------------------------------------------------------------------
@@ -115,9 +101,8 @@ export async function registerClinicBillingRoutes(
     const params = clinicParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid clinic ID' } });
 
-    const authorization = await resolveRequestAuthorization(request, auth);
-    if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!checkClinicAuth(authorization, params.data.clinicId)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic access required' } });
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.BILLING_INVOICES, [...financeRoles]);
+    if (!authorization) return;
 
     const data = await serviceListService.listServices(params.data.clinicId);
     return reply.send({ success: true, data });
@@ -130,12 +115,8 @@ export async function registerClinicBillingRoutes(
     const params = serviceParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid params' } });
 
-    const authorization = await resolveRequestAuthorization(request, auth);
-    if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    // Super admins can update pricing; clinic-member callers need admin/owner role.
-    if (!checkClinicAuth(authorization, params.data.clinicId, ['clinic_owner', 'clinic_admin'])) {
-      return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic admin access required' } });
-    }
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.BILLING_INVOICES, ['clinic_owner', 'clinic_admin']);
+    if (!authorization) return;
 
     const body = updateServicePriceBodySchema.safeParse(request.body);
     if (!body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid price value' } });
@@ -158,9 +139,8 @@ export async function registerClinicBillingRoutes(
     const params = clinicParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid clinic ID' } });
 
-    const authorization = await resolveRequestAuthorization(request, auth);
-    if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!checkClinicAuth(authorization, params.data.clinicId)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic access required' } });
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.BILLING_INVOICES, [...financeRoles]);
+    if (!authorization) return;
 
     const query = listInvoicesQuerySchema.safeParse(request.query);
     if (!query.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid query params' } });
@@ -177,9 +157,8 @@ export async function registerClinicBillingRoutes(
     const params = clinicParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid clinic ID' } });
 
-    const authorization = await resolveRequestAuthorization(request, auth);
-    if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!checkClinicAuth(authorization, params.data.clinicId)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic access required' } });
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.BILLING_INVOICES, [...financeRoles]);
+    if (!authorization) return;
 
     const body = generateInvoiceBodySchema.safeParse(request.body);
     if (!body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid invoice data' } });
@@ -214,9 +193,8 @@ export async function registerClinicBillingRoutes(
     const params = invoiceParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid params' } });
 
-    const authorization = await resolveRequestAuthorization(request, auth);
-    if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!checkClinicAuth(authorization, params.data.clinicId)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic access required' } });
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.BILLING_INVOICES, [...financeRoles]);
+    if (!authorization) return;
 
     const callerBranchIds = getCallerBranchIds(authorization, params.data.clinicId);
     const invoice = await billingService.getInvoice(params.data.clinicId, params.data.invoiceId, callerBranchIds);
@@ -232,9 +210,8 @@ export async function registerClinicBillingRoutes(
     const params = invoiceParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid params' } });
 
-    const authorization = await resolveRequestAuthorization(request, auth);
-    if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!checkClinicAuth(authorization, params.data.clinicId)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic access required' } });
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.BILLING_PAYMENTS, [...financeRoles]);
+    if (!authorization) return;
 
     const body = recordPaymentBodySchema.safeParse(request.body);
     if (!body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid payment data' } });
@@ -267,9 +244,8 @@ export async function registerClinicBillingRoutes(
     const params = clinicParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid clinic ID' } });
 
-    const authorization = await resolveRequestAuthorization(request, auth);
-    if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!checkClinicAuth(authorization, params.data.clinicId)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic access required' } });
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.BILLING_INVOICES, [...financeRoles]);
+    if (!authorization) return;
 
     const callerBranchIds = getCallerBranchIds(authorization, params.data.clinicId);
     const data = await billingService.listUnbilledEncounters(params.data.clinicId, callerBranchIds);
@@ -283,9 +259,8 @@ export async function registerClinicBillingRoutes(
     const params = clinicParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid clinic ID' } });
 
-    const authorization = await resolveRequestAuthorization(request, auth);
-    if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!checkClinicAuth(authorization, params.data.clinicId)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic access required' } });
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.BILLING_PAYMENTS, [...financeRoles]);
+    if (!authorization) return;
 
     const callerBranchIds = getCallerBranchIds(authorization, params.data.clinicId);
     const data = await billingService.getTodayEarnings(params.data.clinicId, callerBranchIds);

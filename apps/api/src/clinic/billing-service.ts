@@ -1,7 +1,8 @@
 import { and, count, desc, eq, gte, ilike, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
+import { writeAudit } from '@dentra/db/audit';
+import { AuditAction } from '@dentra/shared';
 import {
-  auditEvents,
   branches,
   clinics,
   encounters,
@@ -494,10 +495,10 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
         }
 
         // Audit event
-        await tx.insert(auditEvents).values({
+        await writeAudit(tx, {
           clinicId,
           actorId: createdBy,
-          action: 'invoice.created',
+          action: AuditAction.INVOICE_CREATED,
           entityType: 'invoice',
           entityId: inv.id,
           metadata: JSON.stringify({ invoiceNumber: inv.invoiceNumber, totalAmountPhp }),
@@ -566,10 +567,10 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
           .set({ status: 'paid', paidAt: new Date() })
           .where(and(eq(invoices.id, invoiceId), eq(invoices.status, 'pending')));
 
-        await tx.insert(auditEvents).values({
+        await writeAudit(tx, {
           clinicId,
           actorId: recordedBy,
-          action: 'payment.recorded',
+          action: AuditAction.PAYMENT_RECORDED,
           entityType: 'invoice',
           entityId: invoiceId,
           metadata: JSON.stringify({ amountPhp, paymentMethod, paymentDate }),
@@ -584,7 +585,12 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
       // Filter by the user-recorded payment_date (YYYY-MM-DD string), not by
       // created_at, so that historically-dated payments don't inflate today's
       // collections and payments dated today are always included.
-      const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+      const todayStr = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Manila',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date());
 
       const conditions = [
         eq(invoicePayments.clinicId, clinicId),

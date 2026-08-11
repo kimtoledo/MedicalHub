@@ -1,6 +1,6 @@
 # Billing Lite — Services, Invoices & Receipts
 
-> **Status:** ✅ Done — MVP 1 (Increment 5)
+> **Status:** ✅ Done — MVP 1 (Increment 5), post-merge acceptance verified August 12, 2026
 > **Proposal alignment:** Executive Summary §3-C — Billing & Receipt Module
 > **Project task:** #22
 
@@ -36,13 +36,13 @@ The executive summary places billing in the product MVP. Our original plan defer
 
 ## Steps
 
-1. **Schema** — Add `invoices` and `invoice_payments` tables; add `price_php` column to `services`; generate and apply migration.
-2. **Service pricing UI** — Clinic admin can set/edit price per service in the service catalog screen.
-3. **Invoice generation** — "Generate Invoice" action on a finalized encounter: auto-populates line items from treatment records, calculates total, assigns reference number.
-4. **Payment recording** — Staff selects method, enters amount, confirms — invoice status updates to `paid`.
-5. **PDF receipt** — Browser-printable receipt layout with all required fields; "Download / Print" button.
-6. **Dashboard earnings tile** — Today's earnings tile reading live from `invoice_payments`.
-7. **Audit** — Write audit entries for invoice creation and payment recording.
+1. ✅ **Schema** — migration `0008_billing_lite.sql` adds service pricing plus tenant-scoped invoices, immutable line-item snapshots, and single-payment records.
+2. ✅ **Service pricing UI** — `/app/settings/services` lets Clinic Owners/Admins set or clear PHP prices; protected APIs require `FeatureKey.BILLING_INVOICES`.
+3. ✅ **Invoice generation** — finalized encounter details link to a preselected invoice form; the service validates tenant/branch access, snapshots treatment rows, calculates the total, and assigns `{PREFIX}INV{NNNNNN}` transactionally.
+4. ✅ **Payment recording** — a confirmation modal accepts the exact total, method, Manila payment date, and optional notes; one protected payment changes the pending invoice to `paid` and requires `FeatureKey.BILLING_PAYMENTS`.
+5. ✅ **PDF receipt** — invoice detail renders the clinic identity/address/logo, patient, itemized services, totals, payment details, and a browser Print / Save as PDF action.
+6. ✅ **Dashboard earnings tile** — Today's Collections reads live payment totals and paid-invoice count using the `Asia/Manila` calendar day.
+7. ✅ **Audit** — invoice creation and payment recording append `invoice.created` and `payment.recorded` audit entries within their database transactions.
 
 ## Relevant files
 

@@ -1,26 +1,47 @@
 "use client";
 
 import { useState } from "react";
-import { ImageIcon, Shield } from "lucide-react";
+import { FileText, ImageIcon, Shield } from "lucide-react";
 import FilesTab from "@/components/app/FilesTab";
 import { HmoTab } from "./PatientDetailClient";
+import PatientPrescriptionsTab from "./PatientPrescriptionsTab";
 
-type ExtensionTab = "files" | "hmo";
+type ExtensionTab = "prescriptions" | "files" | "hmo";
 
 export default function PatientRecordExtensions({
   clinicId,
   patientId,
   branchId,
+  canUsePrescriptions,
+  canUseFiles,
+  canUseHmo,
 }: {
   clinicId: string;
   patientId: string;
   branchId: string;
+  canUsePrescriptions: boolean;
+  canUseFiles: boolean;
+  canUseHmo: boolean;
 }) {
-  const [tab, setTab] = useState<ExtensionTab>("files");
+  const initialTab: ExtensionTab = canUsePrescriptions
+    ? "prescriptions"
+    : canUseFiles
+      ? "files"
+      : "hmo";
+  const [tab, setTab] = useState<ExtensionTab>(initialTab);
   const tabs = [
-    { id: "files" as const, label: "Clinical Files", icon: ImageIcon },
-    { id: "hmo" as const, label: "HMO Coverage", icon: Shield },
+    ...(canUsePrescriptions
+      ? [{ id: "prescriptions" as const, label: "Prescriptions", icon: FileText }]
+      : []),
+    ...(canUseFiles
+      ? [{ id: "files" as const, label: "Clinical Files", icon: ImageIcon }]
+      : []),
+    ...(canUseHmo
+      ? [{ id: "hmo" as const, label: "HMO Coverage", icon: Shield }]
+      : []),
   ];
+
+  if (tabs.length === 0) return null;
 
   return (
     <section className="px-4 pb-8 sm:px-8">
@@ -43,16 +64,18 @@ export default function PatientRecordExtensions({
           ))}
         </div>
 
-        {tab === "files" ? (
+        {tab === "prescriptions" && canUsePrescriptions ? (
+          <PatientPrescriptionsTab clinicId={clinicId} patientId={patientId} />
+        ) : tab === "files" && canUseFiles ? (
           <FilesTab
             clinicId={clinicId}
             patientId={patientId}
             branchId={branchId}
             allowUpload={Boolean(branchId)}
           />
-        ) : (
+        ) : canUseHmo ? (
           <HmoTab clinicId={clinicId} patientId={patientId} />
-        )}
+        ) : null}
       </div>
     </section>
   );

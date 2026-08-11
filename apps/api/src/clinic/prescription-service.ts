@@ -1,5 +1,7 @@
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
+import { writeAudit } from '@dentra/db/audit';
+import { AuditAction } from '@dentra/shared';
 import {
   prescriptions,
   prescriptionItems,
@@ -7,7 +9,6 @@ import {
   dentists,
   clinics,
   encounters,
-  auditEvents,
 } from '@dentra/db/schema';
 
 // ---------------------------------------------------------------------------
@@ -134,6 +135,10 @@ export interface FinalizedEncounterSummary {
 // ---------------------------------------------------------------------------
 
 export interface ClinicPrescriptionService {
+  /** Defaults derived from the authenticated dentist profile. */
+  getPrescriberDefaults(
+    dentistId: string,
+  ): Promise<{ prcLicenseNumber: string | null }>;
   /**
    * List finalized encounters that a caller can write prescriptions for.
    * Used to populate the encounter-selector on the new-prescription form.
@@ -188,6 +193,15 @@ export interface ClinicPrescriptionService {
 
 export function createClinicPrescriptionService(db: DB): ClinicPrescriptionService {
   return {
+    async getPrescriberDefaults(dentistId) {
+      const [dentist] = await db
+        .select({ prcLicenseNumber: dentists.licenseNumber })
+        .from(dentists)
+        .where(eq(dentists.id, dentistId))
+        .limit(1);
+      return { prcLicenseNumber: dentist?.prcLicenseNumber ?? null };
+    },
+
     // ──────────────────────────────────────────────────────────────────────
     // listFinalizedEncounters
     // ──────────────────────────────────────────────────────────────────────
@@ -312,10 +326,10 @@ export function createClinicPrescriptionService(db: DB): ClinicPrescriptionServi
           })),
         );
 
-        await tx.insert(auditEvents).values({
+        await writeAudit(tx, {
           clinicId,
           actorId: issuedBy,
-          action: 'prescription.issued',
+          action: AuditAction.PRESCRIPTION_ISSUED,
           entityType: 'prescription',
           entityId: rx.id,
           metadata: JSON.stringify({ encounterId, itemCount: items.length }),
@@ -580,10 +594,10 @@ export function createClinicPrescriptionService(db: DB): ClinicPrescriptionServi
           })),
         );
 
-        await tx.insert(auditEvents).values({
+        await writeAudit(tx, {
           clinicId,
           actorId: input.issuedBy,
-          action: 'prescription.issued',
+          action: AuditAction.PRESCRIPTION_ISSUED,
           entityType: 'prescription',
           entityId: rx.id,
           metadata: JSON.stringify({ amendedFrom: prescriptionId, encounterId: original.encounterId }),

@@ -27,7 +27,7 @@ Super Admin needs to create and manage clinics end-to-end: from onboarding a new
 ## Out of scope
 
 - Patient or clinical record access from the admin panel.
-- Billing/invoice generation (MVP 2).
+- Routine clinic-operated invoice generation (delivered separately in MVP 1 Task 19).
 - Self-service clinic sign-up (MVP 3 or separate onboarding flow).
 
 ---

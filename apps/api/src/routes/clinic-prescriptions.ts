@@ -1,8 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { getClinicAccess, hasClinicAccess, isSuperAdmin } from '../auth/authorization.js';
-import { resolveRequestAuthorization } from '../auth/request.js';
+import { FeatureKey } from '@dentra/shared';
+import { getClinicAccess } from '../auth/authorization.js';
 import type { AuthorizationContext, AuthServices } from '../auth/types.js';
+import { requireClinicFeature } from '../clinic/access.js';
+import type { EntitlementService } from '../entitlements/service.js';
 import {
   PrescriptionError,
   type ClinicPrescriptionService,
@@ -52,17 +54,7 @@ const listPrescriptionsQuerySchema = z.object({
 // Auth helpers (same pattern as billing routes)
 // ---------------------------------------------------------------------------
 
-function checkClinicAuth(
-  authorization: AuthorizationContext,
-  clinicId: string,
-  allowedRoles?: Parameters<typeof hasClinicAccess>[2],
-): boolean {
-  if (isSuperAdmin(authorization)) return true;
-  return hasClinicAccess(authorization, clinicId, allowedRoles);
-}
-
 function getCallerBranchIds(authorization: AuthorizationContext, clinicId: string): string[] | null {
-  if (isSuperAdmin(authorization)) return null;
   const memberships = getClinicAccess(authorization, clinicId);
   if (memberships.some((m) => m.branchId === null)) return null;
   const ids = memberships.map((m) => m.branchId).filter((id): id is string => id !== null);
@@ -71,11 +63,9 @@ function getCallerBranchIds(authorization: AuthorizationContext, clinicId: strin
 
 /**
  * Returns the dentist ID linked to the caller's dentist membership for this clinic.
- * Returns null for super admins (they cannot issue prescriptions on behalf of a dentist).
  * Returns null if the caller has no dentist membership (enforced separately by role check).
  */
 function getCallerDentistId(authorization: AuthorizationContext, clinicId: string): string | null {
-  if (isSuperAdmin(authorization)) return null;
   const memberships = getClinicAccess(authorization, clinicId);
   const dentistMembership = memberships.find((m) => m.role === 'dentist' && m.dentistId != null);
   return dentistMembership?.dentistId ?? null;
@@ -87,8 +77,11 @@ function getCallerDentistId(authorization: AuthorizationContext, clinicId: strin
 
 export type ClinicPrescriptionRoutesOptions = {
   auth: AuthServices;
+  entitlements: EntitlementService;
   prescriptionService: ClinicPrescriptionService;
 };
+
+const clinicalRoles = ['clinic_owner', 'clinic_admin', 'dentist', 'dental_assistant'] as const;
 
 // ---------------------------------------------------------------------------
 // Register routes
@@ -98,7 +91,7 @@ export async function registerClinicPrescriptionRoutes(
   app: FastifyInstance,
   options: ClinicPrescriptionRoutesOptions,
 ): Promise<void> {
-  const { auth, prescriptionService } = options;
+  const { auth, entitlements, prescriptionService } = options;
 
   // ─── helpers ─────────────────────────────────────────────────────────────
   function prescriptionErrorStatus(err: PrescriptionError): number {
@@ -118,30 +111,33 @@ export async function registerClinicPrescriptionRoutes(
     const params = clinicParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid clinic ID' } });
 
-    const authorization = await resolveRequestAuthorization(request, auth);
-    if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!checkClinicAuth(authorization, params.data.clinicId)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic access required' } });
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.PRESCRIPTIONS, ['dentist']);
+    if (!authorization) return;
+
+    const callerDentistId = getCallerDentistId(authorization, params.data.clinicId);
+    if (!callerDentistId) {
+      return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Your account is not linked to a dentist profile' } });
+    }
 
     const callerBranchIds = getCallerBranchIds(authorization, params.data.clinicId);
-    const data = await prescriptionService.listFinalizedEncounters(params.data.clinicId, callerBranchIds);
-    return reply.send({ success: true, data });
+    const [encounters, defaults] = await Promise.all([
+      prescriptionService.listFinalizedEncounters(params.data.clinicId, callerBranchIds),
+      prescriptionService.getPrescriberDefaults(callerDentistId),
+    ]);
+    return reply.send({ success: true, data: { encounters, ...defaults } });
   });
 
   // -----------------------------------------------------------------------
   // POST /v1/clinic/:clinicId/prescriptions — issue a new prescription
-  // Only dentists may issue prescriptions. Super admins are excluded because
-  // they have no dentist profile and cannot be the prescriber.
+  // Only dentists may issue prescriptions. Prescriber identity always comes
+  // from the authenticated clinic membership.
   // -----------------------------------------------------------------------
   app.post('/v1/clinic/:clinicId/prescriptions', async (request, reply) => {
     const params = clinicParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid clinic ID' } });
 
-    const authorization = await resolveRequestAuthorization(request, auth);
-    if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    // Only dentist role may issue prescriptions
-    if (!checkClinicAuth(authorization, params.data.clinicId, ['dentist'])) {
-      return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Only dentists may issue prescriptions' } });
-    }
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.PRESCRIPTIONS, ['dentist']);
+    if (!authorization) return;
 
     const callerDentistId = getCallerDentistId(authorization, params.data.clinicId);
     if (!callerDentistId) {
@@ -176,9 +172,8 @@ export async function registerClinicPrescriptionRoutes(
     const params = clinicParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid clinic ID' } });
 
-    const authorization = await resolveRequestAuthorization(request, auth);
-    if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!checkClinicAuth(authorization, params.data.clinicId)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic access required' } });
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.PRESCRIPTIONS, [...clinicalRoles]);
+    if (!authorization) return;
 
     const query = listPrescriptionsQuerySchema.safeParse(request.query);
     if (!query.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid query params' } });
@@ -198,9 +193,8 @@ export async function registerClinicPrescriptionRoutes(
     const params = prescriptionParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid params' } });
 
-    const authorization = await resolveRequestAuthorization(request, auth);
-    if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!checkClinicAuth(authorization, params.data.clinicId)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic access required' } });
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.PRESCRIPTIONS, [...clinicalRoles]);
+    if (!authorization) return;
 
     const callerBranchIds = getCallerBranchIds(authorization, params.data.clinicId);
     const rx = await prescriptionService.getPrescription(
@@ -221,12 +215,8 @@ export async function registerClinicPrescriptionRoutes(
     const params = prescriptionParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid params' } });
 
-    const authorization = await resolveRequestAuthorization(request, auth);
-    if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    // Only dentist role may amend prescriptions
-    if (!checkClinicAuth(authorization, params.data.clinicId, ['dentist'])) {
-      return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Only dentists may amend prescriptions' } });
-    }
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.PRESCRIPTIONS, ['dentist']);
+    if (!authorization) return;
 
     const callerDentistId = getCallerDentistId(authorization, params.data.clinicId);
     if (!callerDentistId) {

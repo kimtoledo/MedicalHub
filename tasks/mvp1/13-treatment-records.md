@@ -22,7 +22,7 @@ Treatment records document procedures that have already been performed. They are
 ## Out of scope
 
 - Treatment planning (proposed future treatments — MVP 2 — `tasks/mvp2/01-treatment-planning.md`).
-- Fee/billing linkage to treatment records (MVP 2 — `tasks/mvp2/03-billing-payments.md`).
+- Proposed estimates, discounts, partial-payment allocation, and other full-billing controls (MVP 2 — `tasks/mvp2/03-billing-payments.md`); MVP 1 invoices already snapshot performed treatments as line items.
 
 ---
 

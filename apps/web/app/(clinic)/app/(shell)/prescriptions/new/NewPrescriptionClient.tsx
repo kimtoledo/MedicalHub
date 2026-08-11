@@ -31,8 +31,19 @@ type MedicineRow = {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function NewPrescriptionClient({ clinicId }: { clinicId: string }) {
+export default function NewPrescriptionClient({
+  clinicId,
+  initialEncounterId,
+  embedded = false,
+}: {
+  clinicId: string;
+  initialEncounterId?: string;
+  embedded?: boolean;
+}) {
   const router = useRouter();
+  const containerClass = embedded
+    ? "p-4 sm:p-6 space-y-6"
+    : "p-4 sm:p-6 lg:p-8 max-w-3xl space-y-6";
 
   // Step 1: encounter selection
   const [encounters, setEncounters] = useState<UnbilledEncounter[]>([]);
@@ -51,20 +62,27 @@ export default function NewPrescriptionClient({ clinicId }: { clinicId: string }
   // Load finalized encounters that can have prescriptions
   useEffect(() => {
     setLoadingEncounters(true);
-    // Use the same unbilled-encounters endpoint — finalized encounters are our entry point.
-    // Prescriptions can be issued for any finalized encounter (not just unbilled ones).
-    // We'll use a custom endpoint.
     fetch(`/api/clinic/${clinicId}/prescriptions/encounters`, {
       credentials: "include",
       cache: "no-store",
     })
       .then((r) => r.json())
-      .then((data: { success: boolean; data: UnbilledEncounter[] }) => {
-        if (data.success) setEncounters(data.data);
+      .then((data: {
+        success: boolean;
+        data?: { encounters: UnbilledEncounter[]; prcLicenseNumber: string | null };
+      }) => {
+        if (!data.success || !data.data) return;
+        setEncounters(data.data.encounters);
+        setPrcLicenseNumber(data.data.prcLicenseNumber ?? "");
+        if (initialEncounterId) {
+          setSelectedEncounter(
+            data.data.encounters.find((encounter) => encounter.id === initialEncounterId) ?? null,
+          );
+        }
       })
       .catch(() => undefined)
       .finally(() => setLoadingEncounters(false));
-  }, [clinicId]);
+  }, [clinicId, initialEncounterId]);
 
   function addRow() {
     setRows((prev) => [
@@ -123,7 +141,7 @@ export default function NewPrescriptionClient({ clinicId }: { clinicId: string }
   // ─── Step 1: select encounter ─────────────────────────────────────────────
   if (!selectedEncounter) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-3xl space-y-6">
+      <div className={containerClass}>
         <div>
           <h1 className="text-2xl font-bold text-violet-900">New Prescription</h1>
           <p className="text-violet-500 text-sm mt-0.5">
@@ -186,7 +204,7 @@ export default function NewPrescriptionClient({ clinicId }: { clinicId: string }
 
   // ─── Step 2: prescription form ────────────────────────────────────────────
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-3xl space-y-6">
+    <div className={containerClass}>
       <div>
         <button
           type="button"
@@ -262,7 +280,7 @@ export default function NewPrescriptionClient({ clinicId }: { clinicId: string }
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div>
                     <label className="block text-xs font-semibold text-violet-700 mb-1">Dosage</label>
                     <input

@@ -106,7 +106,7 @@ export const FeatureKey = {
   // Inventory (MVP 2)
   INVENTORY_MANAGE: 'inventory.manage',
 
-  // Imaging (MVP 2)
+  // Clinical file uploads / imaging (MVP 1 basic → MVP 3 AI imaging)
   RADIOGRAPHS: 'clinical.radiographs',
 
   // AI assistance (MVP 2)

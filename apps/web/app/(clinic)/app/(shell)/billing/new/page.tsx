@@ -17,7 +17,11 @@ export type UnbilledEncounter = {
   branchId: string;
 };
 
-export default async function NewInvoicePage() {
+export default async function NewInvoicePage({
+  searchParams,
+}: {
+  searchParams: { encounterId?: string };
+}) {
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
 
@@ -40,6 +44,7 @@ export default async function NewInvoicePage() {
       encounters={encounters}
       clinicId={identity.clinicId}
       branchId={identity.branchId ?? ""}
+      initialEncounterId={searchParams.encounterId}
     />
   );
 }

@@ -5,6 +5,8 @@ export type ClinicIdentity = {
   email: string;
   name: string;
   role: ClinicRole;
+  /** Exact database membership role used for role-aware navigation/actions. */
+  membershipRole: string;
   /** True when the raw membership role is clinic_owner or clinic_admin. */
   isAdmin: boolean;
   clinicId: string;

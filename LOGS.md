@@ -18,6 +18,15 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ MVP 1 post-merge acceptance audit
+- Rechecked every MVP 1 task and implementation step after migration-history/content merges; Tasks 01–21 are now evidence-marked and the release checklist covers Increment 5 business basics
+- Enforced canonical feature entitlements and clinic-role authorization on every direct billing, payment, prescription, and clinical-file API, not only sidebar visibility
+- Added pre-storage validation that clinical file branch, patient, and optional encounter all belong to the same clinic and relationship; removed fallback HMAC secrets from clinical-file and remote-consult signed access
+- Wired finalized encounters to a responsive prescription drawer with encounter preselection and authenticated dentist PRC defaults; added an entitlement-aware patient prescription timeline and gated file/business actions in direct views
+- Added direct finalized-encounter invoice preselection, Manila-day payment/collections handling, and enabled MVP 1 business entitlements for the Professional demo package without changing existing deterministic seed IDs
+- Corrected stale clinic-login redirects and updated the MVP 1 scope, task index, release evidence, README, and shared feature comments
+- Verified 228 passing API tests and repository-wide TypeScript checks; production build and migration checks are recorded with this commit
+
 ### ✅ MVP 1 release hardening and synthetic demo data
 - Expanded the clean idempotent seed target to 2 clinics, 4 dentists, 20 synthetic patients, and 50 synthetic appointments while retaining fictional test contact and PRC-style identifiers
 - Added release-gate coverage for concurrent same-dentist booking, multi-clinic dentist separation, unpublished public 404s, PWA API cache exclusion, synthetic seed targets, and append-only audit enforcement
@@ -367,7 +376,7 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 - `DEVELOPER.md` — local setup, conventions, workflow
 - `AGENTS.md` — agent coordination rules
 - `replit.md` — Replit-specific setup notes
-- `tasks/README.md` + `tasks/mvp1/`, `tasks/mvp2/`, `tasks/mvp3/` — 42 scoped task files
+- `tasks/README.md` + `tasks/mvp1/`, `tasks/mvp2/`, `tasks/mvp3/` — 52 scoped task files
 
 ### ✅ Billing lite — service pricing, invoices & receipts (task #22)
 - Added `price_php` column to `services` table and `invoices`, `invoice_line_items`, `invoice_payments` tables via migration `0008_billing_lite.sql`

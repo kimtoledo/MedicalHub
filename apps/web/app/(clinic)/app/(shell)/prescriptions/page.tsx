@@ -4,6 +4,6 @@ import PrescriptionsListClient from "./PrescriptionsListClient";
 
 export default async function PrescriptionsPage() {
   const identity = await getClinicSession();
-  if (!identity) redirect("/login");
+  if (!identity) redirect("/cl-login");
   return <PrescriptionsListClient clinicId={identity.clinicId} />;
 }

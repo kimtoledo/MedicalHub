@@ -246,9 +246,18 @@ Audit:
 - encounter/treatment changes;
 - odontogram events/corrections.
 
-## O. Explicit exclusions
+## O. Business basics (Increment 5)
+- service pricing and invoices generated from finalized encounter treatments;
+- one exact payment per invoice and printable receipt;
+- today's collections summary using the Manila calendar day;
+- dentist-only immutable prescriptions with amendment history and printable e-Rx output;
+- private patient/encounter clinical files with validated uploads and short-lived signed access;
+- feature entitlements and tenant/branch authorization enforced at the API for every direct request;
+- audit entries for invoice/payment, prescription issuance, file upload, and signed file access.
+
+## P. Explicit exclusions
 - online payment gateway;
-- full billing/invoicing;
+- full billing beyond the MVP 1 lite flow (partial payments, installments, refunds, discounts);
 - inventory;
 - automated SMS;
 - patient login/portal;
@@ -258,7 +267,7 @@ Audit:
 - true offline clinical editing;
 - insurance/HMO claims.
 
-## P. MVP 1 recommended delivery increments
+## Q. MVP 1 recommended delivery increments
 ### Increment 1 - Platform skeleton
 Repo, auth, tenancy, Super Admin basic clinic creation, plans/features, public clinic route, PWA shell.
 
@@ -271,7 +280,10 @@ Patients, histories, encounters, treatments, odontogram, audit.
 ### Increment 4 - hardening/demo
 Permission matrix, entitlement denials, cross-tenant tests, PWA safety, responsive QA, synthetic demo data.
 
-## Q. MVP 1 release gates
+### Increment 5 - business basics
+Billing lite, prescription builder, and private clinical file uploads.
+
+## R. MVP 1 release gates
 - Clinic A cannot read/write Clinic B protected records.
 - User cannot gain access by editing `clinicId`/`patientId` in requests.
 - Entitlement denial is enforced by API.

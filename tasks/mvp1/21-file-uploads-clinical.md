@@ -1,6 +1,6 @@
 # Clinical File Uploads (X-rays & Photos)
 
-> **Status:** ✅ Done — MVP 1 (Increment 5)
+> **Status:** ✅ Done — MVP 1 (Increment 5), post-merge acceptance verified August 12, 2026
 > **Proposal alignment:** Executive Summary §3-F — File Upload Module
 > **Project task:** #24
 
@@ -38,13 +38,13 @@ Dentists attach radiographs and intraoral photos to almost every encounter. The 
 
 ## Steps
 
-1. **Storage setup** — Configure Replit Object Storage bucket; implement signed URL generation helper in the API layer.
-2. **Schema** — Add `clinical_files` table (patient_id, encounter_id, file_type, storage_key, original_filename, mime_type, size_bytes, tooth_ref, uploaded_by, timestamps); generate and apply migration.
-3. **Upload endpoint** — Multipart upload API route: validate type/size, write to Object Storage, insert metadata row.
-4. **Signed URL endpoint** — Separate API route that generates and returns a short-lived access URL given a `clinical_file_id`.
-5. **Encounter file tab** — File list component on the encounter detail: thumbnails, metadata, inline viewer for images, link-out for PDFs.
-6. **Patient files tab** — Aggregated file list on the patient profile.
-7. **Audit** — Write audit entries for uploads and signed URL requests.
+1. ✅ **Storage setup** — the service lazily uses private Replit Object Storage and signs access tokens with the configured Better Auth/session secret; there is no insecure fallback secret.
+2. ✅ **Schema** — migration `0010_clinical_files.sql` adds tenant/patient/branch/encounter-scoped metadata, storage key, type, filename, MIME type, size, tooth reference, uploader, and timestamps.
+3. ✅ **Upload endpoint** — the protected multipart API requires `FeatureKey.RADIOGRAPHS`, validates the allowlist/20 MB limit/filename, verifies caller branch access, and confirms the branch, patient, and optional encounter all belong together in the clinic before any storage write.
+4. ✅ **Signed URL endpoint** — an authorized metadata lookup returns a signed, file-and-clinic-bound download URL with a 15-minute expiry; the download route verifies the HMAC token.
+5. ✅ **Encounter file tab** — entitlement-aware encounter views list thumbnails and metadata, preview supported images inline, open PDFs securely, and allow clinical-role uploads.
+6. ✅ **Patient files tab** — the entitlement-aware patient profile aggregates files across that patient's encounters with the same secure viewer and upload controls.
+7. ✅ **Audit** — uploads, signed-URL requests, and deletions append tenant-scoped audit entries without storing clinical file contents.
 
 ## Relevant files
 

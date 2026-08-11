@@ -1,12 +1,14 @@
 import { createHmac, randomUUID } from 'crypto';
-import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { Client as StorageClient } from '@replit/object-storage';
 import type { DB } from '@dentra/db';
+import { writeAudit } from '@dentra/db/audit';
+import { AuditAction } from '@dentra/shared';
 import {
   clinicalFiles,
+  branches,
   patients,
   encounters,
-  auditEvents,
 } from '@dentra/db/schema';
 
 // ---------------------------------------------------------------------------
@@ -60,7 +62,11 @@ export class ClinicalFileError extends Error {
 // ---------------------------------------------------------------------------
 
 function getSecret(): string {
-  return process.env.SESSION_SECRET ?? 'dentra-default-secret';
+  const secret = process.env.BETTER_AUTH_SECRET ?? process.env.SESSION_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error('Clinical file signing requires BETTER_AUTH_SECRET or SESSION_SECRET');
+  }
+  return secret;
 }
 
 export function generateSignedToken(fileId: string, clinicId: string): string {
@@ -226,9 +232,53 @@ export function createClinicFilesService(db: DB): ClinicFilesService {
       if (!VALID_FILE_TYPES.has(input.fileType)) {
         throw new ClinicalFileError('INVALID_TYPE', 'Unknown file type category');
       }
+      if (!input.originalFilename.trim() || input.originalFilename.length > 300) {
+        throw new ClinicalFileError('INVALID_TYPE', 'Filename must be between 1 and 300 characters');
+      }
       if (input.callerBranchIds && input.callerBranchIds.length > 0
           && !input.callerBranchIds.includes(input.branchId)) {
         throw new ClinicalFileError('FORBIDDEN', 'You do not have access to this branch');
+      }
+
+      const [branchRows, patientRows, encounterRows] = await Promise.all([
+        db
+          .select({ id: branches.id })
+          .from(branches)
+          .where(and(
+            eq(branches.id, input.branchId),
+            eq(branches.clinicId, clinicId),
+            eq(branches.isActive, true),
+            isNull(branches.deletedAt),
+          ))
+          .limit(1),
+        db
+          .select({ id: patients.id })
+          .from(patients)
+          .where(and(
+            eq(patients.id, input.patientId),
+            eq(patients.clinicId, clinicId),
+            isNull(patients.deletedAt),
+          ))
+          .limit(1),
+        input.encounterId
+          ? db
+            .select({ id: encounters.id })
+            .from(encounters)
+            .where(and(
+              eq(encounters.id, input.encounterId),
+              eq(encounters.clinicId, clinicId),
+              eq(encounters.branchId, input.branchId),
+              eq(encounters.patientId, input.patientId),
+            ))
+            .limit(1)
+          : Promise.resolve([]),
+      ]);
+
+      if (!branchRows[0] || !patientRows[0] || (input.encounterId && !encounterRows[0])) {
+        throw new ClinicalFileError(
+          'NOT_FOUND',
+          'The selected patient, branch, or encounter is not available in this clinic',
+        );
       }
 
       const fileId = randomUUID();
@@ -258,10 +308,10 @@ export function createClinicFilesService(db: DB): ClinicFilesService {
           uploadedBy: input.uploadedBy,
         });
 
-        await tx.insert(auditEvents).values({
+        await writeAudit(tx, {
           clinicId,
           actorId: input.uploadedBy,
-          action: 'file.uploaded',
+          action: AuditAction.FILE_UPLOADED,
           entityType: 'clinical_file',
           entityId: fileId,
           metadata: JSON.stringify({
@@ -360,10 +410,10 @@ export function createClinicFilesService(db: DB): ClinicFilesService {
 
       const token = generateSignedToken(fileId, clinicId);
 
-      await db.insert(auditEvents).values({
+      await writeAudit(db, {
         clinicId,
         actorId: requestedBy,
-        action: 'file.url_generated',
+        action: AuditAction.FILE_URL_GENERATED,
         entityType: 'clinical_file',
         entityId: fileId,
         metadata: JSON.stringify({ fileId, clinicId }),
@@ -431,10 +481,10 @@ export function createClinicFilesService(db: DB): ClinicFilesService {
         await tx
           .delete(clinicalFiles)
           .where(and(eq(clinicalFiles.id, fileId), eq(clinicalFiles.clinicId, clinicId)));
-        await tx.insert(auditEvents).values({
+        await writeAudit(tx, {
           clinicId,
           actorId: deletedBy,
-          action: 'file.deleted',
+          action: AuditAction.FILE_DELETED,
           entityType: 'clinical_file',
           entityId: fileId,
           metadata: JSON.stringify({ fileId, clinicId }),

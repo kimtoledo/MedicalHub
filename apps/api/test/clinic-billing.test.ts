@@ -8,6 +8,8 @@ import {
 } from '../src/clinic/billing-service.js';
 import type { AuthServices, AuthorizationContext } from '../src/auth/types.js';
 import type { ApiConfig } from '../src/config.js';
+import { FeatureKey } from '@dentra/shared';
+import type { EntitlementService } from '../src/entitlements/service.js';
 
 // ---------------------------------------------------------------------------
 // Shared test config
@@ -101,6 +103,23 @@ function createAuth(context: AuthorizationContext | null): AuthServices {
   };
 }
 
+function createEntitlements(
+  disabled: FeatureKey[] = [],
+): EntitlementService {
+  return {
+    resolve: vi.fn(async (clinicId) => ({
+      clinic: { id: clinicId, name: 'Test Clinic', status: 'active' },
+      subscription: null,
+      entitlements: Object.values(FeatureKey).map((featureKey) => ({
+        featureKey,
+        isEnabled: !disabled.includes(featureKey),
+        source: 'override' as const,
+        expiresAt: null,
+      })),
+    })),
+  };
+}
+
 function makeInvoice(overrides: Partial<Awaited<ReturnType<ClinicBillingService['getInvoice']>>> = {}) {
   return {
     id: INVOICE_ID,
@@ -158,6 +177,7 @@ describe('Route registration', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(clinicMemberContext),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: createServiceListService(),
     });
@@ -182,6 +202,7 @@ describe('GET /v1/clinic/:clinicId/services', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(null),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: createServiceListService(),
     });
@@ -195,6 +216,7 @@ describe('GET /v1/clinic/:clinicId/services', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(otherClinicContext),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: createServiceListService(),
     });
@@ -212,6 +234,7 @@ describe('GET /v1/clinic/:clinicId/services', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(clinicMemberContext),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: createServiceListService(),
     });
@@ -238,6 +261,7 @@ describe('PATCH /v1/clinic/:clinicId/services/:serviceId/price', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(null),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: createServiceListService(),
     });
@@ -255,6 +279,7 @@ describe('PATCH /v1/clinic/:clinicId/services/:serviceId/price', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(otherClinicContext),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: createServiceListService(),
     });
@@ -274,6 +299,7 @@ describe('PATCH /v1/clinic/:clinicId/services/:serviceId/price', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(clinicMemberContext),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: svc,
     });
@@ -294,6 +320,7 @@ describe('PATCH /v1/clinic/:clinicId/services/:serviceId/price', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(clinicMemberContext),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: svc,
     });
@@ -319,6 +346,7 @@ describe('GET /v1/clinic/:clinicId/invoices', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(null),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: createServiceListService(),
     });
@@ -332,6 +360,7 @@ describe('GET /v1/clinic/:clinicId/invoices', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(otherClinicContext),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: createServiceListService(),
     });
@@ -350,6 +379,7 @@ describe('GET /v1/clinic/:clinicId/invoices', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(clinicMemberContext),
+      entitlements: createEntitlements(),
       clinicBilling: billing,
       clinicServiceList: createServiceListService(),
     });
@@ -384,6 +414,7 @@ describe('POST /v1/clinic/:clinicId/invoices', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(null),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: createServiceListService(),
     });
@@ -401,6 +432,7 @@ describe('POST /v1/clinic/:clinicId/invoices', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(otherClinicContext),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: createServiceListService(),
     });
@@ -420,6 +452,7 @@ describe('POST /v1/clinic/:clinicId/invoices', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(clinicMemberContext),
+      entitlements: createEntitlements(),
       clinicBilling: billing,
       clinicServiceList: createServiceListService(),
     });
@@ -453,6 +486,7 @@ describe('POST /v1/clinic/:clinicId/invoices', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(clinicMemberContext),
+      entitlements: createEntitlements(),
       clinicBilling: billing,
       clinicServiceList: createServiceListService(),
     });
@@ -478,6 +512,7 @@ describe('POST /v1/clinic/:clinicId/invoices', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(clinicMemberContext),
+      entitlements: createEntitlements(),
       clinicBilling: billing,
       clinicServiceList: createServiceListService(),
     });
@@ -503,6 +538,7 @@ describe('POST /v1/clinic/:clinicId/invoices', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(branchScopedContext),
+      entitlements: createEntitlements(),
       clinicBilling: billing,
       clinicServiceList: createServiceListService(),
     });
@@ -540,6 +576,7 @@ describe('POST /v1/clinic/:clinicId/invoices/:invoiceId/pay', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(null),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: createServiceListService(),
     });
@@ -557,6 +594,7 @@ describe('POST /v1/clinic/:clinicId/invoices/:invoiceId/pay', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(otherClinicContext),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: createServiceListService(),
     });
@@ -576,6 +614,7 @@ describe('POST /v1/clinic/:clinicId/invoices/:invoiceId/pay', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(clinicMemberContext),
+      entitlements: createEntitlements(),
       clinicBilling: billing,
       clinicServiceList: createServiceListService(),
     });
@@ -604,6 +643,7 @@ describe('POST /v1/clinic/:clinicId/invoices/:invoiceId/pay', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(clinicMemberContext),
+      entitlements: createEntitlements(),
       clinicBilling: billing,
       clinicServiceList: createServiceListService(),
     });
@@ -629,6 +669,7 @@ describe('POST /v1/clinic/:clinicId/invoices/:invoiceId/pay', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(clinicMemberContext),
+      entitlements: createEntitlements(),
       clinicBilling: billing,
       clinicServiceList: createServiceListService(),
     });
@@ -654,6 +695,7 @@ describe('POST /v1/clinic/:clinicId/invoices/:invoiceId/pay', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(branchScopedContext),
+      entitlements: createEntitlements(),
       clinicBilling: billing,
       clinicServiceList: createServiceListService(),
     });
@@ -677,6 +719,7 @@ describe('POST /v1/clinic/:clinicId/invoices/:invoiceId/pay', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(clinicMemberContext),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: createServiceListService(),
     });
@@ -701,6 +744,7 @@ describe('GET /v1/clinic/:clinicId/earnings/today', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(null),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: createServiceListService(),
     });
@@ -714,6 +758,7 @@ describe('GET /v1/clinic/:clinicId/earnings/today', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(otherClinicContext),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: createServiceListService(),
     });
@@ -731,6 +776,7 @@ describe('GET /v1/clinic/:clinicId/earnings/today', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(clinicMemberContext),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: createServiceListService(),
     });
@@ -758,6 +804,7 @@ describe('GET /v1/clinic/:clinicId/invoices/unbilled', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(null),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: createServiceListService(),
     });
@@ -771,6 +818,7 @@ describe('GET /v1/clinic/:clinicId/invoices/unbilled', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(otherClinicContext),
+      entitlements: createEntitlements(),
       clinicBilling: createBillingService(),
       clinicServiceList: createServiceListService(),
     });
@@ -789,6 +837,7 @@ describe('GET /v1/clinic/:clinicId/invoices/unbilled', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(branchScopedContext),
+      entitlements: createEntitlements(),
       clinicBilling: billing,
       clinicServiceList: createServiceListService(),
     });
@@ -820,6 +869,7 @@ describe('GET /v1/clinic/:clinicId/invoices/unbilled', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(multiBranchContext),
+      entitlements: createEntitlements(),
       clinicBilling: billing,
       clinicServiceList: createServiceListService(),
     });
@@ -853,6 +903,7 @@ describe('GET /v1/clinic/:clinicId/invoices/unbilled', () => {
       config,
       checkDatabase: vi.fn(async () => undefined),
       auth: createAuth(clinicMemberContext),
+      entitlements: createEntitlements(),
       clinicBilling: billing,
       clinicServiceList: createServiceListService(),
     });
@@ -866,5 +917,56 @@ describe('GET /v1/clinic/:clinicId/invoices/unbilled', () => {
     const body = JSON.parse(res.body) as { success: boolean; data: unknown[] };
     expect(body.success).toBe(true);
     expect(body.data).toHaveLength(1);
+  });
+});
+
+describe('billing entitlements', () => {
+  it('blocks direct invoice API access when billing invoices are disabled', async () => {
+    const billing = createBillingService();
+    app = await buildApp({
+      config,
+      checkDatabase: vi.fn(async () => undefined),
+      auth: createAuth(clinicMemberContext),
+      entitlements: createEntitlements([FeatureKey.BILLING_INVOICES]),
+      clinicBilling: billing,
+      clinicServiceList: createServiceListService(),
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/v1/clinic/${CLINIC_ID}/invoices`,
+      headers: { cookie: 'session=test' },
+    });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.json().error.code).toBe('ENTITLEMENT_REQUIRED');
+    expect(billing.listInvoices).not.toHaveBeenCalled();
+  });
+
+  it('blocks direct payment API access when billing payments are disabled', async () => {
+    const billing = createBillingService();
+    app = await buildApp({
+      config,
+      checkDatabase: vi.fn(async () => undefined),
+      auth: createAuth(clinicMemberContext),
+      entitlements: createEntitlements([FeatureKey.BILLING_PAYMENTS]),
+      clinicBilling: billing,
+      clinicServiceList: createServiceListService(),
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/v1/clinic/${CLINIC_ID}/invoices/${INVOICE_ID}/pay`,
+      headers: { cookie: 'session=test' },
+      payload: {
+        amountPhp: '2000.00',
+        paymentMethod: 'cash',
+        paymentDate: '2026-08-12',
+      },
+    });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.json().error.code).toBe('ENTITLEMENT_REQUIRED');
+    expect(billing.recordPayment).not.toHaveBeenCalled();
   });
 });

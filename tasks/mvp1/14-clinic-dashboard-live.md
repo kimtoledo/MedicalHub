@@ -33,7 +33,7 @@ The clinic dashboard (`/app`) and dentist dashboard (`/app/dentist`) currently d
 ## Out of scope
 
 - Advanced analytics and charts (MVP 2).
-- Financial metrics on the dashboard (MVP 2).
+- Advanced revenue analytics and financial charts (MVP 2); MVP 1 includes only today's collected amount and paid-invoice count.
 
 ---
 

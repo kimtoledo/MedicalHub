@@ -117,8 +117,9 @@ Local URLs after startup:
 - Service pricing, tenant-scoped invoices and payments, live daily collections, and printable receipts.
 - Immutable prescriptions with amendment history and printable Philippine e-Rx layouts.
 - Private clinical X-ray/photo/document uploads with validated multipart handling and short-lived access.
+- Direct invoice, payment, prescription, and clinical-file APIs enforce canonical feature entitlements and tenant/branch ownership; the Professional demo plan enables all MVP 1 business basics.
 - Installable PWA shell with an offline fallback and network-only handling for every protected API response.
-- Synthetic demo seed plus automated/live release gates for tenant isolation, entitlement denial, publication boundaries, booking races, audit integrity, and responsive layouts.
+- Synthetic demo seed plus 228 automated API tests and release gates for tenant isolation, entitlement denial, publication boundaries, booking races, audit integrity, and responsive layouts.
 
 ## MVP 2 delivered so far
 
