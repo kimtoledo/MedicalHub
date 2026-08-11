@@ -1,0 +1,2 @@
+ALTER TABLE "packages" ADD COLUMN "price_display" varchar(50) DEFAULT 'Contact us' NOT NULL;--> statement-breakpoint
+ALTER TABLE "package_features" ADD CONSTRAINT "package_features_package_key_unique" UNIQUE("package_id","feature_key");

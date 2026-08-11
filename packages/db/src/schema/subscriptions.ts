@@ -21,6 +21,10 @@ export const packages = pgTable(
     name: varchar('name', { length: 100 }).notNull(),
     slug: varchar('slug', { length: 80 }).notNull(),
     description: text('description'),
+    /** Human-readable manual price shown in admin/public plan cards. */
+    priceDisplay: varchar('price_display', { length: 50 })
+      .notNull()
+      .default('Contact us'),
     isActive: boolean('is_active').notNull().default(true),
     sortOrder: varchar('sort_order', { length: 10 }).default('0'),
     ...timestamps,
@@ -48,6 +52,10 @@ export const packageFeatures = pgTable(
   },
   (t) => ({
     packageIdx: index('pkg_features_package_id_idx').on(t.packageId),
+    packageFeatureUnique: unique('package_features_package_key_unique').on(
+      t.packageId,
+      t.featureKey,
+    ),
   }),
 );
 
