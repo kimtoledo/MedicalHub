@@ -1,0 +1,65 @@
+import 'server-only';
+import { cookies } from 'next/headers';
+import { getBackendUrl } from './backend';
+
+export type DentistVerificationStatus =
+  | 'unverified'
+  | 'pending'
+  | 'verified';
+
+export type AdminDentistListItem = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  slug: string;
+  licenseNumber: string | null;
+  specialty: string | null;
+  verificationStatus: DentistVerificationStatus;
+  publicationStatus: string;
+  affiliatedClinicCount: number;
+  createdAt: string;
+};
+
+export type AdminDentistListResult = {
+  items: AdminDentistListItem[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
+type AdminDentistListResponse = {
+  success: true;
+  data: AdminDentistListResult;
+};
+
+export async function getAdminDentists(filters: {
+  search: string;
+  verificationStatus?: DentistVerificationStatus;
+  page: number;
+  pageSize?: number;
+}): Promise<AdminDentistListResult> {
+  const url = getBackendUrl('/v1/admin/dentists');
+  url.searchParams.set('page', String(filters.page));
+  url.searchParams.set('pageSize', String(filters.pageSize ?? 10));
+  if (filters.search) {
+    url.searchParams.set('search', filters.search);
+  }
+  if (filters.verificationStatus) {
+    url.searchParams.set('verificationStatus', filters.verificationStatus);
+  }
+
+  const response = await fetch(url, {
+    headers: { cookie: cookies().toString() },
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Dentist list request failed with status ${response.status}`);
+  }
+
+  const payload = (await response.json()) as AdminDentistListResponse;
+  return payload.data;
+}

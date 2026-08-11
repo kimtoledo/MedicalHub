@@ -17,8 +17,10 @@ import type {
   AdminClinicStatusService,
 } from './admin/clinics-service.js';
 import type { AdminClinicSettingsService } from './admin/clinic-settings-service.js';
+import type { AdminDentistListService } from './admin/dentists-service.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
+import { registerAdminDentistRoutes } from './routes/admin-dentists.js';
 import { registerHealthRoutes } from './routes/health.js';
 
 export type BuildAppOptions = {
@@ -31,6 +33,7 @@ export type BuildAppOptions = {
   adminClinicDetails?: AdminClinicDetailService;
   adminClinicStatus?: AdminClinicStatusService;
   adminClinicSettings?: AdminClinicSettingsService;
+  adminDentists?: AdminDentistListService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -79,6 +82,12 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         details: options.adminClinicDetails,
         status: options.adminClinicStatus,
         settings: options.adminClinicSettings,
+      });
+    }
+    if (options.adminDentists) {
+      await registerAdminDentistRoutes(app, {
+        auth: options.auth,
+        dentists: options.adminDentists,
       });
     }
   }
