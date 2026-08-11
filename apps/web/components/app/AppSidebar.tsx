@@ -21,6 +21,7 @@ import {
   Receipt,
   Stethoscope,
   FileText,
+  Camera,
 } from "lucide-react";
 import { type ClinicRole } from "@/lib/clinic-types";
 import { signOutClinic } from "@/lib/clinic-auth-client";
@@ -44,6 +45,7 @@ const dentistNavItems = [
   { label: "Encounters",     href: "/app/encounters",               icon: ClipboardList  },
   { label: "Prescriptions",  href: "/app/prescriptions",            icon: FileText       },
   { label: "Odontogram",     href: "/app/dentist/odontogram",       icon: Grid3X3        },
+  { label: "Remote Consults", href: "/app/dentist/remote-consults", icon: Camera         },
   { label: "My Profile",     href: "/app/dentist/profile",          icon: UserCircle     },
 ];
 

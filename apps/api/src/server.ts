@@ -17,6 +17,7 @@ import { createClinicPrescriptionService } from './clinic/prescription-service.j
 import { createClinicFilesService } from './clinic/clinical-files-service.js';
 import { createAiAssistanceService } from './clinic/ai-service.js';
 import { createLLMProvider } from './ai/provider.js';
+import { createRemoteConsultsService } from './clinic/remote-consults-service.js';
 
 const config = loadConfig();
 const database = await createDatabaseServices();
@@ -32,6 +33,7 @@ const clinicPrescription = createClinicPrescriptionService(database.db);
 const clinicFiles = createClinicFilesService(database.db);
 const llmProvider = createLLMProvider();
 const clinicAi = createAiAssistanceService(database.db, llmProvider);
+const remoteConsults = createRemoteConsultsService(database.db);
 const app = await buildApp({
   config,
   checkDatabase: database.check,
@@ -46,6 +48,7 @@ const app = await buildApp({
   clinicPrescription,
   clinicFiles,
   clinicAi,
+  remoteConsults,
   db: database.db,
 });
 

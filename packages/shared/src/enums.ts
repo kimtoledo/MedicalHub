@@ -114,6 +114,9 @@ export const FeatureKey = {
   AI_RECALL: 'ai.recall',
   AI_TREATMENT_SEQUENCE: 'ai.treatment_sequence',
 
+  // Tele-dentistry (MVP 2)
+  TELEDENTISTRY: 'teledentistry',
+
   // Reports
   REPORTS_BASIC: 'reports.basic',
   REPORTS_ADVANCED: 'reports.advanced',
@@ -226,6 +229,11 @@ export const AuditAction = {
   AI_NOTE_SUGGESTED: 'ai.note_suggested',
   AI_RECALL_SUGGESTED: 'ai.recall_suggested',
   AI_TREATMENT_SEQUENCE_SUGGESTED: 'ai.treatment_sequence_suggested',
+
+  // Tele-dentistry
+  REMOTE_ASSESSMENT_SUBMITTED: 'remote_assessment.submitted',
+  REMOTE_ASSESSMENT_REVIEWED: 'remote_assessment.reviewed',
+  REMOTE_ASSESSMENT_CLOSED: 'remote_assessment.closed',
 
   // Support / admin access
   SUPPORT_ACCESS_GRANTED: 'support_access.granted',
