@@ -1,6 +1,6 @@
 # Super Admin — Package Management
 
-> **Status:** 🔲 Queued — no project task yet
+> **Status:** 🔄 In progress — step 1 of 4 complete
 
 ---
 
@@ -30,7 +30,7 @@ Super Admin defines what features each clinic can access through packages (plans
 
 ## Steps
 
-1. **Package list + create/edit** — wire `/dentra-admin/packages` to the API; build create/edit form with feature-toggle matrix.
+1. **Package list + create/edit** — ✅ `/dentra-admin/packages` lists price display, active clinic/feature counts, and supports audited create/edit/deactivate workflows with a canonical `FeatureKey` toggle matrix.
 2. **Subscription list** — wire `/dentra-admin/subscriptions` to `GET /v1/admin/subscriptions` with filtering.
 3. **Subscription reassignment** — allow changing a clinic's package from the subscriptions view.
 4. **Feature catalog API** — ensure `GET /v1/entitlements/:clinicId` returns the resolved feature list so the PWA can gate features client-side.

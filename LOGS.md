@@ -18,6 +18,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Super Admin package catalog management
+- Added a human-readable package price display and a database uniqueness constraint for package-to-feature mappings through migration `0004_bored_sumo.sql`
+- Added protected package list/create/edit/deactivate APIs backed exclusively by canonical `FeatureKey` values
+- Replaced the package stub with responsive plan cards and a create/edit feature-toggle drawer
+- Reports enabled feature count and effective active clinic count per package and audits catalog mutations
+- Verified authorization, normalization, feature-key validation, and duplicate handling with 99 passing API tests and repository-wide typecheck
+
 ### ✅ Complete Super Admin dentist management
 - Added confirmed verify/revoke and publish/unpublish actions with exact Super Admin authorization
 - Enforces verification before public profile publication and uses conditional updates to prevent stale state transitions

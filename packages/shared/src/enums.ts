@@ -158,6 +158,9 @@ export const AuditAction = {
   SUBSCRIPTION_CHANGED: 'subscription.changed',
   FEATURE_OVERRIDE_SET: 'feature_override.set',
   FEATURE_OVERRIDE_REMOVED: 'feature_override.removed',
+  PACKAGE_CREATED: 'package.created',
+  PACKAGE_UPDATED: 'package.updated',
+  PACKAGE_DEACTIVATED: 'package.deactivated',
 
   // Appointments
   APPOINTMENT_CREATED: 'appointment.created',
