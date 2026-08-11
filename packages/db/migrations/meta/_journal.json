@@ -43,6 +43,13 @@
       "when": 1786466572500,
       "tag": "0005_faithful_azazel",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786468077401,
+      "tag": "0006_dazzling_legion",
+      "breakpoints": true
     }
   ]
 }

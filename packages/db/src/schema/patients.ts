@@ -1,4 +1,4 @@
-import { index, pgTable, text, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, pgTable, text, unique, uuid, varchar } from 'drizzle-orm/pg-core';
 import { clinics } from './clinics';
 import { id, timestamps, deletedAt } from './helpers';
 
@@ -57,6 +57,7 @@ export const patients = pgTable(
   (t) => ({
     clinicIdx: index('patients_clinic_id_idx').on(t.clinicId),
     patientNumberIdx: index('patients_patient_number_idx').on(t.clinicId, t.patientNumber),
+    patientNumberUnique: unique('patients_clinic_patient_number_unique').on(t.clinicId, t.patientNumber),
     nameIdx: index('patients_name_idx').on(t.clinicId, t.lastName, t.firstName),
   }),
 );
