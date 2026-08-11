@@ -29,7 +29,7 @@
 | `08-appointment-booking-public.md` | Public booking flows, conflict validation | ✅ Done |
 | `09-clinic-pwa-shell.md` | PWA manifest, installable, offline fallback | ✅ Done |
 | `10-patient-management.md` | Patient list, profile, medical/dental history | ✅ Done |
-| `11-clinical-encounter.md` | Encounter form, chief complaint, findings, procedures | 🔲 Queued |
+| `11-clinical-encounter.md` | Encounter form, chief complaint, findings, procedures | ✅ Done |
 | `12-odontogram.md` | Adult tooth chart, surface selection, history | 🔲 Queued |
 | `13-treatment-records.md` | Treatment logging per encounter | 🔲 Queued |
 | `14-clinic-dashboard-live.md` | Dashboard with live data from API | 🔲 Queued |

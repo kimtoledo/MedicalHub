@@ -18,6 +18,14 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Dentist clinical encounters
+- Added feature-protected encounter list, create, detail, and update APIs with exact clinic scoping and dentist-derived identity
+- Validates the patient tenant, active dentist-branch assignment, and optional appointment linkage before clinical record creation
+- Added a complete draft editor and confirmed finalization workflow; finalized encounters are read-only and protected by a transactional state check
+- Added dentist encounter lists, patient filtering, prefilled patient/appointment context, and profile appointment links to existing encounters
+- Writes distinct immutable create, update, and finalize audits containing identifiers/state only, never clinical free text
+- Verified live seeded dentist API/pages, cross-tenant and role denials, 134 API tests, and repository-wide typecheck
+
 ### ✅ Tenant-scoped patient management
 - Added protected patient list, registration, profile, medical-history, and dental-history APIs with role and feature-key entitlement enforcement
 - Enforces the clinic boundary before every patient query and confirmed a seeded Clinic A session receives `403` for Clinic B records

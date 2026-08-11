@@ -176,6 +176,7 @@ export const AuditAction = {
   // Clinical
   ENCOUNTER_CREATED: 'encounter.created',
   ENCOUNTER_UPDATED: 'encounter.updated',
+  ENCOUNTER_FINALIZED: 'encounter.finalized',
   TREATMENT_RECORDED: 'treatment.recorded',
   ODONTOGRAM_EVENT: 'odontogram.event',
 

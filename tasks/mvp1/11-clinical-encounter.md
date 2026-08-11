@@ -1,6 +1,6 @@
 # Clinical Encounter
 
-> **Status:** 🔲 Queued — no project task yet
+> **Status:** ✅ Done
 
 ---
 
@@ -31,8 +31,8 @@ Every patient visit generates an encounter record documenting what happened clin
 
 ## Steps
 
-1. **Encounter API** — `POST /v1/clinic/encounters`, `GET /v1/clinic/encounters/[id]`, `PATCH /v1/clinic/encounters/[id]` with tenant + role checks.
-2. **Encounter form** — build the encounter creation/edit form in the Clinic PWA; include draft/finalize states.
-3. **Encounter list** — show encounters in the patient profile and in `/app/dentist/encounters`.
-4. **Appointment linkage** — auto-link an encounter to its originating appointment when created from the appointment view.
-5. **Audit entries** — write audit rows on encounter create, update, and finalize.
+1. **Encounter API** — ✅ Protected list/create/detail/update endpoints enforce tenant, feature, dentist-role, patient, branch-assignment, and appointment ownership boundaries.
+2. **Encounter form** — ✅ The Clinic PWA captures the complete clinical visit, supports drafts and confirmed finalization, and renders finalized records read-only.
+3. **Encounter list** — ✅ Dentist encounter lists support patient filtering; patient appointment history links to its encounter when one exists.
+4. **Appointment linkage** — ✅ The creation route accepts prefilled patient/appointment context and the API validates the appointment against the same clinic, patient, branch, and dentist.
+5. **Audit entries** — ✅ Create, draft update, and finalization write separate immutable audit entries without clinical free text in metadata.
