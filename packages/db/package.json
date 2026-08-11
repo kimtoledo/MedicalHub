@@ -2,8 +2,10 @@
   "name": "@toothhub/db",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts"
   },
   "scripts": {
     "generate": "drizzle-kit generate --config=drizzle.config.ts",
@@ -12,12 +14,12 @@
     "push": "drizzle-kit push --config=drizzle.config.ts"
   },
   "dependencies": {
-    "drizzle-orm": "^0.32.0",
+    "drizzle-orm": "^0.45.2",
     "postgres": "^3.4.3",
     "@toothhub/shared": "*"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.23.0",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^5",
     "@types/node": "^20"
   }

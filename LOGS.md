@@ -50,6 +50,7 @@ All Drizzle ORM schema files created:
 | `0000_talented_speedball.sql` | All base tables (clinics → audit_events) |
 | `0001_overrated_loners.sql` | `patient_dental_histories`, `encounters`, `treatment_records`, `odontogram_events` |
 | `0002_sleepy_lethal_legion.sql` | `prefix` column + unique constraint on `clinics` |
+| `0003_great_zemo.sql` | Better Auth `accounts`, `sessions`, and `verifications`; auth identity fields on `users` |
 
 ### ✅ Demo seed data (live in DB)
 Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
@@ -72,16 +73,37 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 **Patient number format:** `{PREFIX}{NNNNNN}` — e.g. `SBD000001`, `BSM000012`
 
 ### ✅ Web app shell (apps/web — Next.js 14)
-**Super Admin section** (`/admin`)
+**Super Admin section** (`/th-admin`)
 - Login page (mock auth via `localStorage` — `th_admin_session`)
 - Dashboard with sidebar, top bar, mobile tab bar
-- Stub pages: Clinics, Dentists, Users, Subscriptions, Audit, Settings
+- Stub pages: Clinics, Dentists, Packages, Subscriptions, Audit, Settings
 
 **Clinic / Dentist section** (`/app`)
 - Role-selector login (`/cl-login`) — mock auth via `th_clinic_session`
 - App shell with sidebar, top bar, mobile tabs
 - Dashboard variants for clinic admin vs dentist
-- Stub pages: Appointments, Patients, Encounters, Odontogram, Services, Staff, Reports, Settings
+- Stub pages: Appointments, Patients, Staff, Profile, Settings, plus dentist Schedule, Encounters, Odontogram, Patients, and Profile
+
+### ✅ Fastify API foundation (apps/api)
+- Fastify 5 TypeScript workspace with development, build, start, typecheck, and test scripts
+- `GET /health` liveness endpoint
+- `GET /v1/health` readiness endpoint backed by a real PostgreSQL query
+- Explicit credentialed CORS allowlist for the frontend origin
+- Helmet security headers and cookie parsing ready for the authentication task
+- Structured JSON errors for unknown routes and server failures
+- Authorization and cookie headers are redacted from API logs
+- Graceful shutdown closes the shared PostgreSQL connection pool
+- Vitest coverage for liveness, database readiness/failure, and CORS
+
+### ✅ Better Auth backend foundation
+- Better Auth mounted at `/v1/auth/*` with database-backed, seven-day sessions
+- Email/password sign-in enabled; public sign-up disabled until invite/onboarding flows exist
+- `GET /v1/session-context` returns only backend-resolved platform roles and active clinic memberships
+- Reusable `superAdmin` and tenant/clinic role guards enforce server-side authorization boundaries
+- Auth tokens/cookies remain redacted from logs; secure, HTTP-only, SameSite cookies are configured
+- Fastify and Better Auth rate limits protect auth endpoints, with a stricter email sign-in limit
+- Migration `0003_great_zemo.sql` applied and verified on local PostgreSQL
+- API authorization/auth-route test suite expanded to 11 passing tests
 
 ### ✅ Scripts & automation
 - `scripts/post-merge.sh` — auto-runs migrations after task merges
@@ -103,19 +125,19 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 | # | Title | Notes |
 |---|-------|-------|
 | #6 | Connect Replit PostgreSQL and apply the first migration | DB is live; `DATABASE_URL` already set by Replit. Task may be redundant — migrations are already applied. |
-| #7 | Scaffold the Fastify API server (`apps/api`) | No API server yet; all data flows are mock/local |
-| #8 | Add authentication with Better Auth | Currently using `localStorage` mock sessions |
-| #12 | Let Super Admin see and search all clinics from one table | UI stub exists at `/admin/clinics` |
-| #13 | Replace mock Super Admin login with real auth | Depends on #8 |
+| #12 | Let Super Admin see and search all clinics from one table | UI stub exists at `/th-admin/clinics` |
+| #13 | Replace mock Super Admin login with real auth | Backend dependency #8 is complete |
 
 ---
 
 ## Known Gaps / Tech Debt
 
-- **No real auth** — all login is localStorage mock; `th_admin_session` / `th_clinic_session`
-- **No API server** — no `apps/api`; UI stubs have no data fetching
+- **Auth UI still mocked** — Better Auth and backend role resolution are ready, but `/th-admin/login` and `/cl-login` still use `th_admin_session` / `th_clinic_session` until task #13 and the clinic-login task wire them to the API.
+- **No seeded passwords yet** — demo users exist, but Better Auth credential accounts will be created as part of the real-login wiring task; no real password is currently available.
+- **No domain API routes yet** — the Fastify server currently exposes operational health and authentication/session endpoints; UI stubs still have no live domain data fetching
 - **Patient number sequencing** — no DB-level sequence generator; race condition possible under concurrent inserts
 - **Clinic prefix required** — schema allows `prefix = ''` as default; admin UI must enforce non-empty unique prefix on clinic creation
+- **Dependency upgrades pending** — `npm audit` reports 2 high advisories in the existing Next.js/PostCSS stack and 4 moderate build-tool advisories through Drizzle Kit. The runtime Drizzle ORM, new Fastify API, and Vitest test runner were upgraded to patched releases; the remaining fixes require separate tested framework/tooling upgrades.
 
 ---
 
@@ -124,7 +146,7 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 ### Demo credentials (after seed)
 | Role | Email | How to log in |
 |------|-------|---------------|
-| Super Admin | `admin@toothhub.ph` | `/admin/login` → any password (mock) |
+| Super Admin | `admin@toothhub.ph` | `/th-admin/login` → any password (mock; real credentials pending #13) |
 | Clinic Admin (SBD) | `admin@smilebrightdental.ph` | `/cl-login` → select Clinic Admin |
 | Clinic Admin (BSM) | `admin@brightsmile.ph` | `/cl-login` → select Clinic Admin |
 | Dentist | `dr.reyes@smilebrightdental.ph` | `/cl-login` → select Dentist |
@@ -138,6 +160,10 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 ### Useful scripts
 ```bash
 npm run dev          # Start Next.js on port 5000
+npm run api:dev      # Start Fastify API on port 3001
+npm run api:start    # Start the production API bundle
+npm run test         # Run workspace tests
+npm run typecheck    # Run workspace TypeScript checks
 npm run db:generate  # Generate a new Drizzle migration from schema changes
 npm run db:migrate   # Apply pending migrations
 npm run db:seed      # Load demo data (idempotent)

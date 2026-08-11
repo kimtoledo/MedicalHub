@@ -1,4 +1,4 @@
-import { index, pgEnum, pgTable, unique, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, index, pgEnum, pgTable, unique, uuid, varchar } from 'drizzle-orm/pg-core';
 import { branches } from './branches';
 import { clinics } from './clinics';
 import { dentists } from './dentists';
@@ -28,7 +28,9 @@ export const users = pgTable(
   'users',
   {
     id: id(),
+    name: varchar('name', { length: 200 }).notNull().default(''),
     email: varchar('email', { length: 255 }).notNull(),
+    emailVerified: boolean('email_verified').notNull().default(false),
     firstName: varchar('first_name', { length: 100 }),
     lastName: varchar('last_name', { length: 100 }),
     phone: varchar('phone', { length: 20 }),

@@ -3,6 +3,7 @@ export * from './clinics';
 export * from './branches';
 export * from './dentists';
 export * from './users';
+export * from './auth';
 export * from './patients';
 export * from './appointments';
 export * from './subscriptions';

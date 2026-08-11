@@ -83,9 +83,16 @@ npm run db:migrate
 
 # 4. Start the frontend (port 5000)
 npm run dev
+
+# 5. In another terminal, start the API (port 3001)
+npm run api:dev
 ```
 
 See **[DEVELOPER.md](DEVELOPER.md)** for full setup instructions across Replit, VS Code, and Codex.
+
+The API exposes Better Auth under `/v1/auth/*`. Authenticated clients can call
+`GET /v1/session-context` to receive platform roles and active clinic
+memberships resolved by the backend.
 
 ---
 

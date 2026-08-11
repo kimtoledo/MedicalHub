@@ -1,0 +1,97 @@
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { fromNodeHeaders } from 'better-auth/node';
+import type { ApiConfig } from '../config.js';
+import type { AuthServices, AuthorizationContext } from '../auth/types.js';
+
+type RegisterAuthRoutesOptions = {
+  auth: AuthServices;
+  config: ApiConfig;
+};
+
+function toWebRequest(request: FastifyRequest, baseUrl: string): Request {
+  const url = new URL(request.raw.url ?? request.url, baseUrl);
+  const method = request.method.toUpperCase();
+  const hasBody = method !== 'GET' && method !== 'HEAD' && request.body !== undefined;
+  const headers = fromNodeHeaders(request.headers);
+  headers.set('x-toothhub-client-ip', request.ip);
+
+  return new Request(url, {
+    method,
+    headers,
+    body: hasBody ? JSON.stringify(request.body) : undefined,
+  });
+}
+
+async function resolveRequestAuthorization(
+  request: FastifyRequest,
+  auth: AuthServices,
+): Promise<AuthorizationContext | null> {
+  const session = await auth.getSession(fromNodeHeaders(request.headers));
+
+  if (!session) {
+    return null;
+  }
+
+  return auth.resolveAuthorization(session.user.id);
+}
+
+export async function registerAuthRoutes(
+  app: FastifyInstance,
+  options: RegisterAuthRoutesOptions,
+): Promise<void> {
+  app.route({
+    method: ['GET', 'POST'],
+    url: '/v1/auth/*',
+    config: {
+      rateLimit: {
+        max: 30,
+        timeWindow: '1 minute',
+      },
+    },
+    handler: async (request, reply) => {
+      const response = await options.auth.handler(
+        toWebRequest(request, options.config.authBaseUrl),
+      );
+      const responseHeaders = response.headers as Headers & {
+        getSetCookie?: () => string[];
+      };
+      const setCookies = responseHeaders.getSetCookie?.() ?? [];
+
+      response.headers.forEach((value, name) => {
+        if (name.toLowerCase() !== 'set-cookie') {
+          reply.header(name, value);
+        }
+      });
+      if (setCookies.length > 0) {
+        reply.header('set-cookie', setCookies);
+      }
+
+      reply.status(response.status);
+
+      if (!response.body) {
+        return reply.send();
+      }
+
+      return reply.send(Buffer.from(await response.arrayBuffer()));
+    },
+  });
+
+  app.get('/v1/session-context', async (request, reply) => {
+    const authorization = await resolveRequestAuthorization(request, options.auth);
+
+    if (!authorization) {
+      return reply.status(401).send({
+        success: false,
+        error: {
+          code: 'UNAUTHENTICATED',
+          message: 'A valid session is required',
+        },
+      });
+    }
+
+    return reply.send({
+      success: true,
+      data: authorization,
+    });
+  });
+}

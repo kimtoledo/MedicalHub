@@ -35,7 +35,7 @@ This guide covers getting the project running in three environments: **Replit**,
 If you're working directly in Replit (using Replit Agent or the Replit editor):
 
 1. **Open the Repl** — the project is already imported.
-2. **Secrets are pre-configured** — `DATABASE_URL` and `SESSION_SECRET` are in Replit Secrets. No `.env` file needed.
+2. **Secrets are pre-configured** — `DATABASE_URL` and either `BETTER_AUTH_SECRET` or the legacy `SESSION_SECRET` fallback are in Replit Secrets. No `.env` file needed.
 3. **Click Run** (or use the **"Start application"** workflow) — this runs `cd apps/web && npx next dev -p 5000`.
 4. **The preview pane** shows the app at port 5000.
 
@@ -90,7 +90,7 @@ Now open `.env` and fill in the values:
 | Variable | Where to get it |
 |---|---|
 | `DATABASE_URL` | Replit → your project → Secrets tab → copy `DATABASE_URL` |
-| `SESSION_SECRET` | Replit → Secrets → copy, or generate: `openssl rand -hex 32` |
+| `BETTER_AUTH_SECRET` | Replit → Secrets → copy, or generate: `openssl rand -hex 32` |
 | `NEXT_PUBLIC_APP_URL` | `http://localhost:5000` for local dev |
 | `NEXT_PUBLIC_API_URL` | `http://localhost:3001` for local dev |
 
@@ -112,11 +112,16 @@ npm run dev
 
 The Next.js app starts at [http://localhost:5000](http://localhost:5000).
 
-When `apps/api` is scaffolded, start it separately:
+Start the API separately in another terminal:
 ```bash
-# (future — api not yet scaffolded)
 npm run api:dev
 ```
+
+The API listens on [http://localhost:3001](http://localhost:3001). Use
+`GET /health` for process liveness and `GET /v1/health` to verify the API can
+reach PostgreSQL. Better Auth is mounted at `/v1/auth/*`; `GET
+/v1/session-context` returns the signed-in user's server-resolved platform role
+and active clinic memberships.
 
 ---
 
@@ -157,11 +162,11 @@ All variables are documented in `.env.example`. Here is a summary:
 | Variable | Required | Description | Source |
 |---|---|---|---|
 | `DATABASE_URL` | ✅ Always | PostgreSQL connection string | Replit Secrets |
-| `SESSION_SECRET` | ✅ Always | Secret for signing session cookies | Replit Secrets / generate locally |
+| `BETTER_AUTH_SECRET` | ✅ API | Better Auth signing secret (minimum 32 characters) | Replit Secrets / generate locally |
+| `SESSION_SECRET` | Fallback | Legacy fallback when `BETTER_AUTH_SECRET` is omitted | Replit Secrets |
 | `NEXT_PUBLIC_APP_URL` | ✅ Frontend | Public URL of the Next.js app | `http://localhost:5000` locally |
 | `NEXT_PUBLIC_API_URL` | ✅ Frontend | Public URL of the Fastify API | `http://localhost:3001` locally |
-| `BETTER_AUTH_SECRET` | When auth is wired | Better Auth signing secret | Replit Secrets (future) |
-| `BETTER_AUTH_URL` | When auth is wired | Base URL for Better Auth | Same as API URL (future) |
+| `BETTER_AUTH_URL` | ✅ API | Base URL for Better Auth | Same as API URL |
 | `STORAGE_BUCKET` | When storage is wired | Object storage bucket name | Provider dashboard (future) |
 
 **On Replit:** all secrets are in the Replit Secrets panel — never in code or committed files.  
@@ -184,6 +189,7 @@ All tables are defined in `packages/db/src/schema/`:
 | `branches.ts` | `branches` |
 | `dentists.ts` | `dentists`, `dentist_branch_assignments` |
 | `users.ts` | `users`, `clinic_memberships` |
+| `auth.ts` | `accounts`, `sessions`, `verifications` |
 | `patients.ts` | `patients`, `patient_medical_histories` |
 | `appointments.ts` | `services`, `appointments`, `appointment_status_history` |
 | `subscriptions.ts` | `packages`, `package_features`, `clinic_subscriptions`, `clinic_feature_overrides` |
@@ -259,6 +265,13 @@ npm run build        # production build
 ```
 
 The Replit **"Start application"** workflow runs `npm run dev` automatically.
+
+### Backend API (Fastify)
+
+```bash
+npm run api:dev      # development server with watch mode, port 3001
+npm run api:start    # run the production bundle after npm run build
+```
 
 ### Database scripts
 

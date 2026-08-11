@@ -15,14 +15,18 @@ if (!process.env.DATABASE_URL) {
  */
 const isMigration = process.env.DRIZZLE_MIGRATION === 'true';
 
-const sql = postgres(process.env.DATABASE_URL, {
+const client = postgres(process.env.DATABASE_URL, {
   max: isMigration ? 1 : 10,
   idle_timeout: 20,
   connect_timeout: 10,
 });
 
-export const db = drizzle(sql, { schema });
+export const db = drizzle(client, { schema });
 export type DB = typeof db;
+
+export async function closeDatabase(): Promise<void> {
+  await client.end({ timeout: 5 });
+}
 
 // Export schema for use in queries
 export { schema };

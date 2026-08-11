@@ -5,7 +5,11 @@
   "description": "ToothHub PH — Multi-tenant dental SaaS platform for the Philippines",
   "scripts": {
     "dev": "cd apps/web && npx next dev -p 5000",
-    "build": "cd apps/web && npx next build",
+    "api:dev": "npm run dev --workspace @toothhub/api",
+    "api:start": "npm run start --workspace @toothhub/api",
+    "build": "npm run build --workspace @toothhub/web && npm run build --workspace @toothhub/api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
     "db:generate": "cd packages/db && npx drizzle-kit generate --config=drizzle.config.ts",
     "db:migrate": "cd packages/db && DRIZZLE_MIGRATION=true npx drizzle-kit migrate --config=drizzle.config.ts",
     "db:studio": "cd packages/db && npx drizzle-kit studio --config=drizzle.config.ts",
@@ -24,7 +28,7 @@
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "autoprefixer": "^10.5.4",
-    "drizzle-orm": "^0.32.0",
+    "drizzle-orm": "^0.45.2",
     "lucide-react": "^0.400.0",
     "next": "^14.2.29",
     "postcss": "^8.5.26",
@@ -36,6 +40,7 @@
     "zod": "^3.23.0"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.23.0"
+    "drizzle-kit": "^0.31.10",
+    "esbuild": "^0.28.2"
   }
 }
