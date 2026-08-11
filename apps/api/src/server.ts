@@ -19,6 +19,7 @@ import { createAiAssistanceService } from './clinic/ai-service.js';
 import { createLLMProvider } from './ai/provider.js';
 import { createRemoteConsultsService } from './clinic/remote-consults-service.js';
 import { createHmoService } from './clinic/hmo-service.js';
+import { createAdminClinicSettingsService } from './admin/clinic-settings-service.js';
 
 const config = loadConfig();
 const database = await createDatabaseServices();
@@ -36,6 +37,7 @@ const llmProvider = createLLMProvider();
 const clinicAi = createAiAssistanceService(database.db, llmProvider);
 const remoteConsults = createRemoteConsultsService(database.db);
 const hmo = createHmoService(database.db);
+const adminClinicSettings = createAdminClinicSettingsService(database.db);
 const app = await buildApp({
   config,
   checkDatabase: database.check,
@@ -53,6 +55,7 @@ const app = await buildApp({
   remoteConsults,
   hmo,
   db: database.db,
+  adminClinicSettings,
 });
 
 app.addHook('onClose', async () => {

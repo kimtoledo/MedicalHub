@@ -26,6 +26,7 @@ import type { ClinicFilesService } from './clinic/clinical-files-service.js';
 import type { AiAssistanceService } from './clinic/ai-service.js';
 import type { RemoteConsultsService } from './clinic/remote-consults-service.js';
 import type { HmoService } from './clinic/hmo-service.js';
+import type { AdminClinicSettingsService } from './admin/clinic-settings-service.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
 import { registerClinicBillingRoutes } from './routes/clinic-billing.js';
@@ -55,6 +56,7 @@ export type BuildAppOptions = {
   remoteConsults?: RemoteConsultsService;
   hmo?: HmoService;
   db?: import('@dentra/db').DB;
+  adminClinicSettings?: AdminClinicSettingsService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -108,6 +110,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         branchCreation: options.adminClinicBranchCreation,
         details: options.adminClinicDetails,
         status: options.adminClinicStatus,
+        settings: options.adminClinicSettings,
       });
     }
     if (options.clinicBilling && options.clinicServiceList) {

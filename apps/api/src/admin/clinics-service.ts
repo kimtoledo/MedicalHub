@@ -7,6 +7,7 @@ import {
   ilike,
   inArray,
   isNull,
+  lte,
   or,
 } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
@@ -21,8 +22,7 @@ import {
   packages,
   users,
 } from '@dentra/db/schema';
-import { AuditAction } from '@dentra/shared';
-import type { FeatureKey } from '@dentra/shared';
+import { AuditAction, FeatureKey } from '@dentra/shared';
 
 export type ClinicStatus = typeof clinics.$inferSelect.status;
 
@@ -174,6 +174,7 @@ export type AdminClinicDetail = {
     reason: string | null;
     expiresAt: Date | null;
   }>;
+  availableFeatureKeys: FeatureKey[];
 };
 
 export type AdminClinicDetailService = {
@@ -273,6 +274,7 @@ export function createAdminClinicListService(
 ): AdminClinicListService {
   return {
     list: async (input) => {
+      const now = new Date();
       const search = input.search.trim();
       const searchCondition = search
         ? or(
@@ -340,7 +342,16 @@ export function createAdminClinicListService(
           })
           .from(clinicSubscriptions)
           .innerJoin(packages, eq(clinicSubscriptions.packageId, packages.id))
-          .where(inArray(clinicSubscriptions.clinicId, clinicIds))
+          .where(
+            and(
+              inArray(clinicSubscriptions.clinicId, clinicIds),
+              lte(clinicSubscriptions.startsAt, now),
+              or(
+                isNull(clinicSubscriptions.expiresAt),
+                gt(clinicSubscriptions.expiresAt, now),
+              ),
+            ),
+          )
           .orderBy(desc(clinicSubscriptions.startsAt)),
       ]);
 
@@ -453,7 +464,16 @@ export function createAdminClinicDetailService(
             })
             .from(clinicSubscriptions)
             .innerJoin(packages, eq(clinicSubscriptions.packageId, packages.id))
-            .where(eq(clinicSubscriptions.clinicId, clinicId))
+            .where(
+              and(
+                eq(clinicSubscriptions.clinicId, clinicId),
+                lte(clinicSubscriptions.startsAt, now),
+                or(
+                  isNull(clinicSubscriptions.expiresAt),
+                  gt(clinicSubscriptions.expiresAt, now),
+                ),
+              ),
+            )
             .orderBy(desc(clinicSubscriptions.startsAt))
             .limit(1),
           database
@@ -549,6 +569,7 @@ export function createAdminClinicDetailService(
           : null,
         featureOverrides: [...latestOverrides.values()],
         effectiveEntitlements,
+        availableFeatureKeys: Object.values(FeatureKey),
       };
     },
   };

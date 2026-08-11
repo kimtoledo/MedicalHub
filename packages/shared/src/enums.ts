@@ -188,6 +188,8 @@ export const AuditAction = {
   CLINIC_SUSPENDED: 'clinic.suspended',
   CLINIC_REACTIVATED: 'clinic.reactivated',
   CLINIC_ARCHIVED: 'clinic.archived',
+  CLINIC_PUBLISHED: 'clinic.published',
+  CLINIC_UNPUBLISHED: 'clinic.unpublished',
 
   // Branch lifecycle
   BRANCH_CREATED: 'branch.created',

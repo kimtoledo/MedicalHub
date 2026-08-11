@@ -15,10 +15,15 @@ import {
 } from 'lucide-react';
 import {
   getAdminClinicDetail,
+  getAdminClinicPackageOptions,
+  type AdminClinicPackageOption,
   type ClinicStatus,
 } from '@/lib/admin-clinics';
 import ClinicStatusActions from '@/components/admin/ClinicStatusActions';
 import AddClinicBranch from '@/components/admin/AddClinicBranch';
+import ClinicPackageAction from '@/components/admin/ClinicPackageAction';
+import ClinicPublicationAction from '@/components/admin/ClinicPublicationAction';
+import FeatureOverrideManager from '@/components/admin/FeatureOverrideManager';
 
 type ClinicDetailPageProps = {
   params: { clinicId: string };
@@ -53,8 +58,12 @@ function joinAddress(parts: Array<string | null>): string {
 
 export default async function ClinicDetailPage({ params }: ClinicDetailPageProps) {
   let clinic;
+  let packageOptions: AdminClinicPackageOption[] = [];
   try {
-    clinic = await getAdminClinicDetail(params.clinicId);
+    [clinic, packageOptions] = await Promise.all([
+      getAdminClinicDetail(params.clinicId),
+      getAdminClinicPackageOptions().catch(() => []),
+    ]);
   } catch {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
@@ -118,11 +127,18 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
               </div>
             </div>
             <div className="space-y-3">
-              <ClinicStatusActions
-                clinicId={clinic.id}
-                clinicName={clinic.name}
-                status={clinic.status}
-              />
+              <div className="flex flex-wrap gap-2 sm:justify-end">
+                <ClinicPublicationAction
+                  clinicId={clinic.id}
+                  clinicName={clinic.name}
+                  publicationStatus={clinic.publicationStatus}
+                />
+                <ClinicStatusActions
+                  clinicId={clinic.id}
+                  clinicName={clinic.name}
+                  status={clinic.status}
+                />
+              </div>
               <div className="text-left text-xs text-slate-500 sm:text-right">
                 <p>Created {formatDate(clinic.createdAt)}</p>
                 <p className="mt-1">Updated {formatDate(clinic.updatedAt)}</p>
@@ -224,9 +240,23 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
                     <p className="mt-1">Expires {formatDate(clinic.subscription.expiresAt)}</p>
                   </div>
                 </div>
+                <ClinicPackageAction
+                  clinicId={clinic.id}
+                  clinicName={clinic.name}
+                  currentPackageId={clinic.subscription.package.id}
+                  packages={packageOptions}
+                />
               </div>
             ) : (
-              <p className="mt-4 text-sm text-slate-500">No package is currently assigned.</p>
+              <div>
+                <p className="mt-4 text-sm text-slate-500">No package is currently assigned.</p>
+                <ClinicPackageAction
+                  clinicId={clinic.id}
+                  clinicName={clinic.name}
+                  currentPackageId={null}
+                  packages={packageOptions}
+                />
+              </div>
             )}
           </section>
         </div>
@@ -301,28 +331,11 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
             )}
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="font-bold text-slate-900">Feature overrides</h2>
-            <p className="mt-1 text-sm text-slate-500">Current unexpired exceptions.</p>
-            {clinic.featureOverrides.length === 0 ? (
-              <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-500">No active overrides.</p>
-            ) : (
-              <div className="mt-5 space-y-3">
-                {clinic.featureOverrides.map((override) => (
-                  <div key={override.id} className="rounded-xl border border-violet-100 bg-violet-50/50 p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-violet-900">{formatFeatureKey(override.featureKey)}</p>
-                      <span className={`text-xs font-bold ${override.isEnabled ? 'text-emerald-700' : 'text-red-600'}`}>
-                        {override.isEnabled ? 'Enabled' : 'Disabled'}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs leading-5 text-violet-700">{override.reason}</p>
-                    <p className="mt-2 text-xs text-violet-500">Expires: {formatDate(override.expiresAt)}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          <FeatureOverrideManager
+            clinicId={clinic.id}
+            availableFeatureKeys={clinic.availableFeatureKeys}
+            overrides={clinic.featureOverrides}
+          />
         </div>
       </div>
     </div>

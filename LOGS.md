@@ -18,6 +18,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Complete Super Admin clinic management
+- Added effective-dated package assignment with preserved subscription history and current-period entitlement resolution
+- Added reasoned, optionally expiring feature overrides with audited set/remove operations
+- Added audited microsite publish/unpublish controls with operational-status and `FeatureKey.MICROSITE_PUBLISH` enforcement
+- Added confirmation-based responsive controls and same-origin proxy routes for all three workflows
+- Verified authorization, validation, tenant scoping, effective-date rules, audit behavior, entitlement enforcement, 68 API tests, typecheck, and web/API production builds
+
 ### ✅ Super Admin clinic branch creation
 - Added protected `POST /v1/admin/clinics/:clinicId/branches` with strict normalized validation and route-owned tenant scope
 - Serializes branch creation per clinic, automatically makes the first branch main, and rejects a second active main branch
@@ -205,21 +212,45 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 - Seeded all 12 demo services with PHP prices (₱350–₱8,000); seed script updated to include `pricePhp`
 - All 49 existing API tests continue to pass; typecheck clean
 
+### ✅ AI clinical assistance — notes, voice-to-text & suggestions (task #25)
+- Migration `0007_ai_interactions.sql`: `ai_interactions` table (prompt, response, model, tokens, latency)
+- `AiAssistanceService` with provider-agnostic interface; `AiInteractionType` enum added to `@dentra/shared`
+- Routes: `POST /v1/clinic/:clinicId/ai/suggest-notes`, `POST /v1/clinic/:clinicId/ai/suggest-recall`; encounter ownership validated against clinic/branch scope before any AI call
+- Web: AI note suggestion panel on encounter edit page; `AIRecallBanner` (labelled "Review only") on recall display; voice-to-text dictation using Web Speech API
+- Security: encounterId validated to clinic + caller branch; AI routes require clinic member auth; no PII in audit logs
+
+### ✅ Tele-dentistry — remote photo consultations (task #26)
+- Migration `0008_remote_assessments.sql`: `remote_assessments` + `remote_assessment_photos` tables; status: `pending → reviewed | closed`
+- Public submission endpoint `POST /v1/public/consult/:clinicId` — no auth required; up to 5 photos per consult
+- Photos stored in Replit Object Storage at `teledentistry/{clinicId}/{assessmentId}/{index}`; 15-minute HMAC-SHA256 signed download tokens (same pattern as clinical files)
+- Clinic routes: list, get, review, close assessments; `closeAssessment` has duplicate-close guard; `reviewAssessment` blocks already-reviewed/closed assessments
+- Web: `/app/remote-consults` list with status tabs; detail page with signed photo gallery + assessment form + close action; public `/consult/[clinicId]` submission page
+- `@fastify/multipart` limit raised to `files: 5` globally
+
+### ✅ HMO / Insurance claims module (task #27)
+- Migration `0009_hmo_claims.sql`: `hmo_payers`, `patient_hmo_memberships`, `hmo_claims`; `is_hmo_covered` + `hmo_standard_rate_php` columns on `services`
+- `HmoService` with full payer/membership/claim CRUD; `assertTransition()` enforces status matrix: `prepared → submitted → approved | rejected → paid`
+- Paid transition: locks claim + invoice with `FOR UPDATE`; requires approved amount = invoice total (prevents partial/overpayment); rejects if invoice already paid/voided or if another paid claim exists for same invoice; marks invoice paid atomically
+- Cross-tenant validation on every FK: patient, payer, membership, invoice, encounter all scoped to clinic + patient
+- Claim status PATCH restricted to clinic admin/owner; claim number globally unique (`HMOCLM` + 8-digit global count + 4-digit random suffix)
+- Web: `/app/settings/hmo-payers` payer catalog; `/app/billing/hmo-claims` tracker with status tabs; claim detail with progress tracker + status action forms + printable claim document (`window.print()`); patient HMO tab with membership add/delete; HMO Claims sidebar nav item; Settings page card
+- 24 Vitest unit tests covering billing guard logic (zero/under/over/exact amount), status transitions, and concurrent payment paths
+
 ---
 
 ## Queued (Proposed Tasks)
 
 > **Proposal alignment review (Aug 2026):** The executive summary PDF was reviewed. Features in the proposal's MVP that were deferred to MVP 2 have been promoted to MVP 1 Increment 5 (tasks #22–24). Three new features not in any task file were added: AI clinical assistance (#25, MVP 2), tele-dentistry (#26, MVP 2), HMO/insurance (#27, MVP 2), plus AI imaging and kiosk check-in added to MVP 3 docs.
 
-| # | Title | Phase | Notes |
-|---|-------|-------|-------|
-| #6 | Connect Replit PostgreSQL and apply the first migration | MVP 1 | DB is live; `DATABASE_URL` already set by Replit. May be redundant — migrations already applied. |
-| #22 | Billing lite — service pricing, invoices & receipts | MVP 1 Increment 5 | Promoted from MVP 2 to align with proposal's MVP scope |
-| #23 | Prescription builder / e-Rx | MVP 1 Increment 5 | Promoted from MVP 2; dentist daily-use feature |
-| #24 | Clinical file uploads — X-rays & photos | MVP 1 Increment 5 | Promoted from MVP 2; Replit Object Storage, signed URLs |
-| #25 | AI clinical assistance — notes, voice-to-text & suggestions | MVP 2 | New; key differentiator per proposal |
-| #26 | Tele-dentistry — remote photo consultations | MVP 2 | New; proposal Phase 2 |
-| #27 | HMO / Insurance claims module | MVP 2 | New; proposal Phase 2 |
+| # | Title | Phase | Status |
+|---|-------|-------|--------|
+| #6 | Connect Replit PostgreSQL and apply the first migration | MVP 1 | May be redundant — DB is live and all migrations are applied |
+| #22 | Billing lite — service pricing, invoices & receipts | MVP 1 Increment 5 | ✅ Merged |
+| #23 | Prescription builder / e-Rx | MVP 1 Increment 5 | ✅ Merged |
+| #24 | Clinical file uploads — X-rays & photos | MVP 1 Increment 5 | ✅ Merged |
+| #25 | AI clinical assistance — notes, voice-to-text & suggestions | MVP 2 | ✅ Merged |
+| #26 | Tele-dentistry — remote photo consultations | MVP 2 | ✅ Merged |
+| #27 | HMO / Insurance claims module | MVP 2 | ✅ Merged |
 
 ---
 
@@ -228,7 +259,7 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 - **Clinic owner invitation delivery** — clinic creation links or creates a pending owner identity and membership, but invite email delivery and password setup remain a separate onboarding step.
 - **Clinic membership selection** — authenticated users currently enter their first active clinic membership; explicit clinic/branch switching remains part of the PWA shell real-data work.
 - **PWA entitlement and branch context remain static** — the required entitlement and branch-listing API endpoints are not implemented yet.
-- **Most domain API routes remain queued** — clinic listing, onboarding, detail, status transitions, and branch creation are now implemented; branch editing, package, feature-override, microsite, and other domain operations still need backend routes.
+- **Most domain API routes remain queued** — Task 02 clinic onboarding and management operations are implemented; branch editing and other domain modules still need backend routes.
 - **Patient number sequencing** — no DB-level sequence generator; race condition possible under concurrent inserts
 - **Clinic prefix required** — schema allows `prefix = ''` as default; admin UI must enforce non-empty unique prefix on clinic creation
 - **Dependency upgrades pending** — `npm audit` reports 2 high advisories in the existing Next.js/PostCSS stack and 4 moderate build-tool advisories through Drizzle Kit. The runtime Drizzle ORM, new Fastify API, and Vitest test runner were upgraded to patched releases; the remaining fixes require separate tested framework/tooling upgrades.
