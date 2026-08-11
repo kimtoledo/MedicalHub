@@ -7,6 +7,7 @@ import {
   Users,
   UserCheck,
   ArrowRight,
+  Banknote,
 } from "lucide-react";
 import { useAppBranch } from "../AppBranchContext";
 import AppointmentActions from "./AppointmentActions";
@@ -14,6 +15,10 @@ import { statusStyle, time, todayManila, type DashboardSummary } from "./types";
 export default function ClinicDashboard() {
   const { clinicId, branchId, branchName } = useAppBranch();
   const [data, setData] = useState<DashboardSummary | null>(null);
+  const [earnings, setEarnings] = useState<{
+    totalPhp: string;
+    invoiceCount: number;
+  } | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const load = useCallback(async () => {
@@ -31,6 +36,20 @@ export default function ClinicDashboard() {
       if (!response.ok || !payload.data)
         throw new Error(payload.error?.message ?? "Dashboard unavailable");
       setData(payload.data);
+
+      const earningsResponse = await fetch(
+        `/api/clinic/${clinicId}/earnings/today`,
+        { cache: "no-store" },
+      );
+      if (earningsResponse.ok) {
+        const earningsPayload = (await earningsResponse.json()) as {
+          success: boolean;
+          data?: { totalPhp: string; invoiceCount: number };
+        };
+        setEarnings(earningsPayload.success ? earningsPayload.data ?? null : null);
+      } else {
+        setEarnings(null);
+      }
     } catch (caught) {
       setError(
         caught instanceof Error ? caught.message : "Dashboard unavailable",
@@ -64,6 +83,16 @@ export default function ClinicDashboard() {
     ["Checked In", data?.checkedInCount ?? 0, UserCheck],
     ["Upcoming", data?.upcomingCount ?? 0, Clock],
     ["Active Patients", data?.activePatientCount ?? 0, Users],
+    [
+      "Today's Collections",
+      earnings
+        ? `₱${Number(earnings.totalPhp).toLocaleString("en-PH", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}`
+        : "₱0.00",
+      Banknote,
+    ],
   ] as const;
   return (
     <div className="space-y-6 p-4 sm:p-8">
@@ -91,7 +120,7 @@ export default function ClinicDashboard() {
           </button>
         </div>
       )}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {kpis.map(([label, value, Icon]) => (
           <article
             key={label}
@@ -100,6 +129,11 @@ export default function ClinicDashboard() {
             <Icon className="text-violet-600" size={20} />
             <p className="mt-3 text-3xl font-bold text-violet-950">{value}</p>
             <p className="text-xs font-semibold text-slate-500">{label}</p>
+            {label === "Today's Collections" && earnings ? (
+              <p className="mt-1 text-xs text-slate-400">
+                {earnings.invoiceCount} paid invoice{earnings.invoiceCount === 1 ? "" : "s"}
+              </p>
+            ) : null}
           </article>
         ))}
       </div>

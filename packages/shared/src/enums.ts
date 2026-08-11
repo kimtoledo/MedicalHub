@@ -98,7 +98,7 @@ export const FeatureKey = {
   STAFF_MANAGE: 'staff.manage',
   ROLES_MANAGE: 'roles.manage',
 
-  // Billing features (MVP 2)
+  // Billing features (MVP 1 lite → MVP 2 full)
   BILLING_INVOICES: 'billing.invoices',
   BILLING_PAYMENTS: 'billing.payments',
   PRESCRIPTIONS: 'clinical.prescriptions',
@@ -108,6 +108,17 @@ export const FeatureKey = {
 
   // Imaging (MVP 2)
   RADIOGRAPHS: 'clinical.radiographs',
+
+  // AI assistance (MVP 2)
+  AI_NOTES: 'ai.notes',
+  AI_RECALL: 'ai.recall',
+  AI_TREATMENT_SEQUENCE: 'ai.treatment_sequence',
+
+  // Tele-dentistry (MVP 2)
+  TELEDENTISTRY: 'teledentistry',
+
+  // HMO / Insurance (MVP 2)
+  HMO_CLAIMS: 'hmo.claims',
 
   // Reports
   REPORTS_BASIC: 'reports.basic',
@@ -121,6 +132,50 @@ export const FeatureKey = {
   BRANCHES_MULTI: 'branches.multi',
 } as const;
 export type FeatureKey = (typeof FeatureKey)[keyof typeof FeatureKey];
+
+// ---------------------------------------------------------------------------
+// Invoice status
+// ---------------------------------------------------------------------------
+export const InvoiceStatus = {
+  PENDING: 'pending',
+  PAID:    'paid',
+  VOIDED:  'voided',
+} as const;
+export type InvoiceStatus = (typeof InvoiceStatus)[keyof typeof InvoiceStatus];
+
+// ---------------------------------------------------------------------------
+// Payment method
+// ---------------------------------------------------------------------------
+export const PaymentMethod = {
+  CASH:          'cash',
+  GCASH:         'gcash',
+  CARD:          'card',
+  BANK_TRANSFER: 'bank_transfer',
+  OTHER:         'other',
+} as const;
+export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod];
+
+// ---------------------------------------------------------------------------
+// Clinical file types
+// ---------------------------------------------------------------------------
+export const ClinicalFileType = {
+  RADIOGRAPH:       'radiograph',
+  INTRAORAL_PHOTO:  'intraoral_photo',
+  EXTRAORAL_PHOTO:  'extraoral_photo',
+  CONSENT_FORM:     'consent_form',
+  LAB_RESULT:       'lab_result',
+  REFERRAL_LETTER:  'referral_letter',
+  OTHER:            'other',
+} as const;
+export type ClinicalFileType = (typeof ClinicalFileType)[keyof typeof ClinicalFileType];
+
+// ---------------------------------------------------------------------------
+// Prescription status
+// ---------------------------------------------------------------------------
+export const PrescriptionStatus = {
+  ISSUED: 'issued',
+} as const;
+export type PrescriptionStatus = (typeof PrescriptionStatus)[keyof typeof PrescriptionStatus];
 
 // ---------------------------------------------------------------------------
 // Audit event actions
@@ -179,6 +234,36 @@ export const AuditAction = {
   ENCOUNTER_FINALIZED: 'encounter.finalized',
   TREATMENT_RECORDED: 'treatment.recorded',
   ODONTOGRAM_EVENT: 'odontogram.event',
+
+  // Billing
+  INVOICE_CREATED:   'invoice.created',
+  INVOICE_PAID:      'invoice.paid',
+  INVOICE_VOIDED:    'invoice.voided',
+  PAYMENT_RECORDED:  'payment.recorded',
+
+  // Prescriptions
+  PRESCRIPTION_ISSUED: 'prescription.issued',
+
+  // Clinical files
+  FILE_UPLOADED: 'file.uploaded',
+  FILE_DELETED: 'file.deleted',
+  FILE_URL_GENERATED: 'file.url_generated',
+
+  // AI assistance
+  AI_NOTE_SUGGESTED: 'ai.note_suggested',
+  AI_RECALL_SUGGESTED: 'ai.recall_suggested',
+  AI_TREATMENT_SEQUENCE_SUGGESTED: 'ai.treatment_sequence_suggested',
+
+  // Tele-dentistry
+  REMOTE_ASSESSMENT_SUBMITTED: 'remote_assessment.submitted',
+  REMOTE_ASSESSMENT_REVIEWED: 'remote_assessment.reviewed',
+  REMOTE_ASSESSMENT_CLOSED: 'remote_assessment.closed',
+
+  // HMO / Insurance claims
+  HMO_PAYER_CREATED: 'hmo_payer.created',
+  HMO_PAYER_UPDATED: 'hmo_payer.updated',
+  HMO_CLAIM_CREATED: 'hmo_claim.created',
+  HMO_CLAIM_STATUS_CHANGED: 'hmo_claim.status_changed',
 
   // Support / admin access
   SUPPORT_ACCESS_GRANTED: 'support_access.granted',

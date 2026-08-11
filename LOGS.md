@@ -242,8 +242,14 @@ All Drizzle ORM schema files created:
 | `audit.ts` | `audit_events` |
 | `encounters.ts` | `encounters`, `treatment_records` |
 | `odontogram.ts` | `odontogram_events` |
+| `billing.ts` | `invoices`, `invoice_line_items`, `invoice_payments` |
+| `prescriptions.ts` | `prescriptions`, `prescription_items` |
+| `clinical-files.ts` | `clinical_files` |
+| `ai-interactions.ts` | `ai_interactions` |
+| `remote-assessments.ts` | `remote_assessments` |
+| `hmo.ts` | `hmo_payers`, `patient_hmo_memberships`, `hmo_claims` |
 
-### ✅ Database migrations (applied to live DB)
+### ✅ Database migrations
 
 | File | Contents |
 |------|---------|
@@ -255,6 +261,13 @@ All Drizzle ORM schema files created:
 | `0005_faithful_azazel.sql` | Structured clinic hero text and branch operating hours |
 | `0006_dazzling_legion.sql` | Tenant-scoped patient-number uniqueness |
 | `0007_audit_immutability.sql` | Database trigger rejecting every audit-event update or delete |
+| `0008_billing_lite.sql` | Service pricing, invoices, line items, and single-payment records |
+| `0009_prescriptions.sql` | Immutable prescriptions and medicine line items |
+| `0010_clinical_files.sql` | Private clinical-file metadata |
+| `0011_ai_interactions.sql` | Metadata-only AI interaction records |
+| `0012_remote_assessments.sql` | Remote photo consultation records |
+| `0013_hmo_claims.sql` | HMO payers, patient memberships, claims, and service coverage fields |
+| `0014_merge_history_reconciliation.sql` | Idempotent reconciliation for the two merged migration histories |
 
 ### ✅ Demo seed data (live in DB)
 Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
@@ -356,11 +369,63 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 - `replit.md` — Replit-specific setup notes
 - `tasks/README.md` + `tasks/mvp1/`, `tasks/mvp2/`, `tasks/mvp3/` — 42 scoped task files
 
+### ✅ Billing lite — service pricing, invoices & receipts (task #22)
+- Added `price_php` column to `services` table and `invoices`, `invoice_line_items`, `invoice_payments` tables via migration `0008_billing_lite.sql`
+- Added `InvoiceStatus` and `PaymentMethod` enums + billing `AuditAction` entries to `@dentra/shared`
+- Created `apps/api/src/clinic/billing-service.ts` with full service: list/price-update for services, generate invoice from finalized encounter, record single payment, today's earnings
+- Created `apps/api/src/routes/clinic-billing.ts` with 6 routes under `/v1/clinic/:clinicId/*`, registered in `app.ts` / `server.ts`
+- Added web proxy route `apps/web/app/api/clinic/[...path]/route.ts`
+- Added Billing nav item to `AppSidebar.tsx`
+- Built invoice list page (`/app/billing`) with patient/status search filter and pagination
+- Built invoice detail page (`/app/billing/[invoiceId]`) as server component + client child for payment modal + print
+- Built service pricing settings page (`/app/settings/services`) with inline editable price fields
+- Updated clinic dashboard to show live Today's Collections tile fetched from `/v1/clinic/:clinicId/earnings/today`
+- Seeded all 12 demo services with PHP prices (₱350–₱8,000); seed script updated to include `pricePhp`
+- All 222 API tests pass; typecheck clean
+
+### ✅ Prescription builder / e-Rx (task #23)
+- Added tenant-scoped `prescriptions` and `prescription_items` via migration `0009_prescriptions.sql`, including immutable amendment links
+- Added protected issue, list, detail, and amend workflows with finalized-encounter validation and `prescription.issued` audit records
+- Built prescription list, new prescription, detail, amendment, and browser-printable prescription pages
+- Added dentist PRC and clinic/patient identity snapshots so issued prescriptions remain historically accurate
+
+### ✅ Clinical file uploads — X-rays & photos (task #24)
+- Added tenant-scoped clinical file metadata via migration `0010_clinical_files.sql`
+- Added private multipart upload, validated file allowlists and size limits, short-lived signed access, and file deletion workflows
+- Built encounter and patient file views with upload controls, image preview, and PDF access
+- Scoped every metadata lookup and storage key to the clinic, patient, branch, and optional encounter
+
+### ✅ AI clinical assistance — notes, voice-to-text & suggestions (task #25)
+- Migration `0011_ai_interactions.sql`: metadata-only `ai_interactions` table (feature, model, token counts, latency, outcome)
+- `AiAssistanceService` with provider-agnostic interface; `AiInteractionType` enum added to `@dentra/shared`
+- Routes: `POST /v1/clinic/:clinicId/ai/suggest-notes`, `POST /v1/clinic/:clinicId/ai/suggest-recall`; encounter ownership validated against clinic/branch scope before any AI call
+- Web: AI note suggestion panel on encounter edit page; `AIRecallBanner` (labelled "Review only") on recall display; voice-to-text dictation using Web Speech API
+- Security: encounterId validated to clinic + caller branch; AI routes require clinic member auth; no PII in audit logs
+
+### ✅ Tele-dentistry — remote photo consultations (task #26)
+- Migration `0012_remote_assessments.sql`: `remote_assessments` with private photo metadata; status: `pending → reviewed | closed`
+- Public submission endpoint `POST /v1/public/consult/:clinicId` — no auth required; up to 5 photos per consult
+- Photos stored in Replit Object Storage at `teledentistry/{clinicId}/{assessmentId}/{index}`; 15-minute HMAC-SHA256 signed download tokens (same pattern as clinical files)
+- Clinic routes: list, get, review, close assessments; `closeAssessment` has duplicate-close guard; `reviewAssessment` blocks already-reviewed/closed assessments
+- Web: `/app/dentist/remote-consults` list with status tabs; detail page with signed photo gallery + assessment form + close action; public `/consult/[clinicId]` submission page
+- `@fastify/multipart` limit raised to `files: 5` globally
+
+### ✅ HMO / Insurance claims module (task #27)
+- Migration `0013_hmo_claims.sql`: `hmo_payers`, `patient_hmo_memberships`, `hmo_claims`; `is_hmo_covered` + `hmo_standard_rate_php` columns on `services`
+- `HmoService` with full payer/membership/claim CRUD; `assertTransition()` enforces status matrix: `prepared → submitted → approved | rejected → paid`
+- Paid transition: locks claim + invoice with `FOR UPDATE`; requires approved amount = invoice total (prevents partial/overpayment); rejects if invoice already paid/voided or if another paid claim exists for same invoice; marks invoice paid atomically
+- Cross-tenant validation on every FK: patient, payer, membership, invoice, encounter all scoped to clinic + patient
+- Claim status PATCH restricted to clinic admin/owner; claim number globally unique (`HMOCLM` + 8-digit global count + 4-digit random suffix)
+- Web: `/app/settings/hmo-payers` payer catalog; `/app/billing/hmo-claims` tracker with status tabs; claim detail with progress tracker + status action forms + printable claim document (`window.print()`); patient HMO tab with membership add/delete; HMO Claims sidebar nav item; Settings page card
+- 24 Vitest unit tests covering billing guard logic (zero/under/over/exact amount), status transitions, and concurrent payment paths
+
 ---
 
 ## Queued (Proposed Tasks)
 
-No MVP 1 implementation tasks remain queued. The next planned product work is under `tasks/mvp2/`.
+> **Proposal alignment review (Aug 2026):** The executive summary PDF was reviewed. Features in the proposal's MVP that were deferred to MVP 2 have been promoted to MVP 1 Increment 5 (tasks #22–24). Three new features not in any task file were added: AI clinical assistance (#25, MVP 2), tele-dentistry (#26, MVP 2), HMO/insurance (#27, MVP 2), plus AI imaging and kiosk check-in added to MVP 3 docs.
+
+No MVP 1 implementation tasks remain queued. Tasks #22–27 are merged; the next planned product work is under `tasks/mvp2/` and `tasks/mvp3/`.
 
 ---
 

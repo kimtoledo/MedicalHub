@@ -48,6 +48,7 @@ export async function getClinicSession(): Promise<ClinicIdentity | null> {
       email: payload.data.user.email,
       name: payload.data.user.name,
       role: membership.role === 'dentist' ? 'dentist' : 'clinic_staff',
+      isAdmin: membership.role === 'clinic_owner' || membership.role === 'clinic_admin',
       clinicId: membership.clinicId,
       branchId: membership.branchId,
       dentistId: membership.dentistId,

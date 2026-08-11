@@ -19,6 +19,8 @@
 | `09-integrations-api.md` | Partner API, webhooks, calendar/accounting export | 🔜 Future |
 | `10-offline-mode.md` | Secure, minimal offline clinical access (threat-modeled) | 🔜 Future |
 | `11-platform-operations.md` | Support tooling, tenant export, retention, security alerts | 🔜 Future |
+| `12-ai-imaging.md` | AI radiograph analysis, oral health scoring, AI diagnostics assistant | 🔜 Future |
+| `13-kiosk-checkin.md` | Tablet self-check-in for high-volume clinic branches | 🔜 Future |
 
 ---
 

@@ -1,4 +1,4 @@
-import { index, pgEnum, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, numeric, pgEnum, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { branches } from './branches';
 import { clinics } from './clinics';
 import { dentists } from './dentists';
@@ -30,6 +30,12 @@ export const services = pgTable(
     description: text('description'),
     /** Duration in minutes */
     durationMinutes: varchar('duration_minutes', { length: 10 }).notNull().default('30'),
+    /** Price in PHP (two decimal places). NULL means price not yet set. */
+    pricePhp: numeric('price_php', { precision: 10, scale: 2 }),
+    /** Whether this service is reimbursable by HMO providers */
+    isHmoCovered: varchar('is_hmo_covered', { length: 5 }).notNull().default('false'),
+    /** Standard HMO reimbursement rate in PHP (may differ from clinic price) */
+    hmoStandardRatePhp: numeric('hmo_standard_rate_php', { precision: 10, scale: 2 }),
     isActive: varchar('is_active', { length: 10 }).notNull().default('true'),
     ...timestamps,
   },

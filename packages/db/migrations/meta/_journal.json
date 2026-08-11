@@ -57,6 +57,55 @@
       "when": 1786470578567,
       "tag": "0007_audit_immutability",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786487877357,
+      "tag": "0008_billing_lite",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786550400000,
+      "tag": "0009_prescriptions",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1786636800000,
+      "tag": "0010_clinical_files",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1786723200000,
+      "tag": "0011_ai_interactions",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1786809600000,
+      "tag": "0012_remote_assessments",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1786896000000,
+      "tag": "0013_hmo_claims",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1786896000001,
+      "tag": "0014_merge_history_reconciliation",
+      "breakpoints": true
     }
   ]
 }

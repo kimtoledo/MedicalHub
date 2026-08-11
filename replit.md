@@ -14,15 +14,36 @@ cd apps/web && npx next dev -p 5000
 
 The workflow **"Start application"** handles this automatically. The app is served at port 5000.
 
+The Fastify API runs separately:
+
+```bash
+npm run api:dev
+```
+
+The workflow **"Start API"** handles this automatically. The API is served at port 3001.
+
 ## Project structure
 
 ```
 apps/
-  web/        # Next.js 14 App Router — public site, landing page, future PWA
-  api/        # Fastify TypeScript API (not yet scaffolded)
+  web/        # Next.js 14 App Router — public site, clinic app, Super Admin, PWA
+  api/        # Fastify 5 TypeScript API — live, served at port 3001
+    src/
+      app.ts          # Fastify app factory
+      server.ts       # Entry point — wires services, starts server
+      config.ts       # Environment config
+      database.ts     # Drizzle DB client
+      auth/           # Better Auth setup, session helpers, authorization guards
+      admin/          # Super Admin service (clinic CRUD, status, branches)
+      clinic/         # Clinic-scoped services: billing, prescriptions, files,
+                      #   encounters, patients, AI assistance, remote consults, HMO
+      routes/         # Fastify route registrations (one file per domain)
+      ai/             # AI provider client wrappers
+    test/           # Vitest test suite (unit + service-layer tests)
 packages/
   db/         # Drizzle ORM schema, migrations, DB client
-  shared/     # Shared TypeScript enums, Zod schemas, FeatureKey constants
+  shared/     # Shared TypeScript enums (FeatureKey, ClinicRole, AuditAction, …),
+              #   Zod schemas, SubscriptionStatus, InvoiceStatus, PaymentMethod
 docs/         # Product spec, architecture, MVP plans, API contracts
 scripts/      # Migration helpers and post-merge automation
 ```
@@ -30,8 +51,8 @@ scripts/      # Migration helpers and post-merge automation
 ## Stack
 
 - **Frontend**: Next.js 14 App Router, React 18, TypeScript, Tailwind CSS
-- **Backend** (planned): Fastify, TypeScript, Drizzle ORM, PostgreSQL
-- **Auth** (planned): Better Auth
+- **Backend**: Fastify 5, TypeScript, Drizzle ORM, PostgreSQL — live at port 3001
+- **Auth**: Better Auth — database-backed, HTTP-only sessions; email/password sign-in; public sign-up disabled
 - **Design**: Tonik-inspired — violet palette, rounded cards, pill buttons
 
 ## Key docs (read before major changes)
@@ -52,16 +73,46 @@ scripts/      # Migration helpers and post-merge automation
 - **Database**: Replit PostgreSQL — `DATABASE_URL` from Replit Secrets
 
 ### Schema overview
-| File | Tables |
+
+| Schema file | Tables / columns of note |
 |---|---|
 | `clinics.ts` | `clinics` |
 | `branches.ts` | `branches` |
 | `dentists.ts` | `dentists`, `dentist_branch_assignments` |
 | `users.ts` | `users`, `clinic_memberships` |
-| `patients.ts` | `patients`, `patient_medical_histories` |
-| `appointments.ts` | `services`, `appointments`, `appointment_status_history` |
+| `auth.ts` | `accounts`, `sessions`, `verifications` (Better Auth) |
+| `patients.ts` | `patients`, `patient_medical_histories`, `patient_dental_histories` |
+| `appointments.ts` | `services` (+ `price_php`, `is_hmo_covered`, `hmo_standard_rate_php`), `appointments`, `appointment_status_history` |
 | `subscriptions.ts` | `packages`, `package_features`, `clinic_subscriptions`, `clinic_feature_overrides` |
 | `audit.ts` | `audit_events` |
+| `encounters.ts` | `encounters`, `treatment_records` |
+| `odontogram.ts` | `odontogram_events` |
+| `billing.ts` | `invoices`, `invoice_line_items`, `invoice_payments` |
+| `prescriptions.ts` | `prescriptions`, `prescription_items` |
+| `clinical-files.ts` | `clinical_files` (Object Storage metadata) |
+| `ai-interactions.ts` | `ai_interactions` |
+| `remote-assessments.ts` | `remote_assessments` (private photo metadata stored as JSON) |
+| `hmo.ts` | `hmo_payers`, `patient_hmo_memberships`, `hmo_claims` |
+
+### Applied migrations
+
+| Migration | Contents |
+|---|---|
+| `0000_talented_speedball` | Base tables: clinics → audit_events |
+| `0001_overrated_loners` | `patient_dental_histories`, `encounters`, `treatment_records`, `odontogram_events` |
+| `0002_sleepy_lethal_legion` | `prefix` column + unique constraint on `clinics` |
+| `0003_great_zemo` | Better Auth `accounts`, `sessions`, `verifications`; auth fields on `users` |
+| `0004_bored_sumo` | Package display price and unique package-feature mappings |
+| `0005_faithful_azazel` | Structured clinic hero text and branch operating hours |
+| `0006_dazzling_legion` | Tenant-scoped patient-number uniqueness |
+| `0007_audit_immutability` | Append-only audit trigger |
+| `0008_billing_lite` | `price_php` on `services`; `invoices`, `invoice_line_items`, `invoice_payments` |
+| `0009_prescriptions` | `prescriptions`, `prescription_items` |
+| `0010_clinical_files` | `clinical_files` (Object Storage metadata) |
+| `0011_ai_interactions` | `ai_interactions` |
+| `0012_remote_assessments` | `remote_assessments` with private photo metadata |
+| `0013_hmo_claims` | `hmo_payers`, `patient_hmo_memberships`, `hmo_claims`; HMO columns on `services` |
+| `0014_merge_history_reconciliation` | Idempotent reconciliation for both merged migration histories |
 
 ### Workflow — for every schema change
 ```
@@ -99,17 +150,44 @@ npm run db:studio     # open Drizzle Studio UI
 
 ---
 
+## API routes (apps/api)
+
+| Route prefix | File | Auth |
+|---|---|---|
+| `GET /health`, `GET /v1/health` | `routes/health.ts` | Public |
+| `POST /v1/auth/*` | `routes/auth.ts` | Public (Better Auth) |
+| `GET /v1/session-context` | `routes/auth.ts` | Authenticated |
+| `GET /v1/admin/clinics` | `routes/admin-clinics.ts` | Super Admin |
+| `POST /v1/admin/clinics` | `routes/admin-clinics.ts` | Super Admin |
+| `GET /v1/admin/clinics/:id` | `routes/admin-clinics.ts` | Super Admin |
+| `PATCH /v1/admin/clinics/:id/status` | `routes/admin-clinics.ts` | Super Admin |
+| `POST /v1/admin/clinics/:id/branches` | `routes/admin-clinics.ts` | Super Admin |
+| `GET/PATCH /v1/clinic/:id/services` | `routes/clinic-billing.ts` | Clinic member |
+| `POST /v1/clinic/:id/invoices` | `routes/clinic-billing.ts` | Clinic member |
+| `GET /v1/clinic/:id/invoices` | `routes/clinic-billing.ts` | Clinic member |
+| `GET /v1/clinic/:id/invoices/:iid` | `routes/clinic-billing.ts` | Clinic member |
+| `POST /v1/clinic/:id/invoices/:iid/payments` | `routes/clinic-billing.ts` | Clinic member |
+| `GET /v1/clinic/:id/earnings/today` | `routes/clinic-billing.ts` | Clinic member |
+| `GET/POST /v1/clinic/:id/prescriptions` | `routes/clinic-prescriptions.ts` | Clinic member |
+| `GET/POST /v1/clinic/:id/files/*` | `routes/clinic-files.ts` | Clinic member |
+| `GET/POST /v1/clinic/:id/encounters/*` | `routes/clinic-encounters.ts` | Clinic member |
+| `GET/POST /v1/clinic/:id/patients/*` | `routes/clinic-patients.ts` | Clinic member |
+| `POST /v1/clinic/:id/ai/*` | `routes/clinic-ai.ts` | Clinic member |
+| `GET/POST /v1/clinic/:id/hmo/*` | `routes/hmo.ts` | Clinic member / Admin |
+| `POST /v1/public/consult/:id` | `routes/remote-consults.ts` | Public |
+| `GET/POST /v1/clinic/:id/remote-consults/*` | `routes/remote-consults.ts` | Clinic member |
+
+---
+
 ## LOGS.md — keep it current
 
-`LOGS.md` (root) is the running record of everything built, in progress, and queued.
+`LOGS.md` (root) is the running record of everything built, in progress, and queued. It is secondary to this file — use `replit.md` as the primary orientation point, then `LOGS.md` for the detailed change history.
 
 **Update it after every task or session that changes the project:**
 - Move completed items into the **Completed** section with a short summary.
 - Update the **Queued** table to reflect the latest task states.
 - Add new entries to **Known Gaps / Tech Debt** if anything was deferred.
 - Update the **Reference** section if credentials, prefixes, or scripts change.
-
-Do not skip this step — future agents (and humans) rely on `LOGS.md` as the first place to understand current project state.
 
 ---
 

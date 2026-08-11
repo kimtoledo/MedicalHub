@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "postgresql-16"]
+modules = ["nodejs-20", "python-base-3.13", "postgresql-16"]
 [nix]
 channel = "stable-25_05"
 
@@ -43,12 +43,12 @@ args = "npm run api:dev"
 waitForPort = 3001
 
 [[ports]]
-localPort = 5000
-externalPort = 80
-
-[[ports]]
 localPort = 3001
 externalPort = 3001
+
+[[ports]]
+localPort = 5000
+externalPort = 80
 
 [postMerge]
 path = "scripts/post-merge.sh"

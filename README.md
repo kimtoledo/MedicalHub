@@ -2,7 +2,7 @@
 
 **The all-in-one dental practice management platform for the Philippines.**
 
-Dentra.ph is a multi-tenant SaaS product that gives dental clinics a public online presence, online appointment booking, digital patient records, staff management, and a Progressive Web App — all in one place. Independent dentists get their own bookable profile. Platform operators manage everything through a Super Admin panel.
+Dentra.ph is a multi-tenant SaaS product that gives dental clinics a public online presence, online appointment booking, digital patient and clinical records, billing, prescriptions, private clinical files, and a Progressive Web App — all in one place. Independent dentists get their own bookable profile. Platform operators manage everything through a Super Admin panel.
 
 Brand and frontend implementation must follow [`docs/BRANDING.md`](docs/BRANDING.md). Approved SVG assets are stored in [`docs/branding/`](docs/branding/).
 
@@ -19,6 +19,7 @@ Brand and frontend implementation must follow [`docs/BRANDING.md`](docs/BRANDING
 | Clinic microsite | `/clinic/[clinicSlug]` | Public |
 | Online booking | `/clinic/[clinicSlug]/appointment` | Public |
 | Dentist profile | `/dentists/[dentistSlug]` | Public |
+| Remote photo consultation | `/consult/[clinicId]` | Public patients |
 | Clinic / staff login | `/cl-login` | Auth |
 | Clinic PWA | `/app/*` | Clinic staff & dentists |
 | Super Admin panel | `/dentra-admin/*` | Platform operators |
@@ -32,6 +33,7 @@ Brand and frontend implementation must follow [`docs/BRANDING.md`](docs/BRANDING
 | **Frontend** | Next.js 14 App Router · React 18 · TypeScript · Tailwind CSS |
 | **Backend** | Fastify 5 · TypeScript · Zod · Pino |
 | **Database** | PostgreSQL · Drizzle ORM · Drizzle Kit migrations |
+| **Private files** | Replit Object Storage · short-lived signed access |
 | **Auth** | Better Auth (behind an `AuthService` boundary) |
 | **Shared** | `@dentra/shared` — Zod schemas, enums, `FeatureKey` constants |
 | **Testing** | Vitest · TypeScript checks · production builds · Chrome responsive QA |
@@ -65,8 +67,8 @@ replit.md       # Replit Agent instructions
 
 | MVP | Focus | Status |
 |---|---|---|
-| **MVP 1** | Foundation — website, booking, patient records, clinical workflows, PWA | ✅ Complete |
-| **MVP 2** | Clinic business — billing, prescriptions, inventory, reports | Planned |
+| **MVP 1** | Foundation, booking, clinical workflows, billing lite, e-Rx, private files, PWA | ✅ Complete |
+| **MVP 2** | Clinic business — AI assistance, tele-dentistry, HMO claims, inventory, reports | 🟡 In progress |
 | **MVP 3** | Ecosystem — patient portal, reviews, custom domains, API | Planned |
 
 ---
@@ -112,8 +114,17 @@ Local URLs after startup:
 - Protected Super Admin clinic, dentist, package, subscription, entitlement, and immutable audit management.
 - Publication-safe clinic/dentist directories, microsites, profiles, and conflict-safe public booking.
 - Tenant/branch-scoped Clinic PWA dashboards, appointment status workflows, patient records, versioned histories, encounters, treatment records, and append-only odontogram corrections.
+- Service pricing, tenant-scoped invoices and payments, live daily collections, and printable receipts.
+- Immutable prescriptions with amendment history and printable Philippine e-Rx layouts.
+- Private clinical X-ray/photo/document uploads with validated multipart handling and short-lived access.
 - Installable PWA shell with an offline fallback and network-only handling for every protected API response.
 - Synthetic demo seed plus automated/live release gates for tenant isolation, entitlement denial, publication boundaries, booking races, audit integrity, and responsive layouts.
+
+## MVP 2 delivered so far
+
+- Review-only AI note, recall, treatment-sequence, and voice-input assistance with metadata-only interaction records.
+- Public remote photo consultation intake and a protected dentist assessment queue.
+- HMO payer catalogs, patient memberships, claim preparation/status tracking, and atomic claim-to-invoice payment handling.
 
 ---
 

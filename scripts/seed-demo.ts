@@ -724,12 +724,12 @@ async function seed() {
   // ── 8. Services ────────────────────────────────────────────────────────────
   console.log('  🛠  Services...');
   const serviceTemplates = [
-    { name: 'Prophylaxis (Cleaning)', description: 'Professional teeth cleaning and polishing.', duration: '45' },
-    { name: 'Tooth Extraction', description: 'Simple or surgical tooth removal.', duration: '30' },
-    { name: 'Composite Filling', description: 'Tooth-colored resin filling for cavities.', duration: '45' },
-    { name: 'Root Canal Treatment', description: 'Endodontic therapy to save infected teeth.', duration: '90' },
-    { name: 'Dental X-Ray', description: 'Periapical or panoramic radiograph.', duration: '15' },
-    { name: 'Teeth Whitening', description: 'In-office bleaching for a brighter smile.', duration: '60' },
+    { name: 'Prophylaxis (Cleaning)', description: 'Professional teeth cleaning and polishing.', duration: '45', price: '800.00' },
+    { name: 'Tooth Extraction', description: 'Simple or surgical tooth removal.', duration: '30', price: '1500.00' },
+    { name: 'Composite Filling', description: 'Tooth-colored resin filling for cavities.', duration: '45', price: '2000.00' },
+    { name: 'Root Canal Treatment', description: 'Endodontic therapy to save infected teeth.', duration: '90', price: '8000.00' },
+    { name: 'Dental X-Ray', description: 'Periapical or panoramic radiograph.', duration: '15', price: '350.00' },
+    { name: 'Teeth Whitening', description: 'In-office bleaching for a brighter smile.', duration: '60', price: '5000.00' },
   ];
 
   const SBD_SERVICE_IDS = serviceTemplates.map((_, i) =>
@@ -744,6 +744,7 @@ async function seed() {
       name: s.name,
       description: s.description,
       durationMinutes: s.duration,
+      pricePhp: s.price,
       isActive: 'true',
     })),
     ...serviceTemplates.map((s, i) => ({
@@ -752,6 +753,7 @@ async function seed() {
       name: s.name,
       description: s.description,
       durationMinutes: s.duration,
+      pricePhp: s.price,
       isActive: 'true',
     })),
   ]).onConflictDoNothing();

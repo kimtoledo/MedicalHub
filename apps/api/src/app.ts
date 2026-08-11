@@ -16,6 +16,16 @@ import type {
   AdminClinicListService,
   AdminClinicStatusService,
 } from './admin/clinics-service.js';
+import type {
+  ClinicBillingService,
+  ClinicServiceListService,
+} from './clinic/billing-service.js';
+import multipart from '@fastify/multipart';
+import type { ClinicPrescriptionService } from './clinic/prescription-service.js';
+import type { ClinicFilesService } from './clinic/clinical-files-service.js';
+import type { AiAssistanceService } from './clinic/ai-service.js';
+import type { RemoteConsultsService } from './clinic/remote-consults-service.js';
+import type { HmoService } from './clinic/hmo-service.js';
 import type { AdminClinicSettingsService } from './admin/clinic-settings-service.js';
 import type {
   AdminDentistCreationService,
@@ -53,6 +63,12 @@ import { registerClinicEncounterRoutes } from './routes/clinic-encounters.js';
 import { registerClinicOdontogramRoutes } from './routes/clinic-odontogram.js';
 import { registerClinicTreatmentRoutes } from './routes/clinic-treatments.js';
 import { registerClinicDashboardRoutes } from './routes/clinic-dashboard.js';
+import { registerClinicBillingRoutes } from './routes/clinic-billing.js';
+import { registerClinicPrescriptionRoutes } from './routes/clinic-prescriptions.js';
+import { registerClinicFilesRoutes } from './routes/clinic-files.js';
+import { registerClinicAiRoutes } from './routes/clinic-ai.js';
+import { registerRemoteConsultRoutes } from './routes/remote-consults.js';
+import { registerHmoRoutes } from './routes/hmo.js';
 import { registerHealthRoutes } from './routes/health.js';
 
 export type BuildAppOptions = {
@@ -64,6 +80,14 @@ export type BuildAppOptions = {
   adminClinicBranchCreation?: AdminClinicBranchCreationService;
   adminClinicDetails?: AdminClinicDetailService;
   adminClinicStatus?: AdminClinicStatusService;
+  clinicBilling?: ClinicBillingService;
+  clinicServiceList?: ClinicServiceListService;
+  clinicPrescription?: ClinicPrescriptionService;
+  clinicFiles?: ClinicFilesService;
+  clinicAi?: AiAssistanceService;
+  remoteConsults?: RemoteConsultsService;
+  hmo?: HmoService;
+  db?: import('@dentra/db').DB;
   adminClinicSettings?: AdminClinicSettingsService;
   adminDentists?: AdminDentistListService;
   adminDentistCreation?: AdminDentistCreationService;
@@ -107,6 +131,12 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   await app.register(helmet);
   await app.register(cookie);
   await app.register(rateLimit, { global: false });
+  // Multipart uploads — 20 MB limit, 1 file per request
+  await app.register(multipart, {
+    // files: allow up to 5 for the public remote-consult endpoint;
+    // individual routes that expect only one file validate further in-handler.
+    limits: { fileSize: 20 * 1024 * 1024, files: 5, fields: 10 },
+  });
   await app.register(cors, {
     credentials: true,
     origin(origin, callback) {
@@ -188,6 +218,41 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (options.clinicDashboard && options.entitlements) {
       await registerClinicDashboardRoutes(app, { auth: options.auth, entitlements: options.entitlements, dashboard: options.clinicDashboard });
+    }
+    if (options.clinicBilling && options.clinicServiceList) {
+      await registerClinicBillingRoutes(app, {
+        auth: options.auth,
+        billingService: options.clinicBilling,
+        serviceListService: options.clinicServiceList,
+      });
+    }
+    if (options.clinicPrescription) {
+      await registerClinicPrescriptionRoutes(app, {
+        auth: options.auth,
+        prescriptionService: options.clinicPrescription,
+      });
+    }
+    if (options.clinicFiles) {
+      await registerClinicFilesRoutes(app, {
+        auth: options.auth,
+        filesService: options.clinicFiles,
+      });
+    }
+    if (options.clinicAi && options.db) {
+      await registerClinicAiRoutes(app, {
+        auth: options.auth,
+        aiService: options.clinicAi,
+        db: options.db,
+      });
+    }
+    if (options.remoteConsults) {
+      await registerRemoteConsultRoutes(app, {
+        auth: options.auth,
+        rcService: options.remoteConsults,
+      });
+    }
+    if (options.hmo) {
+      await registerHmoRoutes(app, { auth: options.auth, hmo: options.hmo });
     }
   }
 

@@ -11,7 +11,6 @@ import {
   Settings,
   UserCircle,
   CalendarCheck,
-  Stethoscope,
   ClipboardList,
   Grid3X3,
   ChevronLeft,
@@ -19,26 +18,37 @@ import {
   LogOut,
   ChevronDown,
   Building2,
+  Receipt,
+  Stethoscope,
+  FileText,
+  Camera,
+  Shield,
 } from "lucide-react";
 import { type ClinicBranchContext, type ClinicRole } from "@/lib/clinic-types";
 import { signOutClinic } from "@/lib/clinic-auth-client";
 import DentraLogo from "@/components/brand/DentraLogo";
 
 const clinicNavItems = [
-  { label: "Dashboard",        href: "/app",              icon: LayoutDashboard, exact: true },
-  { label: "Appointments",     href: "/app/appointments", icon: CalendarDays, feature: "appointments.manage" },
-  { label: "Patients",         href: "/app/patients",     icon: Users, feature: "patients.manage" },
-  { label: "Staff",            href: "/app/staff",        icon: UserCog, feature: "staff.manage" },
-  { label: "Clinic Settings",  href: "/app/settings",     icon: Settings      },
-  { label: "My Profile",       href: "/app/profile",      icon: UserCircle    },
+  { label: "Dashboard",       href: "/app",                    icon: LayoutDashboard, exact: true },
+  { label: "Appointments",    href: "/app/appointments",       icon: CalendarDays, feature: "appointments.manage" },
+  { label: "Patients",        href: "/app/patients",           icon: Users, feature: "patients.manage" },
+  { label: "Encounters",      href: "/app/encounters",         icon: ClipboardList, feature: "clinical.encounters" },
+  { label: "Prescriptions",   href: "/app/prescriptions",      icon: FileText, feature: "clinical.prescriptions" },
+  { label: "Billing",         href: "/app/billing",            icon: Receipt, feature: "billing.invoices" },
+  { label: "HMO Claims",      href: "/app/billing/hmo-claims", icon: Shield, feature: "hmo.claims" },
+  { label: "Staff",           href: "/app/staff",              icon: UserCog, feature: "staff.manage" },
+  { label: "Clinic Settings", href: "/app/settings",           icon: Settings },
+  { label: "My Profile",      href: "/app/profile",            icon: UserCircle },
 ];
 
 const dentistNavItems = [
-  { label: "My Schedule",  href: "/app/dentist",              icon: CalendarCheck, exact: true, feature: "appointments.calendar" },
-  { label: "My Patients",  href: "/app/dentist/patients",     icon: Users, feature: "patients.manage" },
-  { label: "Encounters",   href: "/app/dentist/encounters",   icon: ClipboardList, feature: "clinical.encounters" },
-  { label: "Odontogram",   href: "/app/dentist/odontogram",   icon: Grid3X3, feature: "clinical.odontogram" },
-  { label: "My Profile",   href: "/app/dentist/profile",      icon: UserCircle     },
+  { label: "My Schedule",     href: "/app/dentist",                 icon: CalendarCheck, exact: true, feature: "appointments.calendar" },
+  { label: "My Patients",     href: "/app/dentist/patients",        icon: Users, feature: "patients.manage" },
+  { label: "Encounters",      href: "/app/dentist/encounters",      icon: ClipboardList, feature: "clinical.encounters" },
+  { label: "Prescriptions",   href: "/app/prescriptions",           icon: FileText, feature: "clinical.prescriptions" },
+  { label: "Odontogram",      href: "/app/dentist/odontogram",      icon: Grid3X3, feature: "clinical.odontogram" },
+  { label: "Remote Consults", href: "/app/dentist/remote-consults", icon: Camera, feature: "teledentistry" },
+  { label: "My Profile",      href: "/app/dentist/profile",         icon: UserCircle },
 ];
 
 interface AppSidebarProps {
