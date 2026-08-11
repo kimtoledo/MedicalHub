@@ -6,6 +6,7 @@ import {
   createAdminClinicCreationService,
   createAdminClinicDetailService,
   createAdminClinicListService,
+  createAdminClinicStatusService,
 } from './admin/clinics-service.js';
 
 const config = loadConfig();
@@ -14,6 +15,7 @@ const auth = createAuthServices(config, database.db);
 const adminClinics = createAdminClinicListService(database.db);
 const adminClinicCreation = createAdminClinicCreationService(database.db);
 const adminClinicDetails = createAdminClinicDetailService(database.db);
+const adminClinicStatus = createAdminClinicStatusService(database.db);
 const app = await buildApp({
   config,
   checkDatabase: database.check,
@@ -21,6 +23,7 @@ const app = await buildApp({
   adminClinics,
   adminClinicCreation,
   adminClinicDetails,
+  adminClinicStatus,
 });
 
 app.addHook('onClose', async () => {

@@ -13,6 +13,7 @@ import type {
   AdminClinicCreationService,
   AdminClinicDetailService,
   AdminClinicListService,
+  AdminClinicStatusService,
 } from './admin/clinics-service.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
@@ -25,6 +26,7 @@ export type BuildAppOptions = {
   adminClinics?: AdminClinicListService;
   adminClinicCreation?: AdminClinicCreationService;
   adminClinicDetails?: AdminClinicDetailService;
+  adminClinicStatus?: AdminClinicStatusService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -70,6 +72,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         clinics: options.adminClinics,
         creation: options.adminClinicCreation,
         details: options.adminClinicDetails,
+        status: options.adminClinicStatus,
       });
     }
   }

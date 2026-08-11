@@ -1,6 +1,6 @@
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
-import { clinicMemberships, users } from '@dentra/db/schema';
+import { clinicMemberships, clinics, users } from '@dentra/db/schema';
 import type { AuthorizationContext, ClinicAccess, PlatformRole } from './types.js';
 
 export function isSuperAdmin(context: AuthorizationContext): boolean {
@@ -59,10 +59,13 @@ export function createAuthorizationResolver(database: DB) {
         dentistId: clinicMemberships.dentistId,
       })
       .from(clinicMemberships)
+      .innerJoin(clinics, eq(clinicMemberships.clinicId, clinics.id))
       .where(
         and(
           eq(clinicMemberships.userId, user.id),
           eq(clinicMemberships.isActive, 'true'),
+          inArray(clinics.status, ['trial', 'active']),
+          isNull(clinics.deletedAt),
         ),
       );
 

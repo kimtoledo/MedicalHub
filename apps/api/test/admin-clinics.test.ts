@@ -3,9 +3,11 @@ import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../src/app.js';
 import {
   AdminClinicCreationError,
+  AdminClinicStatusError,
   type AdminClinicCreationService,
   type AdminClinicDetailService,
   type AdminClinicListService,
+  type AdminClinicStatusService,
 } from '../src/admin/clinics-service.js';
 import type { AuthServices, AuthorizationContext } from '../src/auth/types.js';
 import type { ApiConfig } from '../src/config.js';
@@ -197,11 +199,22 @@ function createClinicDetailService(): AdminClinicDetailService {
   };
 }
 
+function createClinicStatusService(): AdminClinicStatusService {
+  return {
+    updateStatus: vi.fn(async (clinicId, status) => ({
+      id: clinicId,
+      status,
+      updatedAt: new Date('2026-08-11T00:00:00.000Z'),
+    })),
+  };
+}
+
 async function createApp(
   context: AuthorizationContext | null,
   clinics: AdminClinicListService,
   creation?: AdminClinicCreationService,
   details?: AdminClinicDetailService,
+  status?: AdminClinicStatusService,
 ) {
   app = await buildApp({
     config,
@@ -211,6 +224,7 @@ async function createApp(
     adminClinics: clinics,
     adminClinicCreation: creation,
     adminClinicDetails: details,
+    adminClinicStatus: status,
   });
 }
 
@@ -483,5 +497,125 @@ describe('GET /v1/admin/clinics/:clinicId', () => {
         { featureKey: 'reports.advanced', source: 'override' },
       ],
     });
+  });
+});
+
+describe('PATCH /v1/admin/clinics/:clinicId/status', () => {
+  const clinicId = '00000000-0001-0000-0000-000000000001';
+
+  it('rejects unauthenticated status updates before writing data', async () => {
+    const status = createClinicStatusService();
+    await createApp(null, createClinicService(), undefined, undefined, status);
+
+    const response = await app!.inject({
+      method: 'PATCH',
+      url: `/v1/admin/clinics/${clinicId}/status`,
+      payload: { status: 'suspended' },
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(status.updateStatus).not.toHaveBeenCalled();
+  });
+
+  it('rejects clinic members attempting to change tenant status', async () => {
+    const status = createClinicStatusService();
+    await createApp(
+      clinicMemberContext,
+      createClinicService(),
+      undefined,
+      undefined,
+      status,
+    );
+
+    const response = await app!.inject({
+      method: 'PATCH',
+      url: `/v1/admin/clinics/${clinicId}/status`,
+      payload: { status: 'archived' },
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(status.updateStatus).not.toHaveBeenCalled();
+  });
+
+  it('rejects invalid identifiers and unsupported target statuses', async () => {
+    const status = createClinicStatusService();
+    await createApp(
+      superAdminContext,
+      createClinicService(),
+      undefined,
+      undefined,
+      status,
+    );
+
+    const invalidId = await app!.inject({
+      method: 'PATCH',
+      url: '/v1/admin/clinics/not-a-uuid/status',
+      payload: { status: 'active' },
+    });
+    const invalidStatus = await app!.inject({
+      method: 'PATCH',
+      url: `/v1/admin/clinics/${clinicId}/status`,
+      payload: { status: 'trial' },
+    });
+
+    expect(invalidId.statusCode).toBe(400);
+    expect(invalidStatus.statusCode).toBe(400);
+    expect(status.updateStatus).not.toHaveBeenCalled();
+  });
+
+  it('updates status as the authenticated Super Admin', async () => {
+    const status = createClinicStatusService();
+    await createApp(
+      superAdminContext,
+      createClinicService(),
+      undefined,
+      undefined,
+      status,
+    );
+
+    const response = await app!.inject({
+      method: 'PATCH',
+      url: `/v1/admin/clinics/${clinicId}/status`,
+      headers: { 'user-agent': 'Dentra API test' },
+      payload: { status: 'suspended' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(status.updateStatus).toHaveBeenCalledWith(
+      clinicId,
+      'suspended',
+      expect.objectContaining({
+        id: superAdminContext.user.id,
+        email: superAdminContext.user.email,
+        userAgent: 'Dentra API test',
+      }),
+    );
+    expect(response.json().data.status).toBe('suspended');
+  });
+
+  it.each([
+    ['CLINIC_NOT_FOUND', 404],
+    ['INVALID_STATUS_TRANSITION', 409],
+  ] as const)('maps %s service failures to HTTP %i', async (code, httpStatus) => {
+    const status = createClinicStatusService();
+    vi.mocked(status.updateStatus).mockRejectedValueOnce(
+      new AdminClinicStatusError(code, 'Status update rejected'),
+    );
+    await createApp(
+      superAdminContext,
+      createClinicService(),
+      undefined,
+      undefined,
+      status,
+    );
+
+    const response = await app!.inject({
+      method: 'PATCH',
+      url: `/v1/admin/clinics/${clinicId}/status`,
+      payload: { status: 'active' },
+    });
+
+    expect(response.statusCode).toBe(httpStatus);
+    expect(response.json().error.code).toBe(code);
   });
 });

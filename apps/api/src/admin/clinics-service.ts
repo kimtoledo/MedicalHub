@@ -180,6 +180,41 @@ export type AdminClinicDetailService = {
   getById: (clinicId: string) => Promise<AdminClinicDetail | null>;
 };
 
+export type UpdateAdminClinicStatusActor = {
+  id: string;
+  email: string;
+  ipAddress?: string;
+  userAgent?: string;
+};
+
+export type UpdatedAdminClinicStatus = {
+  id: string;
+  status: ClinicStatus;
+  updatedAt: Date;
+};
+
+export type AdminClinicStatusErrorCode =
+  | 'CLINIC_NOT_FOUND'
+  | 'INVALID_STATUS_TRANSITION';
+
+export class AdminClinicStatusError extends Error {
+  constructor(
+    public readonly code: AdminClinicStatusErrorCode,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'AdminClinicStatusError';
+  }
+}
+
+export type AdminClinicStatusService = {
+  updateStatus: (
+    clinicId: string,
+    status: Exclude<ClinicStatus, 'trial'>,
+    actor: UpdateAdminClinicStatusActor,
+  ) => Promise<UpdatedAdminClinicStatus>;
+};
+
 export function createAdminClinicListService(
   database: DB,
 ): AdminClinicListService {
@@ -463,6 +498,96 @@ export function createAdminClinicDetailService(
         effectiveEntitlements,
       };
     },
+  };
+}
+
+const allowedClinicStatusTransitions: Record<
+  ClinicStatus,
+  Array<Exclude<ClinicStatus, 'trial'>>
+> = {
+  trial: ['active', 'suspended', 'archived'],
+  active: ['suspended', 'archived'],
+  suspended: ['active', 'archived'],
+  archived: ['active'],
+};
+
+function getClinicStatusAuditAction(
+  previousStatus: ClinicStatus,
+  nextStatus: Exclude<ClinicStatus, 'trial'>,
+): (typeof AuditAction)[keyof typeof AuditAction] {
+  if (nextStatus === 'suspended') return AuditAction.CLINIC_SUSPENDED;
+  if (nextStatus === 'archived') return AuditAction.CLINIC_ARCHIVED;
+  return previousStatus === 'trial'
+    ? AuditAction.CLINIC_ACTIVATED
+    : AuditAction.CLINIC_REACTIVATED;
+}
+
+export function createAdminClinicStatusService(
+  database: DB,
+): AdminClinicStatusService {
+  return {
+    updateStatus: async (clinicId, status, actor) =>
+      database.transaction(async (transaction) => {
+        const [clinic] = await transaction
+          .select({ status: clinics.status })
+          .from(clinics)
+          .where(and(eq(clinics.id, clinicId), isNull(clinics.deletedAt)))
+          .limit(1);
+
+        if (!clinic) {
+          throw new AdminClinicStatusError(
+            'CLINIC_NOT_FOUND',
+            'Clinic not found',
+          );
+        }
+
+        if (!allowedClinicStatusTransitions[clinic.status].includes(status)) {
+          throw new AdminClinicStatusError(
+            'INVALID_STATUS_TRANSITION',
+            `A ${clinic.status} clinic cannot transition to ${status}`,
+          );
+        }
+
+        const [updatedClinic] = await transaction
+          .update(clinics)
+          .set({ status })
+          .where(
+            and(
+              eq(clinics.id, clinicId),
+              eq(clinics.status, clinic.status),
+              isNull(clinics.deletedAt),
+            ),
+          )
+          .returning({
+            id: clinics.id,
+            status: clinics.status,
+            updatedAt: clinics.updatedAt,
+          });
+
+        if (!updatedClinic) {
+          throw new AdminClinicStatusError(
+            'INVALID_STATUS_TRANSITION',
+            'The clinic status changed before this request completed',
+          );
+        }
+
+        await transaction.insert(auditEvents).values({
+          actorId: actor.id,
+          actorEmail: actor.email,
+          clinicId,
+          entityType: 'clinic',
+          entityId: clinicId,
+          action: getClinicStatusAuditAction(clinic.status, status),
+          metadata: JSON.stringify({
+            previousStatus: clinic.status,
+            nextStatus: status,
+          }),
+          ipAddress: actor.ipAddress,
+          userAgent: actor.userAgent,
+        });
+
+        return updatedClinic;
+      }),
   };
 }
 

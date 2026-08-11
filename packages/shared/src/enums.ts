@@ -128,6 +128,7 @@ export type FeatureKey = (typeof FeatureKey)[keyof typeof FeatureKey];
 export const AuditAction = {
   // Clinic lifecycle
   CLINIC_CREATED: 'clinic.created',
+  CLINIC_ACTIVATED: 'clinic.activated',
   CLINIC_UPDATED: 'clinic.updated',
   CLINIC_SUSPENDED: 'clinic.suspended',
   CLINIC_REACTIVATED: 'clinic.reactivated',

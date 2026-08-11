@@ -5,9 +5,11 @@ import { resolveRequestAuthorization } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
 import {
   AdminClinicCreationError,
+  AdminClinicStatusError,
   type AdminClinicCreationService,
   type AdminClinicDetailService,
   type AdminClinicListService,
+  type AdminClinicStatusService,
 } from '../admin/clinics-service.js';
 
 const postgresUuidSchema = z.string().regex(
@@ -43,11 +45,16 @@ const clinicParamsSchema = z.object({
   clinicId: postgresUuidSchema,
 });
 
+const updateClinicStatusBodySchema = z.object({
+  status: z.enum(['active', 'suspended', 'archived']),
+});
+
 type RegisterAdminClinicRoutesOptions = {
   auth: AuthServices;
   clinics: AdminClinicListService;
   creation?: AdminClinicCreationService;
   details?: AdminClinicDetailService;
+  status?: AdminClinicStatusService;
 };
 
 export async function registerAdminClinicRoutes(
@@ -142,6 +149,77 @@ export async function registerAdminClinicRoutes(
       }
 
       return reply.send({ success: true, data: clinic });
+    });
+  }
+
+  const statusService = options.status;
+  if (statusService) {
+    app.patch('/v1/admin/clinics/:clinicId/status', async (request, reply) => {
+      const authorization = await resolveRequestAuthorization(request, options.auth);
+
+      if (!authorization) {
+        return reply.status(401).send({
+          success: false,
+          error: {
+            code: 'UNAUTHENTICATED',
+            message: 'A valid session is required',
+          },
+        });
+      }
+
+      if (!isSuperAdmin(authorization)) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Super Admin access is required',
+          },
+        });
+      }
+
+      const params = clinicParamsSchema.safeParse(request.params);
+      const body = updateClinicStatusBodySchema.safeParse(request.body);
+      if (!params.success || !body.success) {
+        return reply.status(400).send({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid clinic status update',
+          },
+        });
+      }
+
+      try {
+        const userAgent = request.headers['user-agent'];
+        const clinic = await statusService.updateStatus(
+          params.data.clinicId,
+          body.data.status,
+          {
+            id: authorization.user.id,
+            email: authorization.user.email,
+            ipAddress: request.ip,
+            userAgent:
+              typeof userAgent === 'string'
+                ? userAgent.slice(0, 500)
+                : undefined,
+          },
+        );
+
+        return reply.send({ success: true, data: clinic });
+      } catch (error) {
+        if (!(error instanceof AdminClinicStatusError)) {
+          throw error;
+        }
+
+        const statusCode = error.code === 'CLINIC_NOT_FOUND' ? 404 : 409;
+        return reply.status(statusCode).send({
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+          },
+        });
+      }
     });
   }
 

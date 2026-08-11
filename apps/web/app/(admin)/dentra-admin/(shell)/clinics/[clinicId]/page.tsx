@@ -17,6 +17,7 @@ import {
   getAdminClinicDetail,
   type ClinicStatus,
 } from '@/lib/admin-clinics';
+import ClinicStatusActions from '@/components/admin/ClinicStatusActions';
 
 type ClinicDetailPageProps = {
   params: { clinicId: string };
@@ -115,9 +116,16 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
                 </p>
               </div>
             </div>
-            <div className="text-left text-xs text-slate-500 sm:text-right">
-              <p>Created {formatDate(clinic.createdAt)}</p>
-              <p className="mt-1">Updated {formatDate(clinic.updatedAt)}</p>
+            <div className="space-y-3">
+              <ClinicStatusActions
+                clinicId={clinic.id}
+                clinicName={clinic.name}
+                status={clinic.status}
+              />
+              <div className="text-left text-xs text-slate-500 sm:text-right">
+                <p>Created {formatDate(clinic.createdAt)}</p>
+                <p className="mt-1">Updated {formatDate(clinic.updatedAt)}</p>
+              </div>
             </div>
           </div>
         </div>
