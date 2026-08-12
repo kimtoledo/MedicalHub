@@ -57,6 +57,7 @@ import { createPaymentService } from './payments/service.js';
 import { createCustomDomainService } from './domains/service.js';
 import { createIntegrationService } from './integrations/service.js';
 import { createPlatformOperationsService } from './platform/operations-service.js';
+import { createAiImagingService } from './clinic/ai-imaging-service.js';
 
 const config = loadConfig();
 const database = await createDatabaseServices();
@@ -99,6 +100,7 @@ const payments = createPaymentService(database.db);
 const customDomains = createCustomDomainService(database.db);
 const integrations = createIntegrationService(database.db);
 const platformOperations = createPlatformOperationsService(database.db);
+const aiImaging = createAiImagingService(database.db);
 const publicBooking = createPublicBookingService(database.db, notifications);
 const clinicSettings = createClinicSettingsService(database.db);
 const clinicWorkspace = createClinicWorkspaceService(database.db);
@@ -158,6 +160,7 @@ const app = await buildApp({
   customDomains,
   integrations,
   platformOperations,
+  aiImaging,
   clinicDashboard,
   clinicTreatmentPlans,
   clinicServiceCatalog,

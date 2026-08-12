@@ -232,6 +232,13 @@
       "when": 1786502233645,
       "tag": "0032_curly_risque",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1786502339411,
+      "tag": "0033_previous_franklin_richards",
+      "breakpoints": true
     }
   ]
 }

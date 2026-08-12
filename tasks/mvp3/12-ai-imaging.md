@@ -1,6 +1,6 @@
 # AI Imaging & Diagnostics
 
-> **Status:** 🔜 Future — MVP 3
+> **Status:** 🔵 Active — gated imaging/score baseline delivered
 > **Proposal alignment:** Executive Summary §5 — Phase 3 (AI imaging interpretation, oral health scoring, AI diagnostics assistant)
 
 ---
@@ -18,6 +18,14 @@ Phase 3 of the executive summary calls for AI-powered radiograph interpretation,
 - **AI diagnostics assistant** — In an open encounter, the dentist can describe a symptom or paste a clinical finding; the AI returns a differential list ranked by likelihood, with supporting rationale. All output is advisory; the dentist selects or ignores.
 - All AI imaging calls are logged (no PHI in logs).
 - AI imaging is feature-gated (`FeatureKey.AI_IMAGING`).
+
+### Delivered baseline
+
+- Added feature-gated radiograph analysis records with clinic/file/patient/encounter ownership checks and advisory-only confirmation state.
+- Added a provider-neutral `rules-baseline` adapter boundary that stores no image pixels, prompts, or clinical text; external model calls remain disabled until a reviewed provider is selected.
+- Added deterministic oral-health score snapshots from tenant-scoped odontogram, treatment, encounter, and appointment counts.
+- Added protected analysis list, dentist confirmation, and patient score endpoints with identifier-only audit metadata.
+- Remaining: evaluated radiograph provider, annotation overlays, diagnostics assistant, clinical validation, and package entitlement rollout.
 
 ---
 

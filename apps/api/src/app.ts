@@ -103,6 +103,8 @@ import { registerIntegrationRoutes } from './routes/integrations.js';
 import type { IntegrationService } from './integrations/service.js';
 import { registerPlatformOperationsRoutes } from './routes/platform-operations.js';
 import type { PlatformOperationsService } from './platform/operations-service.js';
+import { registerAiImagingRoutes } from './routes/ai-imaging.js';
+import type { AiImagingService } from './clinic/ai-imaging-service.js';
 
 export type BuildAppOptions = {
   config: ApiConfig;
@@ -157,6 +159,7 @@ export type BuildAppOptions = {
   customDomains?: CustomDomainService;
   integrations?: IntegrationService;
   platformOperations?: PlatformOperationsService;
+  aiImaging?: AiImagingService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -321,6 +324,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (options.platformOperations) {
       await registerPlatformOperationsRoutes(app, { auth: options.auth, operations: options.platformOperations });
+    }
+    if (options.aiImaging && options.entitlements) {
+      await registerAiImagingRoutes(app, { auth: options.auth, entitlements: options.entitlements, imaging: options.aiImaging });
     }
     if (options.clinicDashboard && options.entitlements) {
       await registerClinicDashboardRoutes(app, { auth: options.auth, entitlements: options.entitlements, dashboard: options.clinicDashboard });

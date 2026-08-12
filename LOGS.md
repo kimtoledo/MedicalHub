@@ -114,6 +114,12 @@ Updated manually after each session or merged task.
 - Added migration `0032_curly_risque.sql` and applied it locally
 - Verified repository-wide TypeScript checks; the existing API test suite remains green
 
+### 🔄 MVP 3 AI imaging baseline
+- Added `FeatureKey.AI_IMAGING` and an entitlement-gated radiograph analysis record with strict clinic/file/patient ownership validation
+- Added advisory-only confirmation and deterministic oral-health score snapshots; no image pixels or clinical text are sent to an external provider
+- Added migration `0033_previous_franklin_richards.sql` and applied it locally
+- Remaining provider evaluation, annotation UI, diagnostics assistant, and clinical validation are explicitly queued
+
 ### ✅ MVP 2 treatment planning
 - Added tenant-scoped treatment plans and multi-item proposals directly from patient profiles
 - Added entitlement- and role-protected plan APIs with draft → approved → archived lifecycle and item progress/cancellation transitions

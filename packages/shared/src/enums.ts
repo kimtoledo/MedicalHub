@@ -127,6 +127,7 @@ export const FeatureKey = {
   AI_NOTES: 'ai.notes',
   AI_RECALL: 'ai.recall',
   AI_TREATMENT_SEQUENCE: 'ai.treatment_sequence',
+  AI_IMAGING: 'ai.imaging',
 
   // Tele-dentistry (MVP 2)
   TELEDENTISTRY: 'teledentistry',
@@ -144,6 +145,7 @@ export const FeatureKey = {
 
   // Branch management
   BRANCHES_MULTI: 'branches.multi',
+  KIOSK_CHECKIN: 'kiosk.checkin',
 } as const;
 export type FeatureKey = (typeof FeatureKey)[keyof typeof FeatureKey];
 
@@ -334,5 +336,7 @@ export const AuditAction = {
   // Support / admin access
   SUPPORT_ACCESS_GRANTED: 'support_access.granted',
   SUPPORT_ACCESS_USED: 'support_access.used',
+  AI_IMAGING_ANALYZED: 'ai.imaging_analyzed',
+  AI_IMAGING_CONFIRMED: 'ai.imaging_confirmed',
 } as const;
 export type AuditAction = (typeof AuditAction)[keyof typeof AuditAction];
