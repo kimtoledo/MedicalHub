@@ -84,6 +84,11 @@ Updated manually after each session or merged task.
 - Remaining: cascading entitlements, central catalog, staff branch assignment, and consented transfers
 - Added migration `0028_cultured_fenris.sql` and applied it locally
 
+### ✅ MVP 3 advanced analytics baseline
+- Added tenant-scoped aggregate analytics for appointment/revenue trends and conversion, no-show, cancellation, and treatment acceptance rates
+- Added `reports.advanced` and role gating; no patient names or clinical notes are returned
+- Verified 239 passing API tests and repository-wide TypeScript checks
+
 ### ✅ MVP 2 treatment planning
 - Added tenant-scoped treatment plans and multi-item proposals directly from patient profiles
 - Added entitlement- and role-protected plan APIs with draft → approved → archived lifecycle and item progress/cancellation transitions

@@ -52,6 +52,7 @@ import { createPatientPortalService } from './patient/portal-service.js';
 import { createVerificationService } from './verification/service.js';
 import { createReviewService } from './reviews/service.js';
 import { createOrganizationService } from './organizations/service.js';
+import { createClinicAnalyticsService } from './clinic/analytics-service.js';
 
 const config = loadConfig();
 const database = await createDatabaseServices();
@@ -89,6 +90,7 @@ const patientPortal = createPatientPortalService(database.db);
 const verification = createVerificationService(database.db);
 const reviews = createReviewService(database.db);
 const organizations = createOrganizationService(database.db);
+const clinicAnalytics = createClinicAnalyticsService(database.db);
 const publicBooking = createPublicBookingService(database.db, notifications);
 const clinicSettings = createClinicSettingsService(database.db);
 const clinicWorkspace = createClinicWorkspaceService(database.db);
@@ -143,6 +145,7 @@ const app = await buildApp({
   verification,
   reviews,
   organizations,
+  clinicAnalytics,
   clinicDashboard,
   clinicTreatmentPlans,
   clinicServiceCatalog,

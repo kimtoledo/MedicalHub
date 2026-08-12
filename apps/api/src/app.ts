@@ -93,6 +93,8 @@ import { registerReviewRoutes } from './routes/reviews.js';
 import type { ReviewService } from './reviews/service.js';
 import { registerOrganizationRoutes } from './routes/organizations.js';
 import type { OrganizationService } from './organizations/service.js';
+import { registerClinicAnalyticsRoutes } from './routes/clinic-analytics.js';
+import type { ClinicAnalyticsService } from './clinic/analytics-service.js';
 
 export type BuildAppOptions = {
   config: ApiConfig;
@@ -142,6 +144,7 @@ export type BuildAppOptions = {
   verification?: VerificationService;
   reviews?: ReviewService;
   organizations?: OrganizationService;
+  clinicAnalytics?: ClinicAnalyticsService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -291,6 +294,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (options.organizations) {
       await registerOrganizationRoutes(app, { auth: options.auth, organizations: options.organizations });
+    }
+    if (options.clinicAnalytics && options.entitlements) {
+      await registerClinicAnalyticsRoutes(app, { auth: options.auth, entitlements: options.entitlements, analytics: options.clinicAnalytics });
     }
     if (options.clinicDashboard && options.entitlements) {
       await registerClinicDashboardRoutes(app, { auth: options.auth, entitlements: options.entitlements, dashboard: options.clinicDashboard });

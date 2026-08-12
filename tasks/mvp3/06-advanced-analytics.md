@@ -1,6 +1,6 @@
 # Advanced Analytics
 
-> **Status:** 🔜 Future — MVP 3
+> **Status:** ✅ Done — MVP 3 baseline
 
 ---
 
@@ -21,6 +21,11 @@ Clinic owners and dental group operators need data beyond the operational report
 - Cohort views: patient acquisition cohorts and their visit frequency.
 - Analytics data is strictly tenant-scoped — cross-tenant aggregation is forbidden.
 - Clinical detail is minimized in all analytics outputs — no patient names in trend charts.
+
+### Delivered
+
+- Added tenant-scoped advanced analytics endpoint with appointment status trends, revenue trends, conversion, no-show, cancellation, and treatment-acceptance rates.
+- Analytics output contains aggregates only and is gated by `reports.advanced` plus clinic roles.
 
 ---
 
