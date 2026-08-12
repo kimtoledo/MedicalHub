@@ -42,6 +42,15 @@ _No active implementation task._
 - Added migration `0016_opposite_zemo.sql`, backfilled existing service prices, enabled Professional/Enterprise catalog access, and verified local migration application
 - Verified 234 passing API tests, repository-wide TypeScript checks, and web/API production builds
 
+### ✅ MVP 2 billing and payments
+- Extended invoices with treatment-plan references, subtotal/discount metadata, and partial-payment statuses
+- Added multiple installment payments with server-calculated remaining balances and transactional row locking
+- Added permission-gated discount reasons and amounts during invoice generation
+- Added immutable refund and admin adjustment transactions with reasons, branch/tenant checks, and audit events
+- Added invoice detail controls for installments, refunds, adjustments, discounts, and remaining balance
+- Added migration `0017_vengeful_magneto.sql` and applied it locally
+- Verified 236 passing API tests, repository-wide TypeScript checks, and web/API production builds (with expected build-time fetch warnings when the local API is not running)
+
 ### ✅ MVP 1 post-merge acceptance audit
 - Rechecked every MVP 1 task and implementation step after migration-history/content merges; Tasks 01–21 are now evidence-marked and the release checklist covers Increment 5 business basics
 - Enforced canonical feature entitlements and clinic-role authorization on every direct billing, payment, prescription, and clinical-file API, not only sidebar visibility

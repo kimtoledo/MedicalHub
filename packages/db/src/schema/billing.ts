@@ -4,6 +4,7 @@ import { clinics } from './clinics';
 import { encounters } from './encounters';
 import { patients } from './patients';
 import { services } from './appointments';
+import { treatmentPlans } from './treatment-plans';
 import { id, timestamps } from './helpers';
 
 // ---------------------------------------------------------------------------
@@ -12,7 +13,9 @@ import { id, timestamps } from './helpers';
 
 export const invoiceStatusEnum = pgEnum('invoice_status', [
   'pending',
+  'partially_paid',
   'paid',
+  'refunded',
   'voided',
 ]);
 
@@ -22,6 +25,11 @@ export const paymentMethodEnum = pgEnum('payment_method', [
   'card',
   'bank_transfer',
   'other',
+]);
+
+export const invoiceTransactionTypeEnum = pgEnum('invoice_transaction_type', [
+  'refund',
+  'adjustment',
 ]);
 
 // ---------------------------------------------------------------------------
@@ -46,6 +54,8 @@ export const invoices = pgTable(
     /** Source encounter — may be null if created ad-hoc */
     encounterId: uuid('encounter_id')
       .references(() => encounters.id, { onDelete: 'set null' }),
+    treatmentPlanId: uuid('treatment_plan_id')
+      .references(() => treatmentPlans.id, { onDelete: 'set null' }),
 
     /** e.g. SBDINV000001 — format: {CLINIC_PREFIX}INV{6-digit seq} */
     invoiceNumber: varchar('invoice_number', { length: 30 }).notNull().unique(),
@@ -59,6 +69,10 @@ export const invoices = pgTable(
     totalAmountPhp: numeric('total_amount_php', { precision: 10, scale: 2 })
       .notNull()
       .default('0'),
+    subtotalPhp: numeric('subtotal_php', { precision: 10, scale: 2 }).notNull().default('0'),
+    discountAmountPhp: numeric('discount_amount_php', { precision: 10, scale: 2 }).notNull().default('0'),
+    discountReason: text('discount_reason'),
+    discountAppliedBy: uuid('discount_applied_by'),
 
     notes: text('notes'),
     issuedAt: timestamp('issued_at', { withTimezone: true }),
@@ -72,6 +86,7 @@ export const invoices = pgTable(
     clinicIdx:   index('invoices_clinic_id_idx').on(t.clinicId),
     patientIdx:  index('invoices_patient_id_idx').on(t.patientId),
     encounterIdx: index('invoices_encounter_id_idx').on(t.encounterId),
+    treatmentPlanIdx: index('invoices_treatment_plan_id_idx').on(t.treatmentPlanId),
     statusIdx:   index('invoices_status_idx').on(t.clinicId, t.status),
     issuedAtIdx: index('invoices_issued_at_idx').on(t.clinicId, t.issuedAt),
   }),
@@ -146,6 +161,28 @@ export const invoicePayments = pgTable(
   }),
 );
 
+/** Refunds and non-payment adjustments are separate immutable transactions. */
+export const invoiceTransactions = pgTable(
+  'invoice_transactions',
+  {
+    id: id(),
+    invoiceId: uuid('invoice_id').notNull().references(() => invoices.id, { onDelete: 'restrict' }),
+    clinicId: uuid('clinic_id').notNull(),
+    type: invoiceTransactionTypeEnum('type').notNull(),
+    amountPhp: numeric('amount_php', { precision: 10, scale: 2 }).notNull(),
+    paymentMethod: paymentMethodEnum('payment_method'),
+    transactionDate: varchar('transaction_date', { length: 20 }).notNull(),
+    reason: text('reason').notNull(),
+    recordedBy: uuid('recorded_by'),
+    ...timestamps,
+  },
+  (t) => ({
+    invoiceIdx: index('invoice_transactions_invoice_idx').on(t.invoiceId),
+    clinicIdx: index('invoice_transactions_clinic_idx').on(t.clinicId),
+    dateIdx: index('invoice_transactions_date_idx').on(t.clinicId, t.transactionDate),
+  }),
+);
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -154,3 +191,4 @@ export type Invoice         = typeof invoices.$inferSelect;
 export type NewInvoice      = typeof invoices.$inferInsert;
 export type InvoiceLineItem = typeof invoiceLineItems.$inferSelect;
 export type InvoicePayment  = typeof invoicePayments.$inferSelect;
+export type InvoiceTransaction = typeof invoiceTransactions.$inferSelect;

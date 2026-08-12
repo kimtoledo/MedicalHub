@@ -970,3 +970,24 @@ describe('billing entitlements', () => {
     expect(billing.recordPayment).not.toHaveBeenCalled();
   });
 });
+
+describe('full billing transactions', () => {
+  it('accepts partial payments and exposes remaining balance workflow', async () => {
+    const billing = createBillingService({ recordPayment: vi.fn(async () => undefined) });
+    app = await buildApp({ config, checkDatabase: vi.fn(async () => undefined), auth: createAuth(clinicMemberContext), entitlements: createEntitlements(), clinicBilling: billing, clinicServiceList: createServiceListService() });
+    const response = await app.inject({ method: 'POST', url: `/v1/clinic/${CLINIC_ID}/invoices/${INVOICE_ID}/pay`, headers: { cookie: 'session=test', 'content-type': 'application/json' }, payload: { amountPhp: '750.00', paymentMethod: 'cash', paymentDate: '2026-08-12' } });
+    expect(response.statusCode).toBe(200);
+    expect(billing.recordPayment).toHaveBeenCalledWith(CLINIC_ID, INVOICE_ID, expect.objectContaining({ amountPhp: '750.00' }));
+  });
+
+  it('guards refund and adjustment endpoints with role, feature, and reason validation', async () => {
+    const billing = createBillingService({ recordRefund: vi.fn(async () => undefined), recordAdjustment: vi.fn(async () => undefined) });
+    app = await buildApp({ config, checkDatabase: vi.fn(async () => undefined), auth: createAuth(clinicMemberContext), entitlements: createEntitlements(), clinicBilling: billing, clinicServiceList: createServiceListService() });
+    const refund = await app.inject({ method: 'POST', url: `/v1/clinic/${CLINIC_ID}/invoices/${INVOICE_ID}/refund`, headers: { cookie: 'session=test', 'content-type': 'application/json' }, payload: { amountPhp: '100.00', transactionDate: '2026-08-12', reason: 'Patient request', paymentMethod: 'cash' } });
+    expect(refund.statusCode).toBe(200);
+    const adjustment = await app.inject({ method: 'POST', url: `/v1/clinic/${CLINIC_ID}/invoices/${INVOICE_ID}/adjustment`, headers: { cookie: 'session=test', 'content-type': 'application/json' }, payload: { amountPhp: '100.00', transactionDate: '2026-08-12', reason: 'Approved courtesy adjustment' } });
+    expect(adjustment.statusCode).toBe(200);
+    expect(billing.recordRefund).toHaveBeenCalled();
+    expect(billing.recordAdjustment).toHaveBeenCalled();
+  });
+});

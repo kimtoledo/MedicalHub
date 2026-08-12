@@ -1,6 +1,6 @@
 # Billing and Payments
 
-> **Status:** 🔜 Future — MVP 2
+> **Status:** ✅ Done — partial payments, discounts, refunds, and adjustments shipped
 > **Note:** A lite version of billing (single-payment invoicing, service pricing, receipt PDF) was promoted to MVP 1 — see `tasks/mvp1/19-billing-lite.md`. This task adds the full layer: partial payments, refunds, adjustments, and discount controls.
 
 ---

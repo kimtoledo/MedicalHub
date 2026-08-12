@@ -24,7 +24,7 @@ type Payment = {
 export type InvoiceDetail = {
   id: string;
   invoiceNumber: string;
-  status: "pending" | "paid" | "voided";
+  status: "pending" | "partially_paid" | "paid" | "refunded" | "voided";
   totalAmountPhp: string;
   issuedAt: string | null;
   paidAt: string | null;
@@ -32,6 +32,12 @@ export type InvoiceDetail = {
   clinic: { name: string; prefix: string; address: string | null; city: string | null; phone: string | null; logoUrl: string | null };
   lineItems: LineItem[];
   payment: Payment | null;
+  payments?: Payment[];
+  transactions?: Array<{ id: string; type: string; amountPhp: string; paymentMethod: string | null; transactionDate: string; reason: string }>;
+  subtotalPhp?: string;
+  discountAmountPhp?: string;
+  discountReason?: string | null;
+  balancePhp?: string;
   encounterId: string | null;
 };
 

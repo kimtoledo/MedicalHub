@@ -8,7 +8,7 @@ import { redirect } from "next/navigation";
 type InvoiceListItem = {
   id: string;
   invoiceNumber: string;
-  status: "pending" | "paid" | "voided";
+  status: "pending" | "partially_paid" | "paid" | "refunded" | "voided";
   totalAmountPhp: string;
   issuedAt: string | null;
   paidAt: string | null;
@@ -18,13 +18,17 @@ type InvoiceListItem = {
 
 const STATUS_STYLES: Record<string, string> = {
   pending: "bg-amber-100 text-amber-700",
+  partially_paid: "bg-blue-100 text-blue-700",
   paid:    "bg-emerald-100 text-emerald-700",
+  refunded: "bg-orange-100 text-orange-700",
   voided:  "bg-red-100 text-red-600",
 };
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "Pending",
+  partially_paid: "Partially paid",
   paid:    "Paid",
+  refunded: "Refunded",
   voided:  "Voided",
 };
 
@@ -78,7 +82,9 @@ export default async function BillingPage({
   const statusOptions = [
     { value: "", label: "All Statuses" },
     { value: "pending", label: "Pending" },
+    { value: "partially_paid", label: "Partially paid" },
     { value: "paid", label: "Paid" },
+    { value: "refunded", label: "Refunded" },
     { value: "voided", label: "Voided" },
   ];
 

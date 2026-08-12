@@ -245,6 +245,8 @@ export const AuditAction = {
   INVOICE_CREATED:   'invoice.created',
   INVOICE_PAID:      'invoice.paid',
   INVOICE_VOIDED:    'invoice.voided',
+  INVOICE_REFUNDED:  'invoice.refunded',
+  INVOICE_ADJUSTED:  'invoice.adjusted',
   PAYMENT_RECORDED:  'payment.recorded',
 
   // Service catalog and pricing

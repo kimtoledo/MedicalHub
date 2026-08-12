@@ -9,6 +9,7 @@ import {
   encounters,
   invoiceLineItems,
   invoicePayments,
+  invoiceTransactions,
   invoices,
   patients,
   services,
@@ -43,6 +44,7 @@ export type InvoiceListItem = {
   patient: { id: string; firstName: string; lastName: string; patientNumber: string };
   encounterId: string | null;
   createdAt: Date;
+  balancePhp?: string;
 };
 
 export type InvoiceDetail = InvoiceListItem & {
@@ -61,6 +63,12 @@ export type InvoiceDetail = InvoiceListItem & {
     paymentMethod: string;
     paymentDate: string;
   } | null;
+  payments?: Array<{ id: string; amountPhp: string; paymentMethod: string; paymentDate: string; recordedBy: string | null }>;
+  transactions?: Array<{ id: string; type: string; amountPhp: string; paymentMethod: string | null; transactionDate: string; reason: string }>;
+  subtotalPhp?: string;
+  discountAmountPhp?: string;
+  discountReason?: string | null;
+  balancePhp?: string;
   clinic: { name: string; prefix: string; address: string | null; city: string | null; phone: string | null; logoUrl: string | null };
 };
 
@@ -185,6 +193,7 @@ export interface ClinicBillingService {
     encounterId: string,
     createdBy: string,
     callerBranchIds?: string[] | null,
+    options?: { discountAmountPhp?: string; discountReason?: string; treatmentPlanId?: string },
   ): Promise<{ invoiceId: string; invoiceNumber: string }>;
 
   recordPayment(
@@ -192,6 +201,9 @@ export interface ClinicBillingService {
     invoiceId: string,
     data: { amountPhp: string; paymentMethod: string; paymentDate: string; notes?: string; recordedBy: string; callerBranchIds?: string[] | null },
   ): Promise<void>;
+
+  recordRefund?: (clinicId: string, invoiceId: string, data: { amountPhp: string; paymentMethod?: string; transactionDate: string; reason: string; recordedBy: string; callerBranchIds?: string[] | null }) => Promise<void>;
+  recordAdjustment?: (clinicId: string, invoiceId: string, data: { amountPhp: string; transactionDate: string; reason: string; recordedBy: string; callerBranchIds?: string[] | null }) => Promise<void>;
 
   /** Branch-scoped: null means clinic-wide. */
   getTodayEarnings(clinicId: string, callerBranchIds?: string[] | null): Promise<{ totalPhp: string; invoiceCount: number }>;
@@ -212,7 +224,7 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
       if (callerBranchIds && callerBranchIds.length > 0) conditions.push(inArray(invoices.branchId, callerBranchIds));
 
       if (status) {
-        conditions.push(eq(invoices.status, status as 'pending' | 'paid' | 'voided'));
+        conditions.push(eq(invoices.status, status as 'pending' | 'partially_paid' | 'paid' | 'refunded' | 'voided'));
       }
       if (dateFrom) {
         conditions.push(gte(invoices.issuedAt, new Date(dateFrom)));
@@ -248,6 +260,9 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
           invoiceNumber: invoices.invoiceNumber,
           status: invoices.status,
           totalAmountPhp: invoices.totalAmountPhp,
+          subtotalPhp: invoices.subtotalPhp,
+          discountAmountPhp: invoices.discountAmountPhp,
+          discountReason: invoices.discountReason,
           issuedAt: invoices.issuedAt,
           paidAt: invoices.paidAt,
           createdAt: invoices.createdAt,
@@ -294,6 +309,9 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
           invoiceNumber: invoices.invoiceNumber,
           status: invoices.status,
           totalAmountPhp: invoices.totalAmountPhp,
+          subtotalPhp: invoices.subtotalPhp,
+          discountAmountPhp: invoices.discountAmountPhp,
+          discountReason: invoices.discountReason,
           issuedAt: invoices.issuedAt,
           paidAt: invoices.paidAt,
           createdAt: invoices.createdAt,
@@ -345,6 +363,21 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
         .where(eq(invoicePayments.invoiceId, invoiceId))
         .limit(1);
 
+      const paymentRows = await db
+        .select({ id: invoicePayments.id, amountPhp: invoicePayments.amountPhp, paymentMethod: invoicePayments.paymentMethod, paymentDate: invoicePayments.paymentDate, recordedBy: invoicePayments.recordedBy })
+        .from(invoicePayments)
+        .where(and(eq(invoicePayments.invoiceId, invoiceId), eq(invoicePayments.clinicId, clinicId)))
+        .orderBy(invoicePayments.createdAt);
+      const transactionRows = await db
+        .select({ id: invoiceTransactions.id, type: invoiceTransactions.type, amountPhp: invoiceTransactions.amountPhp, paymentMethod: invoiceTransactions.paymentMethod, transactionDate: invoiceTransactions.transactionDate, reason: invoiceTransactions.reason })
+        .from(invoiceTransactions)
+        .where(and(eq(invoiceTransactions.invoiceId, invoiceId), eq(invoiceTransactions.clinicId, clinicId)))
+        .orderBy(invoiceTransactions.createdAt);
+      const paidTotal = paymentRows.reduce((sum, item) => sum + Number(item.amountPhp), 0);
+      const adjustmentTotal = transactionRows.filter((item) => item.type === 'adjustment').reduce((sum, item) => sum + Number(item.amountPhp), 0);
+      const refundTotal = transactionRows.filter((item) => item.type === 'refund').reduce((sum, item) => sum + Number(item.amountPhp), 0);
+      const balancePhp = Math.max(0, Number(row.totalAmountPhp) - paidTotal - adjustmentTotal + refundTotal).toFixed(2);
+
       return {
         id: row.id,
         invoiceNumber: row.invoiceNumber,
@@ -370,13 +403,19 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
         },
         lineItems: lineItemRows,
         payment: paymentRow ?? null,
+        payments: paymentRows,
+        transactions: transactionRows,
+        subtotalPhp: row.subtotalPhp ?? row.totalAmountPhp,
+        discountAmountPhp: row.discountAmountPhp ?? '0.00',
+        discountReason: row.discountReason,
+        balancePhp,
       };
     },
 
     // ------------------------------------------------------------------
     // generateInvoice
     // ------------------------------------------------------------------
-    async generateInvoice(clinicId, encounterId, createdBy, callerBranchIds) {
+    async generateInvoice(clinicId, encounterId, createdBy, callerBranchIds, options) {
       // Verify encounter belongs to clinic
       const [encounter] = await db
         .select({
@@ -461,9 +500,19 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
         notes: r.notes ?? null,
       }));
 
-      const totalAmountPhp = lineItemsToInsert
+      const subtotalPhp = lineItemsToInsert
         .reduce((sum, li) => sum + parseFloat(li.totalPhp), 0)
         .toFixed(2);
+      const discountAmountPhp = options?.discountAmountPhp ?? '0.00';
+      const discount = parseFloat(discountAmountPhp);
+      const subtotal = parseFloat(subtotalPhp);
+      if (!Number.isFinite(discount) || discount < 0 || discount > subtotal) {
+        throw new BillingError('INVALID_DISCOUNT', 'Discount must be between ₱0.00 and the invoice subtotal');
+      }
+      if (discount > 0 && !options?.discountReason?.trim()) {
+        throw new BillingError('DISCOUNT_REASON_REQUIRED', 'A reason is required when applying a discount');
+      }
+      const totalAmountPhp = (subtotal - discount).toFixed(2);
 
       const now = new Date();
 
@@ -488,9 +537,14 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
             branchId: encounter.branchId,
             patientId: encounter.patientId,
             encounterId,
+            treatmentPlanId: options?.treatmentPlanId ?? null,
             invoiceNumber,
             status: 'pending',
             totalAmountPhp,
+            subtotalPhp,
+            discountAmountPhp: discount.toFixed(2),
+            discountReason: options?.discountReason?.trim() || null,
+            discountAppliedBy: discount > 0 ? createdBy : null,
             issuedAt: now,
             createdBy,
           })
@@ -509,7 +563,7 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
           action: AuditAction.INVOICE_CREATED,
           entityType: 'invoice',
           entityId: inv.id,
-          metadata: JSON.stringify({ invoiceNumber: inv.invoiceNumber, totalAmountPhp }),
+          metadata: JSON.stringify({ invoiceNumber: inv.invoiceNumber, totalAmountPhp, discountAmountPhp: discount.toFixed(2) }),
         });
 
         return { invoiceId: inv.id, invoiceNumber: inv.invoiceNumber };
@@ -527,12 +581,11 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
         .limit(1);
 
       if (!inv) throw new BillingError('NOT_FOUND', 'Invoice not found');
-      if (inv.status !== 'pending') throw new BillingError('INVALID_STATE', 'Only pending invoices can be paid');
+      if (!['pending', 'partially_paid'].includes(inv.status)) throw new BillingError('INVALID_STATE', 'Only open invoices can be paid');
       if (callerBranchIds && callerBranchIds.length > 0 && !callerBranchIds.includes(inv.branchId)) {
         throw new BillingError('FORBIDDEN', 'You do not have access to this invoice');
       }
 
-      // MVP 1 — single full payment only; amount must equal invoice total (within ₱0.01 tolerance)
       const invoiceTotal = parseFloat(inv.totalAmountPhp);
       const paymentAmount = parseFloat(amountPhp);
 
@@ -542,23 +595,24 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
         throw new BillingError('INVALID_AMOUNT', 'Payment amount must be greater than ₱0.00');
       }
 
-      if (Math.abs(invoiceTotal - paymentAmount) > 0.01) {
-        throw new BillingError(
-          'INVALID_AMOUNT',
-          `Payment amount (₱${paymentAmount.toFixed(2)}) must equal invoice total (₱${invoiceTotal.toFixed(2)}). Partial payments are not supported in this version.`,
-        );
-      }
-
       await db.transaction(async (tx) => {
         // Lock the invoice row to serialise concurrent payment attempts.
         const [lockedInv] = await tx.execute<{ id: string; status: string; branch_id: string }>(
           sql`SELECT id, status, branch_id FROM invoices WHERE id = ${invoiceId} AND clinic_id = ${clinicId} FOR UPDATE`,
         );
         if (!lockedInv) throw new BillingError('NOT_FOUND', 'Invoice not found');
-        if (lockedInv.status !== 'pending') throw new BillingError('INVALID_STATE', 'Only pending invoices can be paid');
+        if (!['pending', 'partially_paid'].includes(lockedInv.status)) throw new BillingError('INVALID_STATE', 'Only open invoices can be paid');
         if (callerBranchIds && callerBranchIds.length > 0 && !callerBranchIds.includes(lockedInv.branch_id)) {
           throw new BillingError('FORBIDDEN', 'You do not have access to this invoice');
         }
+
+        const priorPayments = await tx.select({ amountPhp: invoicePayments.amountPhp }).from(invoicePayments).where(and(eq(invoicePayments.invoiceId, invoiceId), eq(invoicePayments.clinicId, clinicId)));
+        const priorTransactions = await tx.select({ type: invoiceTransactions.type, amountPhp: invoiceTransactions.amountPhp }).from(invoiceTransactions).where(and(eq(invoiceTransactions.invoiceId, invoiceId), eq(invoiceTransactions.clinicId, clinicId)));
+        const paid = priorPayments.reduce((sum, row) => sum + Number(row.amountPhp), 0);
+        const credits = priorTransactions.reduce((sum, row) => sum + (row.type === 'adjustment' ? Number(row.amountPhp) : 0), 0);
+        const refunds = priorTransactions.reduce((sum, row) => sum + (row.type === 'refund' ? Number(row.amountPhp) : 0), 0);
+        const balance = invoiceTotal - paid - credits + refunds;
+        if (paymentAmount > balance + 0.01) throw new BillingError('INVALID_AMOUNT', `Payment exceeds the remaining balance of ₱${Math.max(0, balance).toFixed(2)}`);
 
         await tx.insert(invoicePayments).values({
           invoiceId,
@@ -570,10 +624,8 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
           notes: notes ?? null,
         });
 
-        await tx
-          .update(invoices)
-          .set({ status: 'paid', paidAt: new Date() })
-          .where(and(eq(invoices.id, invoiceId), eq(invoices.status, 'pending')));
+        const nextBalance = balance - paymentAmount;
+        await tx.update(invoices).set({ status: nextBalance <= 0.01 ? 'paid' : 'partially_paid', paidAt: nextBalance <= 0.01 ? new Date() : null }).where(eq(invoices.id, invoiceId));
 
         await writeAudit(tx, {
           clinicId,
@@ -583,6 +635,37 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
           entityId: invoiceId,
           metadata: JSON.stringify({ amountPhp, paymentMethod, paymentDate }),
         });
+      });
+    },
+
+    async recordRefund(clinicId, invoiceId, { amountPhp, paymentMethod, transactionDate, reason, recordedBy, callerBranchIds }) {
+      await db.transaction(async (tx) => {
+        const [invoice] = await tx.select({ id: invoices.id, totalAmountPhp: invoices.totalAmountPhp, branchId: invoices.branchId, status: invoices.status }).from(invoices).where(and(eq(invoices.id, invoiceId), eq(invoices.clinicId, clinicId))).limit(1).for('update');
+        if (!invoice) throw new BillingError('NOT_FOUND', 'Invoice not found');
+        if (invoice.status === 'voided') throw new BillingError('INVALID_STATE', 'Voided invoices cannot be refunded');
+        if (callerBranchIds && callerBranchIds.length > 0 && !callerBranchIds.includes(invoice.branchId)) throw new BillingError('FORBIDDEN', 'You do not have access to this invoice');
+        const amount = Number(amountPhp);
+        if (!Number.isFinite(amount) || amount <= 0) throw new BillingError('INVALID_AMOUNT', 'Refund amount must be greater than ₱0.00');
+        const payments = await tx.select({ amountPhp: invoicePayments.amountPhp }).from(invoicePayments).where(eq(invoicePayments.invoiceId, invoiceId));
+        const refunds = await tx.select({ amountPhp: invoiceTransactions.amountPhp }).from(invoiceTransactions).where(and(eq(invoiceTransactions.invoiceId, invoiceId), eq(invoiceTransactions.type, 'refund')));
+        const refundable = payments.reduce((sum, row) => sum + Number(row.amountPhp), 0) - refunds.reduce((sum, row) => sum + Number(row.amountPhp), 0);
+        if (amount > refundable + 0.01) throw new BillingError('INVALID_AMOUNT', `Refund exceeds refundable payments of ₱${Math.max(0, refundable).toFixed(2)}`);
+        await tx.insert(invoiceTransactions).values({ invoiceId, clinicId, type: 'refund', amountPhp, paymentMethod: (paymentMethod ?? null) as 'cash' | 'gcash' | 'card' | 'bank_transfer' | 'other' | null, transactionDate, reason: reason.trim(), recordedBy });
+        const totalRefunded = refunds.reduce((sum, row) => sum + Number(row.amountPhp), 0) + amount;
+        await tx.update(invoices).set({ status: totalRefunded >= payments.reduce((sum, row) => sum + Number(row.amountPhp), 0) - 0.01 ? 'refunded' : 'partially_paid' }).where(eq(invoices.id, invoiceId));
+        await writeAudit(tx, { clinicId, actorId: recordedBy, action: AuditAction.INVOICE_REFUNDED, entityType: 'invoice', entityId: invoiceId, metadata: JSON.stringify({ amountPhp, transactionDate }), });
+      });
+    },
+
+    async recordAdjustment(clinicId, invoiceId, { amountPhp, transactionDate, reason, recordedBy, callerBranchIds }) {
+      await db.transaction(async (tx) => {
+        const [invoice] = await tx.select({ id: invoices.id, totalAmountPhp: invoices.totalAmountPhp, branchId: invoices.branchId, status: invoices.status }).from(invoices).where(and(eq(invoices.id, invoiceId), eq(invoices.clinicId, clinicId))).limit(1).for('update');
+        if (!invoice) throw new BillingError('NOT_FOUND', 'Invoice not found');
+        if (callerBranchIds && callerBranchIds.length > 0 && !callerBranchIds.includes(invoice.branchId)) throw new BillingError('FORBIDDEN', 'You do not have access to this invoice');
+        const amount = Number(amountPhp);
+        if (!Number.isFinite(amount) || amount <= 0) throw new BillingError('INVALID_AMOUNT', 'Adjustment amount must be greater than ₱0.00');
+        await tx.insert(invoiceTransactions).values({ invoiceId, clinicId, type: 'adjustment', amountPhp, transactionDate, reason: reason.trim(), recordedBy });
+        await writeAudit(tx, { clinicId, actorId: recordedBy, action: AuditAction.INVOICE_ADJUSTED, entityType: 'invoice', entityId: invoiceId, metadata: JSON.stringify({ amountPhp, transactionDate }), });
       });
     },
 

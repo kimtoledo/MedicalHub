@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Printer, CreditCard, CheckCircle } from "lucide-react";
+import { ArrowLeft, Printer, CreditCard, CheckCircle, RotateCcw, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import type { InvoiceDetail } from "./page";
 
@@ -45,6 +45,7 @@ function RecordPaymentModal({
   onSuccess: () => void;
 }) {
   const [method, setMethod] = useState("cash");
+  const [amount, setAmount] = useState(invoice.balancePhp ?? invoice.totalAmountPhp);
   const [date, setDate] = useState(todayManila());
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
@@ -60,7 +61,7 @@ function RecordPaymentModal({
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          amountPhp: invoice.totalAmountPhp,
+          amountPhp: amount,
           paymentMethod: method,
           paymentDate: date,
           notes: notes || undefined,
@@ -109,9 +110,10 @@ function RecordPaymentModal({
           <div>
             <label className="block text-xs font-semibold text-violet-600 mb-1">Amount</label>
             <input
-              readOnly
-              value={formatPhp(invoice.totalAmountPhp)}
-              className="w-full px-3 py-2 rounded-lg border border-violet-100 bg-violet-50 text-sm text-violet-900 font-semibold"
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+              inputMode="decimal"
+              className="w-full px-3 py-2 rounded-lg border border-violet-200 bg-white text-sm text-violet-900 font-semibold"
             />
           </div>
           <div>
@@ -173,6 +175,24 @@ function RecordPaymentModal({
 // ---------------------------------------------------------------------------
 // Main client component
 // ---------------------------------------------------------------------------
+function RecordTransactionModal({ invoice, clinicId, type, onClose, onSuccess }: { invoice: InvoiceDetail; clinicId: string; type: "refund" | "adjustment"; onClose: () => void; onSuccess: () => void }) {
+  const [amount, setAmount] = useState("");
+  const [reason, setReason] = useState("");
+  const [date, setDate] = useState(todayManila());
+  const [method, setMethod] = useState("cash");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault(); setLoading(true); setError(null);
+    const response = await fetch(`/api/clinic/${clinicId}/invoices/${invoice.id}/${type}`, { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ amountPhp: amount, transactionDate: date, reason, ...(type === "refund" ? { paymentMethod: method } : {}) }) });
+    if (!response.ok) { const payload = await response.json().catch(() => null); setError(payload?.error?.message ?? `Unable to record ${type}.`); setLoading(false); return; }
+    setLoading(false); onSuccess();
+  }
+
+  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}><div className="w-full max-w-sm space-y-4 rounded-2xl bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}><h2 className="font-bold capitalize text-violet-900">Record {type}</h2>{error && <p role="alert" className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{error}</p>}<form onSubmit={(event) => { void submit(event); }} className="space-y-3"><label className="block text-xs font-semibold text-violet-600">Amount<input required value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="decimal" className="mt-1 w-full rounded-lg border border-violet-200 px-3 py-2 text-sm" /></label>{type === "refund" && <label className="block text-xs font-semibold text-violet-600">Refund method<select value={method} onChange={(event) => setMethod(event.target.value)} className="mt-1 w-full rounded-lg border border-violet-200 bg-white px-3 py-2 text-sm"><option value="cash">Cash</option><option value="gcash">GCash</option><option value="card">Card</option><option value="bank_transfer">Bank transfer</option><option value="other">Other</option></select></label>}<label className="block text-xs font-semibold text-violet-600">Date<input required type="date" value={date} onChange={(event) => setDate(event.target.value)} className="mt-1 w-full rounded-lg border border-violet-200 px-3 py-2 text-sm" /></label><label className="block text-xs font-semibold text-violet-600">Reason<textarea required minLength={3} value={reason} onChange={(event) => setReason(event.target.value)} rows={3} className="mt-1 w-full rounded-lg border border-violet-200 px-3 py-2 text-sm" /></label><div className="flex gap-2"><button type="button" onClick={onClose} className="flex-1 rounded-xl border border-violet-200 px-4 py-2 text-sm font-semibold text-violet-600">Cancel</button><button disabled={loading} className="flex-1 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">{loading ? "Saving…" : "Save transaction"}</button></div></form></div></div>;
+}
+
 export default function InvoiceDetailClient({
   invoice: initialInvoice,
   clinicId,
@@ -183,9 +203,10 @@ export default function InvoiceDetailClient({
   const router = useRouter();
   const [invoice, setInvoice] = useState(initialInvoice);
   const [showPayModal, setShowPayModal] = useState(false);
+  const [transactionType, setTransactionType] = useState<"refund" | "adjustment" | null>(null);
 
   const isPaid    = invoice.status === "paid";
-  const isPending = invoice.status === "pending";
+  const isPending = invoice.status === "pending" || invoice.status === "partially_paid";
 
   function handlePaySuccess() {
     setShowPayModal(false);
@@ -202,6 +223,7 @@ export default function InvoiceDetailClient({
           onSuccess={handlePaySuccess}
         />
       )}
+      {transactionType && <RecordTransactionModal invoice={invoice} clinicId={clinicId} type={transactionType} onClose={() => setTransactionType(null)} onSuccess={() => { setTransactionType(null); router.refresh(); }} />}
 
       <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto space-y-6">
         {/* Back + actions */}
@@ -221,6 +243,8 @@ export default function InvoiceDetailClient({
                 <CreditCard size={14} /> Record Payment
               </button>
             )}
+            {(invoice.status === "paid" || invoice.status === "partially_paid") && <button onClick={() => setTransactionType("refund")} className="flex items-center gap-1.5 rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700"><RotateCcw size={14} /> Refund</button>}
+            {isPending && <button onClick={() => setTransactionType("adjustment")} className="flex items-center gap-1.5 rounded-xl border border-violet-200 px-4 py-2 text-sm font-semibold text-violet-700"><SlidersHorizontal size={14} /> Adjustment</button>}
             <button
               onClick={() => window.print()}
               className="flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors"
@@ -344,6 +368,8 @@ export default function InvoiceDetailClient({
                 )}
               </tbody>
               <tfoot>
+                <tr><td colSpan={4} className="pt-3 text-right text-sm text-violet-500">Subtotal</td><td className="pt-3 text-right text-sm text-violet-700">{formatPhp(invoice.subtotalPhp ?? invoice.totalAmountPhp)}</td></tr>
+                {Number(invoice.discountAmountPhp ?? 0) > 0 && <tr><td colSpan={4} className="text-right text-sm text-emerald-600">Discount</td><td className="text-right text-sm text-emerald-600">−{formatPhp(invoice.discountAmountPhp ?? "0")}</td></tr>}
                 <tr className="border-t-2 border-violet-200">
                   <td colSpan={4} className="pt-3 text-right font-bold text-violet-900 pr-4 text-base">
                     Total
@@ -352,6 +378,7 @@ export default function InvoiceDetailClient({
                     {formatPhp(invoice.totalAmountPhp)}
                   </td>
                 </tr>
+                <tr><td colSpan={4} className="pt-2 text-right font-bold text-violet-900">Remaining balance</td><td className="pt-2 text-right font-bold text-amber-700">{formatPhp(invoice.balancePhp ?? invoice.totalAmountPhp)}</td></tr>
               </tfoot>
             </table>
           </div>
