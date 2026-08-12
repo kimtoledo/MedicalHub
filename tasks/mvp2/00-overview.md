@@ -17,7 +17,7 @@
 | `07-notifications.md` | Email booking confirmations, reminders, cancellations | 🔵 Active |
 | `08-recall-followup.md` | Recall rules, due dates, follow-up appointment creation | ✅ Done |
 | `09-reports.md` | Operational, financial, and inventory reports | ✅ Done |
-| `10-microsite-customization.md` | Theme presets, brand color, gallery, SEO fields | 🔜 Future |
+| `10-microsite-customization.md` | Theme presets, brand color, gallery, SEO fields | ✅ Done |
 | `11-subscription-operations.md` | Upgrade/downgrade, add-ons, usage enforcement | 🔜 Future |
 | `12-new-roles.md` | Cashier, Inventory Staff, granular permissions | 🔜 Future |
 | `13-ai-clinical-assistance.md` | AI note auto-fill, voice-to-text, follow-up & treatment suggestions | ✅ Done |

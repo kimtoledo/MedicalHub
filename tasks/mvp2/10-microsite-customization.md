@@ -1,6 +1,6 @@
 # Microsite Customization
 
-> **Status:** 🔜 Future — MVP 2
+> **Status:** ✅ Done — MVP 2 baseline
 > Basic microsite content editing is in MVP 1 (`tasks/mvp1/06-clinic-microsite.md`).
 
 ---
@@ -21,6 +21,11 @@ Clinics need more control over how their public microsite looks and what content
 - SEO fields: custom `<title>`, meta description, and Open Graph image per clinic.
 - Live preview before publishing changes.
 - Arbitrary unsafe HTML or JavaScript from tenants is explicitly blocked — all customization goes through structured fields only.
+
+### Delivered
+
+- Added approved theme presets, hex accent validation, section visibility toggles, structured SEO fields, and private gallery metadata.
+- Extended clinic settings and the public clinic detail boundary with tenant-scoped gallery/theme data; no arbitrary HTML or scripts are accepted.
 
 ---
 

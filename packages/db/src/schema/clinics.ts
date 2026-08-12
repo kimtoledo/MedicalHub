@@ -56,6 +56,15 @@ export const clinics = pgTable(
     facebookUrl: varchar('facebook_url', { length: 500 }),
     instagramUrl: varchar('instagram_url', { length: 500 }),
 
+    themePreset: varchar('theme_preset', { length: 40 }).notNull().default('violet-clean'),
+    brandAccent: varchar('brand_accent', { length: 7 }).notNull().default('#7C3AED'),
+    showGallery: boolean('show_gallery').notNull().default(true),
+    showTeam: boolean('show_team').notNull().default(true),
+    showServices: boolean('show_services').notNull().default(true),
+    seoTitle: varchar('seo_title', { length: 160 }),
+    seoDescription: varchar('seo_description', { length: 320 }),
+    ogImageUrl: varchar('og_image_url', { length: 1000 }),
+
     ...timestamps,
     ...deletedAt,
   },

@@ -21,4 +21,5 @@ export * from './service-pricing';
 export * from './inventory';
 export * from './notifications';
 export * from './recalls';
+export * from './microsite';
 export * from './helpers';

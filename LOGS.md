@@ -39,6 +39,12 @@ Updated manually after each session or merged task.
 - Added role/entitlement-protected JSON and CSV report endpoints plus responsive `/app/reports` summary UI
 - Verified repository-wide TypeScript checks and existing API test suite
 
+### ✅ MVP 2 microsite customization baseline
+- Added approved theme/accent settings, section toggles, structured SEO fields, and tenant-scoped gallery metadata
+- Extended clinic settings and public microsite APIs with validation that rejects arbitrary unsafe markup/scripts
+- Added migration `0021_tiny_random.sql` and applied it locally
+- Verified 239 passing API tests and repository-wide TypeScript checks
+
 ### ✅ MVP 2 treatment planning
 - Added tenant-scoped treatment plans and multi-item proposals directly from patient profiles
 - Added entitlement- and role-protected plan APIs with draft → approved → archived lifecycle and item progress/cancellation transitions
