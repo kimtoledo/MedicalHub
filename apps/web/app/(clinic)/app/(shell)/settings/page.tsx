@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Archive, BarChart3, BellRing, CreditCard, DollarSign, Settings, Shield } from "lucide-react";
 import ClinicMicrositeSettings from "@/components/app/ClinicMicrositeSettings";
+import AppPageError from "@/components/app/AppPageError";
 import { getClinicSession } from "@/lib/clinic-session";
-import { getClinicSettings } from "@/lib/clinic-settings";
+import { ClinicSettingsLoadError, getClinicSettings, type ClinicSettings } from "@/lib/clinic-settings";
+import { classifyClinicSettingsError } from "@/lib/clinic-settings-error";
 
 const operationalSettings = [
   {
@@ -45,16 +48,37 @@ const operationalSettings = [
 
 export default async function ClinicSettingsPage() {
   const identity = await getClinicSession();
-  const settings = identity ? await getClinicSettings(identity.clinicId) : null;
 
-  if (!identity || !settings) {
+  if (!identity) {
+    redirect("/cl-login");
+  }
+
+  if (!identity.isAdmin) {
+    return <AppPageError title="Clinic settings restricted" message="Clinic Owner or Admin access is required." kind="forbidden" />;
+  }
+
+  let settings: ClinicSettings;
+  try {
+    settings = await getClinicSettings(identity.clinicId);
+  } catch (caught) {
+    const kind = caught instanceof ClinicSettingsLoadError
+      ? classifyClinicSettingsError(caught.status)
+      : "service";
+
+    if (kind === "unauthenticated") {
+      redirect("/cl-login");
+    }
+    if (kind === "forbidden") {
+      return <AppPageError title="Clinic settings restricted" message="Your current clinic role does not allow settings access." kind="forbidden" />;
+    }
+    if (kind === "not-found") {
+      return <AppPageError title="Clinic not found" message="This clinic is unavailable or no longer active." kind="not-found" />;
+    }
     return (
-      <div className="p-6">
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-800">
-          <h1 className="font-semibold">Clinic settings unavailable</h1>
-          <p className="mt-1 text-sm">Clinic Owner or Admin access is required.</p>
-        </div>
-      </div>
+      <AppPageError
+        title="Clinic settings temporarily unavailable"
+        message="The server could not load clinic settings. Ask an administrator to confirm database migrations are current, then retry."
+      />
     );
   }
 

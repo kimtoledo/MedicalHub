@@ -42,7 +42,7 @@
 | `20-prescriptions-erx.md` | Prescription builder, immutable snapshot, PDF output | ✅ Done |
 | `21-file-uploads-clinical.md` | X-rays, photos, consent forms — private Object Storage, signed URLs | ✅ Done |
 | `22-self-service-account-profile.md` | Secure `/app/profile` account details and clinic access summary | ✅ Done |
-| `23-runtime-readiness-and-page-errors.md` | Migration readiness, dev/build isolation, truthful error states | 🔲 Queued |
+| `23-runtime-readiness-and-page-errors.md` | Migration readiness, dev/build isolation, truthful error states | ✅ Done |
 | `24-super-admin-dashboard-live.md` | Replace presentation KPIs/activity with live platform aggregates | 🔲 Queued |
 | `25-super-admin-settings.md` | Replace platform settings placeholder with safe controls | 🔲 Queued |
 | `26-clinic-staff-management.md` | Staff invitations, roles, branches, activation, permissions | 🔲 Queued |

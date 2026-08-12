@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./audit": "./src/write-audit.ts",
+    "./readiness": "./src/readiness.ts",
     "./schema": "./src/schema/index.ts"
   },
   "scripts": {

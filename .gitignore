@@ -3,6 +3,7 @@ node_modules/
 
 # Next.js build output
 apps/web/.next/
+apps/web/.next-build/
 apps/web/out/
 
 # Build artifacts

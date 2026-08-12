@@ -104,7 +104,21 @@ Now open `.env` and fill in the values:
 npm run db:migrate
 ```
 
-This connects to the Replit PostgreSQL using your `DATABASE_URL` and applies any pending migrations. It is safe to run multiple times (idempotent).
+This connects to the Replit PostgreSQL using your `DATABASE_URL`, applies pending migrations, and verifies the required schema objects exist. It is safe to run multiple times (idempotent). A non-zero exit means the API must not be started until the migration problem is resolved.
+
+To run only the non-mutating readiness check:
+
+```bash
+npm run db:check
+```
+
+If Drizzle says migrations succeeded but the readiness check reports migrations `0015`–`0033` objects as missing, run the one-time ordered reconciliation:
+
+```bash
+npm run db:reconcile-order
+```
+
+This executes the existing committed migrations through Drizzle with corrected in-memory ordering. It does not edit migration files or run manually copied SQL.
 
 ### 6. Start the frontend
 

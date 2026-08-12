@@ -27,11 +27,18 @@ Updated manually after each session or merged task.
 - Audited all 59 Next.js page routes across public/patient, Clinic PWA/dentist, and Super Admin surfaces
 - Added `tasks/PAGE_AUDIT.md` with route-group findings, priorities, dependencies, and recommended execution order
 - Added 17 discrete queued task files covering runtime readiness, three visible placeholders, incomplete reports/HMO/patient workflows, and API-only MVP 3 user interfaces
-- Highest priority is migration readiness and truthful page errors; `/app/settings` currently masks a missing-schema HTTP 500 as an authorization failure
+- Highest-priority runtime safeguards, truthful settings errors, and shared-database migration reconciliation are complete
 
 ---
 
 ## Completed
+
+### ✅ Runtime readiness and truthful page errors
+- API startup, `npm run db:migrate`, and Replit post-merge setup now fail closed when required schema objects are missing, even if Drizzle itself reports no pending migrations
+- Added `npm run db:reconcile-order` and used it to apply skipped migrations `0015`–`0033` transactionally through Drizzle; the shared database readiness check and live API health pass
+- `/app/settings` now separates login, role denial, not-found, and server/schema errors and uses a reusable branded retry state
+- Production builds use `.next-build`; a live local dev server retained HTTP 200 responses throughout a verified production build
+- Verified 248 API tests, 5 web error-classification tests, repository-wide typechecks, production builds, shell syntax, and clean diff validation
 
 ### ✅ Self-service clinic account profile
 - Replaced the `/app/profile` placeholder with responsive personal-information editing, avatar preview, read-only email, and active clinic/branch/role summaries

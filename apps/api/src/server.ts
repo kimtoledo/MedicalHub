@@ -63,6 +63,7 @@ import { createAccountProfileService } from './profile/service.js';
 
 const config = loadConfig();
 const database = await createDatabaseServices();
+await database.check();
 const auth = createAuthServices(config, database.db);
 const adminClinics = createAdminClinicListService(database.db);
 const adminClinicCreation = createAdminClinicCreationService(database.db);

@@ -12,7 +12,9 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "db:generate": "cd packages/db && npx drizzle-kit generate --config=drizzle.config.ts",
-    "db:migrate": "cd packages/db && DRIZZLE_MIGRATION=true npx drizzle-kit migrate --config=drizzle.config.ts",
+    "db:migrate": "cd packages/db && DRIZZLE_MIGRATION=true npx drizzle-kit migrate --config=drizzle.config.ts && cd ../.. && npm run db:check",
+    "db:check": "tsx scripts/check-database-readiness.ts",
+    "db:reconcile-order": "tsx scripts/reconcile-migration-order.ts && npm run db:check",
     "db:studio": "cd packages/db && npx drizzle-kit studio --config=drizzle.config.ts",
     "db:push": "cd packages/db && npx drizzle-kit push --config=drizzle.config.ts",
     "db:seed": "tsx scripts/seed-demo.ts"

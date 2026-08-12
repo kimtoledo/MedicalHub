@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
+import { assertDatabaseSchemaReady } from '@dentra/db/readiness';
 
 export type DatabaseServices = {
   db: DB;
@@ -14,6 +15,7 @@ export async function createDatabaseServices(): Promise<DatabaseServices> {
     db,
     check: async () => {
       await db.execute(sql`select 1`);
+      await assertDatabaseSchemaReady(db);
     },
     close: closeDatabase,
   };

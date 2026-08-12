@@ -3,19 +3,17 @@
 # Apply pending Drizzle migrations to the target database.
 #
 # Usage:
-#   DATABASE_URL=<url> ./scripts/apply-migrations.sh
+#   ./scripts/apply-migrations.sh
 #
 # Idempotent — safe to run multiple times. Already-applied migrations are
 # tracked by Drizzle in the __drizzle_migrations table.
 # =============================================================================
 set -e
 
-if [ -z "$DATABASE_URL" ]; then
-  echo "❌  DATABASE_URL is not set."
-  exit 1
-fi
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo "==> Applying migrations..."
-cd packages/db
-DRIZZLE_MIGRATION=true npx drizzle-kit migrate --config=drizzle.config.ts
-echo "✅  All pending migrations applied."
+cd "$PROJECT_ROOT"
+npm run db:migrate
+echo "✅  All pending migrations applied and schema verified."

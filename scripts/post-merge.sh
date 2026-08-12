@@ -16,14 +16,16 @@ npm install
 # DATABASE_URL is read from Replit Secrets automatically.
 # drizzle-kit migrate is non-interactive and idempotent.
 if [ -z "$DATABASE_URL" ]; then
-  echo "⚠️  [post-merge] DATABASE_URL is not set — skipping database migrations."
-  echo "    Add DATABASE_URL to Replit Secrets to enable automatic migrations."
+  echo "❌  [post-merge] DATABASE_URL is not set — deployment cannot continue safely."
+  echo "    Add DATABASE_URL to Replit Secrets, then rerun post-merge setup."
+  exit 1
 else
   echo "==> [post-merge] Applying database migrations..."
   cd packages/db
   DRIZZLE_MIGRATION=true npx drizzle-kit migrate --config=drizzle.config.ts
   cd ../..
-  echo "✅  [post-merge] Migrations applied."
+  npm run db:check
+  echo "✅  [post-merge] Migrations applied and schema verified."
 fi
 
 echo "✅  [post-merge] Setup complete."

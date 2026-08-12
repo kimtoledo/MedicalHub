@@ -8,7 +8,7 @@
 
 | Priority | Finding | Task |
 |---|---|---|
-| P0 | Pending migrations can break live pages; settings masks server errors as permission failures | [`mvp1/23-runtime-readiness-and-page-errors.md`](mvp1/23-runtime-readiness-and-page-errors.md) |
+| Complete | Runtime readiness, ordered migration reconciliation, and truthful settings errors | [`mvp1/23-runtime-readiness-and-page-errors.md`](mvp1/23-runtime-readiness-and-page-errors.md) |
 | P1 | Super Admin dashboard uses hard-coded KPIs and activity | [`mvp1/24-super-admin-dashboard-live.md`](mvp1/24-super-admin-dashboard-live.md) |
 | P2 | Super Admin Settings is a placeholder | [`mvp1/25-super-admin-settings.md`](mvp1/25-super-admin-settings.md) |
 | P1 | Clinic Staff page is a placeholder despite permission APIs | [`mvp1/26-clinic-staff-management.md`](mvp1/26-clinic-staff-management.md) |
@@ -61,7 +61,7 @@ No duplicate task was created for work already clearly scoped in these files:
 
 ## Recommended execution order
 
-1. P0 runtime readiness and truthful errors.
+1. ✅ P0 runtime readiness and truthful errors.
 2. Clinic staff management and dentist self-profile.
 3. Live Super Admin dashboard and complete reports/HMO workflows.
 4. Patient portal and trust workflows.
