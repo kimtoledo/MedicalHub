@@ -283,6 +283,8 @@ export const AuditAction = {
   VERIFICATION_APPROVED: 'verification.approved',
   VERIFICATION_REJECTED: 'verification.rejected',
   VERIFICATION_REVOKED: 'verification.revoked',
+  REVIEW_MODERATED: 'review.moderated',
+  REVIEW_RESPONDED: 'review.responded',
 
   RECALL_RULE_CREATED: 'recall_rule.created',
   RECALL_RULE_UPDATED: 'recall_rule.updated',

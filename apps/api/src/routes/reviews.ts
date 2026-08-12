@@ -1,0 +1,24 @@
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { z } from 'zod';
+import { hasClinicAccess, isSuperAdmin } from '../auth/authorization.js';
+import { resolveRequestAuthorization } from '../auth/request.js';
+import type { AuthServices } from '../auth/types.js';
+import type { ReviewService } from '../reviews/service.js';
+import { ReviewError } from '../reviews/service.js';
+import { postgresUuidSchema } from '../validation.js';
+const clinic = z.object({ clinicId: postgresUuidSchema });
+const dentist = z.object({ dentistId: postgresUuidSchema });
+const review = z.object({ reviewId: postgresUuidSchema });
+const submit = z.object({ clinicId: postgresUuidSchema, appointmentId: postgresUuidSchema, rating: z.number().int().min(1).max(5), comment: z.string().trim().min(3).max(2000) }).strict();
+const response = z.object({ response: z.string().trim().min(3).max(2000) }).strict();
+const moderation = z.object({ status: z.enum(['approved', 'rejected', 'hidden']), reason: z.string().trim().min(3).max(1000) }).strict();
+const actor = (request: FastifyRequest, auth: { user: { id: string; email: string } }) => ({ id: auth.user.id, email: auth.user.email, ipAddress: request.ip, userAgent: request.headers['user-agent'] });
+function sendError(reply: any, caught: unknown) { if (caught instanceof ReviewError) return reply.status(caught.statusCode).send({ success: false, error: { code: caught.code, message: caught.message } }); throw caught; }
+export async function registerReviewRoutes(app: FastifyInstance, options: { auth: AuthServices; reviews: ReviewService }) {
+  app.get('/v1/public/clinics/:clinicId/reviews', async (request, reply) => { const parsed = clinic.safeParse(request.params); if (!parsed.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid clinic ID' } }); return reply.send({ success: true, data: await options.reviews.listPublic(parsed.data.clinicId) }); });
+  app.get('/v1/public/dentists/:dentistId/reviews', async (request, reply) => { const parsed = dentist.safeParse(request.params); const query = clinic.safeParse(request.query); if (!parsed.success || !query.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Clinic context is required' } }); return reply.send({ success: true, data: await options.reviews.listPublic(query.data.clinicId, parsed.data.dentistId) }); });
+  app.post('/v1/patient/reviews', async (request, reply) => { const body = submit.safeParse(request.body); if (!body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid review' } }); try { return reply.status(201).send({ success: true, data: await options.reviews.submit(request.cookies.dentra_patient_session, body.data) }); } catch (caught) { return sendError(reply, caught); } });
+  app.get('/v1/admin/reviews', async (request, reply) => { const auth = await resolveRequestAuthorization(request, options.auth); if (!auth || !isSuperAdmin(auth)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Super Admin access is required' } }); return reply.send({ success: true, data: await options.reviews.listPending() }); });
+  app.patch('/v1/admin/reviews/:reviewId', async (request, reply) => { const parsed = review.safeParse(request.params); const body = moderation.safeParse(request.body); const auth = await resolveRequestAuthorization(request, options.auth); if (!parsed.success || !body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid moderation action' } }); if (!auth || !isSuperAdmin(auth)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Super Admin access is required' } }); try { return reply.send({ success: true, data: await options.reviews.moderate(parsed.data.reviewId, body.data, actor(request, auth)) }); } catch (caught) { return sendError(reply, caught); } });
+  app.post('/v1/clinic/:clinicId/reviews/:reviewId/response', async (request, reply) => { const parsed = clinic.extend({ reviewId: postgresUuidSchema }).safeParse(request.params); const body = response.safeParse(request.body); const auth = await resolveRequestAuthorization(request, options.auth); if (!parsed.success || !body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid response' } }); if (!auth || !hasClinicAccess(auth, parsed.data.clinicId, ['clinic_owner', 'clinic_admin'])) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic administrator access is required' } }); try { return reply.send({ success: true, data: await options.reviews.respond(parsed.data.clinicId, parsed.data.reviewId, body.data.response, actor(request, auth)) }); } catch (caught) { return sendError(reply, caught); } });
+}

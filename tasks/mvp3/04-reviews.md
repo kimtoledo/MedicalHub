@@ -1,6 +1,6 @@
 # Reviews
 
-> **Status:** 🔜 Future — MVP 3
+> **Status:** ✅ Done — MVP 3 baseline
 
 ---
 
@@ -19,6 +19,11 @@ Patient reviews build trust for clinics and dentists. Reviews must be tied to co
 - Patients can report a review as inappropriate; Dentra.ph moderators can remove it with a reason.
 - Anti-abuse controls: rate limiting, one review per patient per appointment.
 - Average rating is displayed on the clinic microsite and dentist profile.
+
+### Delivered
+
+- Added completed-appointment and explicitly linked-patient eligibility checks, one-review-per-appointment uniqueness, rating/comment validation, and moderation states.
+- Added public approved-review aggregates, clinic responses, Super Admin moderation, and audit records; pending/rejected/hidden content is never public.
 
 ---
 

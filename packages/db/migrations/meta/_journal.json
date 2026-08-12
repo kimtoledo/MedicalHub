@@ -190,6 +190,13 @@
       "when": 1786501426551,
       "tag": "0026_volatile_pet_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1786501565506,
+      "tag": "0027_ambitious_sage",
+      "breakpoints": true
     }
   ]
 }

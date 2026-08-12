@@ -73,6 +73,11 @@ Updated manually after each session or merged task.
 - Added protected clinic submission and Super Admin moderation APIs; public profiles never expose document references
 - Added migration `0026_volatile_pet_avengers.sql` and applied it locally
 
+### ✅ MVP 3 reviews baseline
+- Added completed-appointment and explicit patient-link eligibility, one-review-per-appointment constraint, moderation states, and public aggregates
+- Added clinic responses and Super Admin moderation APIs with audit events
+- Added migration `0027_ambitious_sage.sql` and applied it locally
+
 ### ✅ MVP 2 treatment planning
 - Added tenant-scoped treatment plans and multi-item proposals directly from patient profiles
 - Added entitlement- and role-protected plan APIs with draft → approved → archived lifecycle and item progress/cancellation transitions
