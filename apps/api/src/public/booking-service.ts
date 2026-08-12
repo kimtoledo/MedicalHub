@@ -109,7 +109,7 @@ export function createPublicBookingService(database: DB): PublicBookingService {
   const loadContext = async (input: AvailabilityInput) => {
     const [context] = await database.select({ clinicId: clinics.id, clinicName: clinics.name, branchId: branches.id, branchName: branches.name, operatingHours: branches.operatingHours, serviceId: services.id, serviceName: services.name, durationMinutes: services.durationMinutes })
       .from(clinics).innerJoin(branches, eq(branches.clinicId, clinics.id)).innerJoin(services, eq(services.clinicId, clinics.id))
-      .where(and(eq(clinics.slug, input.clinicSlug), eq(clinics.publicationStatus, 'published'), inArray(clinics.status, ['trial', 'active']), isNull(clinics.deletedAt), eq(branches.id, input.branchId), eq(branches.isActive, true), isNull(branches.deletedAt), eq(services.id, input.serviceId), eq(services.isActive, 'true'))).limit(1);
+      .where(and(eq(clinics.slug, input.clinicSlug), eq(clinics.publicationStatus, 'published'), inArray(clinics.status, ['trial', 'active']), isNull(clinics.deletedAt), eq(branches.id, input.branchId), eq(branches.isActive, true), isNull(branches.deletedAt), eq(services.id, input.serviceId), eq(services.isActive, 'true'), eq(services.isBookable, true))).limit(1);
     if (!context) throw new PublicBookingError('BOOKING_CONTEXT_UNAVAILABLE', 'The selected clinic, branch, or service is unavailable', 404);
     const assignments = await database.select({ assignmentId: dentistBranchAssignments.id, dentistId: dentists.id, firstName: dentists.firstName, lastName: dentists.lastName })
       .from(dentistBranchAssignments).innerJoin(dentists, eq(dentistBranchAssignments.dentistId, dentists.id))
@@ -131,7 +131,7 @@ export function createPublicBookingService(database: DB): PublicBookingService {
     book: async (input, request) => database.transaction(async (transaction) => {
       const [context] = await transaction.select({ clinicId: clinics.id, clinicName: clinics.name, branchId: branches.id, branchName: branches.name, operatingHours: branches.operatingHours, serviceId: services.id, serviceName: services.name, durationMinutes: services.durationMinutes })
         .from(clinics).innerJoin(branches, eq(branches.clinicId, clinics.id)).innerJoin(services, eq(services.clinicId, clinics.id))
-        .where(and(eq(clinics.slug, input.clinicSlug), eq(clinics.publicationStatus, 'published'), inArray(clinics.status, ['trial', 'active']), isNull(clinics.deletedAt), eq(branches.id, input.branchId), eq(branches.isActive, true), isNull(branches.deletedAt), eq(services.id, input.serviceId), eq(services.isActive, 'true'))).limit(1);
+        .where(and(eq(clinics.slug, input.clinicSlug), eq(clinics.publicationStatus, 'published'), inArray(clinics.status, ['trial', 'active']), isNull(clinics.deletedAt), eq(branches.id, input.branchId), eq(branches.isActive, true), isNull(branches.deletedAt), eq(services.id, input.serviceId), eq(services.isActive, 'true'), eq(services.isBookable, true))).limit(1);
       if (!context) throw new PublicBookingError('BOOKING_CONTEXT_UNAVAILABLE', 'The selected clinic, branch, or service is unavailable', 404);
       const minutes = duration(context.durationMinutes); const validSlots = generatedSlots(parseHours(context.operatingHours, input.date), input.date, minutes);
       const requested = validSlots.find((slot) => slot.startsAt === new Date(input.startsAt).toISOString());

@@ -1,6 +1,6 @@
 # Service Catalog and Pricing
 
-> **Status:** 🔜 Future — MVP 2
+> **Status:** ✅ Done — tenant-scoped service catalog and effective pricing shipped
 
 ---
 

@@ -32,6 +32,16 @@ _No active implementation task._
 - Added migration `0015_useful_nocturne.sql`, enabled the treatment-plans entitlement for Professional and Enterprise packages, and verified migration application
 - Verified 231 passing API tests, repository-wide TypeScript checks, and clean diff validation
 
+### ✅ MVP 2 service catalog and pricing
+- Added service category, duration, active/inactive, and public-booking visibility controls to the clinic catalog
+- Added tenant-scoped catalog APIs for clinic admins with canonical service-catalog entitlement and audit events
+- Added effective-dated clinic base prices and optional branch overrides with history and safe clear/fallback behavior
+- Updated invoice generation to resolve the effective branch price while preserving immutable invoice line-item snapshots
+- Public directories and booking now exclude inactive or internal-only services
+- Added responsive catalog management at `/app/settings/services`, including branch pricing view and price history
+- Added migration `0016_opposite_zemo.sql`, backfilled existing service prices, enabled Professional/Enterprise catalog access, and verified local migration application
+- Verified 234 passing API tests, repository-wide TypeScript checks, and web/API production builds
+
 ### ✅ MVP 1 post-merge acceptance audit
 - Rechecked every MVP 1 task and implementation step after migration-history/content merges; Tasks 01–21 are now evidence-marked and the release checklist covers Increment 5 business basics
 - Enforced canonical feature entitlements and clinic-role authorization on every direct billing, payment, prescription, and clinical-file API, not only sidebar visibility

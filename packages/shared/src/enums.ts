@@ -102,6 +102,7 @@ export const FeatureKey = {
   // Billing features (MVP 1 lite → MVP 2 full)
   BILLING_INVOICES: 'billing.invoices',
   BILLING_PAYMENTS: 'billing.payments',
+  SERVICE_CATALOG: 'billing.service_catalog',
   PRESCRIPTIONS: 'clinical.prescriptions',
 
   // Inventory (MVP 2)
@@ -245,6 +246,12 @@ export const AuditAction = {
   INVOICE_PAID:      'invoice.paid',
   INVOICE_VOIDED:    'invoice.voided',
   PAYMENT_RECORDED:  'payment.recorded',
+
+  // Service catalog and pricing
+  SERVICE_CREATED: 'service.created',
+  SERVICE_UPDATED: 'service.updated',
+  SERVICE_STATUS_CHANGED: 'service.status_changed',
+  SERVICE_PRICE_CHANGED: 'service.price_changed',
 
   // Prescriptions
   PRESCRIPTION_ISSUED: 'prescription.issued',

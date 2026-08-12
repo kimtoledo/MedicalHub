@@ -37,14 +37,14 @@ export function createPublicDirectoryService(database: DB): PublicDirectoryServi
       const where = and(publicClinic,
         input.search ? or(ilike(clinics.name, search), ilike(clinics.slug, search), ilike(clinics.description, search)) : undefined,
         input.location ? or(ilike(clinics.city, location), ilike(clinics.province, location), exists(database.select({ id: branches.id }).from(branches).where(and(eq(branches.clinicId, clinics.id), eq(branches.isActive, true), isNull(branches.deletedAt), or(ilike(branches.city, location), ilike(branches.province, location)))))) : undefined,
-        input.service ? exists(database.select({ id: services.id }).from(services).where(and(eq(services.clinicId, clinics.id), eq(services.isActive, 'true'), ilike(services.name, service)))) : undefined,
+        input.service ? exists(database.select({ id: services.id }).from(services).where(and(eq(services.clinicId, clinics.id), eq(services.isActive, 'true'), eq(services.isBookable, true), ilike(services.name, service)))) : undefined,
       );
       const [totalRow] = await database.select({ total: count(clinics.id) }).from(clinics).where(where); const total = totalRow?.total ?? 0; const totalPages = Math.max(1, Math.ceil(total / input.pageSize)); const page = Math.min(input.page, totalPages);
       const rows = await database.select({ id: clinics.id, name: clinics.name, slug: clinics.slug, description: clinics.description, logoUrl: clinics.logoUrl, city: clinics.city, province: clinics.province }).from(clinics).where(where).orderBy(desc(clinics.createdAt), clinics.name).limit(input.pageSize).offset((page - 1) * input.pageSize);
       const ids = rows.map((row) => row.id);
       const [branchRows, serviceRows] = ids.length ? await Promise.all([
         database.select({ clinicId: branches.clinicId, city: branches.city, province: branches.province }).from(branches).where(and(inArray(branches.clinicId, ids), eq(branches.isActive, true), isNull(branches.deletedAt))),
-        database.select({ clinicId: services.clinicId, name: services.name }).from(services).where(and(inArray(services.clinicId, ids), eq(services.isActive, 'true'))).orderBy(services.name),
+        database.select({ clinicId: services.clinicId, name: services.name }).from(services).where(and(inArray(services.clinicId, ids), eq(services.isActive, 'true'), eq(services.isBookable, true))).orderBy(services.name),
       ]) : [[], []];
       return { items: rows.map((row) => ({ ...row, locations: [...new Set(branchRows.filter((branch) => branch.clinicId === row.id).map((branch) => [branch.city, branch.province].filter(Boolean).join(', ')).filter(Boolean))], services: serviceRows.filter((item) => item.clinicId === row.id).map((item) => item.name) })), pagination: { page, pageSize: input.pageSize, total, totalPages } };
     },
@@ -72,7 +72,7 @@ export function createPublicDirectoryService(database: DB): PublicDirectoryServi
       if (!clinic) return null;
       const [branchRows, serviceRows, dentistRows] = await Promise.all([
         database.select({ id: branches.id, name: branches.name, phone: branches.phone, email: branches.email, address: branches.address, city: branches.city, province: branches.province, mapUrl: branches.mapUrl, operatingHours: branches.operatingHours }).from(branches).where(and(eq(branches.clinicId, clinic.id), eq(branches.isActive, true), isNull(branches.deletedAt))).orderBy(desc(branches.isMain), branches.name),
-        database.select({ id: services.id, name: services.name, description: services.description, durationMinutes: services.durationMinutes }).from(services).where(and(eq(services.clinicId, clinic.id), eq(services.isActive, 'true'))).orderBy(services.name),
+        database.select({ id: services.id, name: services.name, description: services.description, durationMinutes: services.durationMinutes }).from(services).where(and(eq(services.clinicId, clinic.id), eq(services.isActive, 'true'), eq(services.isBookable, true))).orderBy(services.name),
         database.select({ id: dentists.id, firstName: dentists.firstName, lastName: dentists.lastName, slug: dentists.slug, specialty: dentists.specialty, photoUrl: dentists.photoUrl, branchId: branches.id, branchName: branches.name }).from(dentistBranchAssignments).innerJoin(dentists, eq(dentistBranchAssignments.dentistId, dentists.id)).innerJoin(branches, eq(dentistBranchAssignments.branchId, branches.id)).where(and(eq(dentistBranchAssignments.clinicId, clinic.id), eq(dentistBranchAssignments.isActive, 'true'), eq(branches.isActive, true), isNull(branches.deletedAt), publicDentist)).orderBy(dentists.lastName, dentists.firstName, branches.name),
       ]);
       const dentistMap = new Map<string, PublicClinicDetail['dentists'][number]>();
@@ -85,7 +85,7 @@ export function createPublicDirectoryService(database: DB): PublicDirectoryServi
       if (!dentist) return null;
       const affiliationRows = await database.select({ assignmentId: dentistBranchAssignments.id, clinicId: clinics.id, clinicName: clinics.name, clinicSlug: clinics.slug, clinicLogoUrl: clinics.logoUrl, branchId: branches.id, branchName: branches.name, address: branches.address, city: branches.city, province: branches.province }).from(dentistBranchAssignments).innerJoin(clinics, eq(dentistBranchAssignments.clinicId, clinics.id)).innerJoin(branches, eq(dentistBranchAssignments.branchId, branches.id)).where(and(eq(dentistBranchAssignments.dentistId, dentist.id), eq(dentistBranchAssignments.isActive, 'true'), eq(branches.isActive, true), isNull(branches.deletedAt), publicClinic)).orderBy(clinics.name, branches.name);
       const clinicIds = [...new Set(affiliationRows.map((row) => row.clinicId))];
-      const serviceRows = clinicIds.length ? await database.select({ clinicId: services.clinicId, name: services.name }).from(services).where(and(inArray(services.clinicId, clinicIds), eq(services.isActive, 'true'))).orderBy(services.name) : [];
+      const serviceRows = clinicIds.length ? await database.select({ clinicId: services.clinicId, name: services.name }).from(services).where(and(inArray(services.clinicId, clinicIds), eq(services.isActive, 'true'), eq(services.isBookable, true))).orderBy(services.name) : [];
       return { ...dentist, affiliations: affiliationRows.map((row) => ({ ...row, services: serviceRows.filter((service) => service.clinicId === row.clinicId).map((service) => service.name) })) };
     },
   };

@@ -17,4 +17,5 @@ export * from './ai-interactions';
 export * from './remote-assessments';
 export * from './hmo';
 export * from './treatment-plans';
+export * from './service-pricing';
 export * from './helpers';

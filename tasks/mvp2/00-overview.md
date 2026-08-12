@@ -9,7 +9,7 @@
 | File | What | Status |
 |------|------|--------|
 | `01-treatment-planning.md` | Proposed treatment plans, multi-item, status tracking | ✅ Done |
-| `02-service-catalog-pricing.md` | Clinic procedure catalog, branch pricing, price history | 🔜 Future |
+| `02-service-catalog-pricing.md` | Clinic procedure catalog, branch pricing, price history | ✅ Done |
 | `03-billing-payments.md` | Invoices, partial payments, refunds, audit | 🔜 Future |
 | `04-prescriptions.md` | Prescription records, printable output, immutable snapshot | 🔜 Future |
 | `05-clinical-files-media.md` | Radiographs, photos, consent docs, private storage | 🔜 Future |

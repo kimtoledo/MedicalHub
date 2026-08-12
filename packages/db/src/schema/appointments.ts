@@ -1,4 +1,4 @@
-import { index, numeric, pgEnum, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, index, numeric, pgEnum, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { branches } from './branches';
 import { clinics } from './clinics';
 import { dentists } from './dentists';
@@ -27,11 +27,14 @@ export const services = pgTable(
       .notNull()
       .references(() => clinics.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 200 }).notNull(),
+    category: varchar('category', { length: 100 }).notNull().default('General'),
     description: text('description'),
     /** Duration in minutes */
     durationMinutes: varchar('duration_minutes', { length: 10 }).notNull().default('30'),
     /** Price in PHP (two decimal places). NULL means price not yet set. */
     pricePhp: numeric('price_php', { precision: 10, scale: 2 }),
+    /** Whether this service is visible in public booking flows. */
+    isBookable: boolean('is_bookable').notNull().default(true),
     /** Whether this service is reimbursable by HMO providers */
     isHmoCovered: varchar('is_hmo_covered', { length: 5 }).notNull().default('false'),
     /** Standard HMO reimbursement rate in PHP (may differ from clinic price) */

@@ -2,6 +2,7 @@ import { and, count, desc, eq, gte, ilike, inArray, isNull, lt, or, sql } from '
 import type { DB } from '@dentra/db';
 import { writeAudit } from '@dentra/db/audit';
 import { AuditAction } from '@dentra/shared';
+import { getEffectiveServicePrice } from './service-catalog-service.js';
 import {
   branches,
   clinics,
@@ -418,8 +419,15 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
         .leftJoin(services, and(eq(treatmentRecords.serviceId, services.id), eq(services.clinicId, clinicId)))
         .where(and(eq(treatmentRecords.encounterId, encounterId), eq(treatmentRecords.clinicId, clinicId)));
 
+      const pricedRecords = await Promise.all(records.map(async (record) => ({
+        ...record,
+        servicePrice: record.serviceId
+          ? (await getEffectiveServicePrice(db, clinicId, record.serviceId, encounter.branchId, new Date(), record.servicePrice)).pricePhp
+          : null,
+      })));
+
       // Validate: must have at least one treatment record to invoice.
-      if (records.length === 0) {
+      if (pricedRecords.length === 0) {
         throw new BillingError(
           'INVALID_STATE',
           'Cannot generate an invoice for an encounter with no treatment records',
@@ -428,7 +436,7 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
 
       // Validate: every treatment record must have a positive price configured.
       // Prevent zero-value official receipts; staff must set prices before invoicing.
-      const unpricedServices = records.filter((r) => {
+      const unpricedServices = pricedRecords.filter((r) => {
         const price = parseFloat(r.servicePrice ?? '0');
         return !isFinite(price) || price <= 0;
       });
@@ -441,7 +449,7 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
       }
 
       // Build line items and total
-      const lineItemsToInsert = records.map((r) => ({
+      const lineItemsToInsert = pricedRecords.map((r) => ({
         invoiceId: '', // filled after insert
         clinicId,
         serviceId: r.serviceId ?? null,

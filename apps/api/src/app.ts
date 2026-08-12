@@ -48,6 +48,7 @@ import type { ClinicOdontogramService } from './clinic/odontogram-service.js';
 import type { ClinicTreatmentsService } from './clinic/treatments-service.js';
 import type { ClinicDashboardService } from './clinic/dashboard-service.js';
 import type { ClinicTreatmentPlansService } from './clinic/treatment-plans-service.js';
+import type { ClinicServiceCatalogService } from './clinic/service-catalog-service.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
 import { registerAdminDentistRoutes } from './routes/admin-dentists.js';
@@ -66,6 +67,7 @@ import { registerClinicTreatmentRoutes } from './routes/clinic-treatments.js';
 import { registerClinicTreatmentPlanRoutes } from './routes/clinic-treatment-plans.js';
 import { registerClinicDashboardRoutes } from './routes/clinic-dashboard.js';
 import { registerClinicBillingRoutes } from './routes/clinic-billing.js';
+import { registerClinicServiceCatalogRoutes } from './routes/clinic-service-catalog.js';
 import { registerClinicPrescriptionRoutes } from './routes/clinic-prescriptions.js';
 import { registerClinicFilesRoutes } from './routes/clinic-files.js';
 import { registerClinicAiRoutes } from './routes/clinic-ai.js';
@@ -110,6 +112,7 @@ export type BuildAppOptions = {
   clinicTreatments?: ClinicTreatmentsService;
   clinicDashboard?: ClinicDashboardService;
   clinicTreatmentPlans?: ClinicTreatmentPlansService;
+  clinicServiceCatalog?: ClinicServiceCatalogService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -224,6 +227,13 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         auth: options.auth,
         entitlements: options.entitlements,
         treatmentPlans: options.clinicTreatmentPlans,
+      });
+    }
+    if (options.clinicServiceCatalog && options.entitlements) {
+      await registerClinicServiceCatalogRoutes(app, {
+        auth: options.auth,
+        entitlements: options.entitlements,
+        serviceCatalog: options.clinicServiceCatalog,
       });
     }
     if (options.clinicDashboard && options.entitlements) {
