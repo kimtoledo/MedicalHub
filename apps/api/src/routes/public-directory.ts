@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { PublicDirectoryService } from '../public/directory-service.js';
 const base = { search: z.string().trim().max(100).default(''), page: z.coerce.number().int().min(1).default(1), pageSize: z.coerce.number().int().min(1).max(48).default(12) };
-const clinicQuery = z.object({ ...base, location: z.string().trim().max(100).default(''), service: z.string().trim().max(100).default('') });
+const clinicQuery = z.object({ ...base, location: z.string().trim().max(100).default(''), service: z.string().trim().max(100).default(''), latitude: z.coerce.number().min(-90).max(90).optional(), longitude: z.coerce.number().min(-180).max(180).optional(), maxDistanceKm: z.coerce.number().positive().max(500).optional() });
 const dentistQuery = z.object({ ...base, specialty: z.string().trim().max(100).default('') });
 const clinicParams = z.object({ slug: z.string().min(2).max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/) });
 export async function registerPublicDirectoryRoutes(app: FastifyInstance, options: { directory: PublicDirectoryService }) {

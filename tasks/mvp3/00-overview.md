@@ -9,7 +9,7 @@
 | File | What | Status |
 |------|------|--------|
 | `01-patient-portal.md` | Secure patient account, appointment/invoice access | ✅ Done |
-| `02-search-discovery.md` | Location-aware clinic/dentist search, SEO directories | 🔜 Future |
+| `02-search-discovery.md` | Location-aware clinic/dentist search, SEO directories | 🔵 Active |
 | `03-verification-moderation.md` | Dentist/clinic verification workflow, trust badges | 🔜 Future |
 | `04-reviews.md` | Patient review submission, moderation, clinic response | 🔜 Future |
 | `05-enterprise-multibranch.md` | Organization hierarchy, consolidated reporting, regional roles | 🔜 Future |

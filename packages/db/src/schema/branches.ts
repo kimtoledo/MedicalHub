@@ -1,4 +1,4 @@
-import { boolean, index, pgTable, text, varchar } from 'drizzle-orm/pg-core';
+import { boolean, index, numeric, pgTable, text, varchar } from 'drizzle-orm/pg-core';
 import { uuid } from 'drizzle-orm/pg-core';
 import { clinics } from './clinics';
 import { id, timestamps, deletedAt } from './helpers';
@@ -27,6 +27,8 @@ export const branches = pgTable(
     city: varchar('city', { length: 100 }),
     province: varchar('province', { length: 100 }),
     mapUrl: varchar('map_url', { length: 500 }),
+    latitude: numeric('latitude', { precision: 9, scale: 6 }),
+    longitude: numeric('longitude', { precision: 9, scale: 6 }),
     /** JSON object keyed by weekday with public opening-hour labels. */
     operatingHours: text('operating_hours'),
 

@@ -3,10 +3,10 @@ import type { DB } from '@dentra/db';
 import { branches, clinicGalleryItems, clinics, dentistBranchAssignments, dentists, services } from '@dentra/db/schema';
 
 export type PublicListInput = { search: string; page: number; pageSize: number };
-export type PublicClinicListInput = PublicListInput & { location: string; service: string };
+export type PublicClinicListInput = PublicListInput & { location: string; service: string; latitude?: number; longitude?: number; maxDistanceKm?: number };
 export type PublicDentistListInput = PublicListInput & { specialty: string };
 export type PublicDirectoryService = {
-  listClinics: (input: PublicClinicListInput) => Promise<{ items: Array<{ id: string; name: string; slug: string; description: string | null; logoUrl: string | null; city: string | null; province: string | null; locations: string[]; services: string[] }>; pagination: Pagination }>;
+  listClinics: (input: PublicClinicListInput) => Promise<{ items: Array<{ id: string; name: string; slug: string; description: string | null; logoUrl: string | null; city: string | null; province: string | null; locations: string[]; services: string[]; distanceKm?: number | null }>; pagination: Pagination }>;
   listDentists: (input: PublicDentistListInput) => Promise<{ items: Array<{ id: string; firstName: string; lastName: string; slug: string; specialty: string | null; bio: string | null; photoUrl: string | null; affiliatedClinicCount: number }>; pagination: Pagination }>;
   summary: () => Promise<{ publishedClinicCount: number; publishedDentistCount: number }>;
   getClinicBySlug: (slug: string) => Promise<PublicClinicDetail | null>;
@@ -45,10 +45,12 @@ export function createPublicDirectoryService(database: DB): PublicDirectoryServi
       const rows = await database.select({ id: clinics.id, name: clinics.name, slug: clinics.slug, description: clinics.description, logoUrl: clinics.logoUrl, city: clinics.city, province: clinics.province }).from(clinics).where(where).orderBy(desc(clinics.createdAt), clinics.name).limit(input.pageSize).offset((page - 1) * input.pageSize);
       const ids = rows.map((row) => row.id);
       const [branchRows, serviceRows] = ids.length ? await Promise.all([
-        database.select({ clinicId: branches.clinicId, city: branches.city, province: branches.province }).from(branches).where(and(inArray(branches.clinicId, ids), eq(branches.isActive, true), isNull(branches.deletedAt))),
+        database.select({ clinicId: branches.clinicId, city: branches.city, province: branches.province, latitude: branches.latitude, longitude: branches.longitude }).from(branches).where(and(inArray(branches.clinicId, ids), eq(branches.isActive, true), isNull(branches.deletedAt))),
         database.select({ clinicId: services.clinicId, name: services.name }).from(services).where(and(inArray(services.clinicId, ids), eq(services.isActive, 'true'), eq(services.isBookable, true))).orderBy(services.name),
       ]) : [[], []];
-      return { items: rows.map((row) => ({ ...row, locations: [...new Set(branchRows.filter((branch) => branch.clinicId === row.id).map((branch) => [branch.city, branch.province].filter(Boolean).join(', ')).filter(Boolean))], services: serviceRows.filter((item) => item.clinicId === row.id).map((item) => item.name) })), pagination: { page, pageSize: input.pageSize, total, totalPages } };
+      const distance = (lat: number, lng: number, branchLat: string | null, branchLng: string | null) => { if (branchLat === null || branchLng === null) return null; const r = 6371; const dLat = (Number(branchLat) - lat) * Math.PI / 180; const dLng = (Number(branchLng) - lng) * Math.PI / 180; const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat * Math.PI / 180) * Math.cos(Number(branchLat) * Math.PI / 180) * Math.sin(dLng / 2) ** 2; return r * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); };
+      const items = rows.map((row) => { const clinicBranches = branchRows.filter((branch) => branch.clinicId === row.id); const distances = input.latitude !== undefined && input.longitude !== undefined ? clinicBranches.map((branch) => distance(input.latitude!, input.longitude!, branch.latitude, branch.longitude)).filter((value): value is number => value !== null) : []; const distanceKm = distances.length ? Math.min(...distances) : null; return { ...row, distanceKm, locations: [...new Set(clinicBranches.map((branch) => [branch.city, branch.province].filter(Boolean).join(', ')).filter(Boolean))], services: serviceRows.filter((item) => item.clinicId === row.id).map((item) => item.name) }; }).filter((item) => input.maxDistanceKm === undefined || item.distanceKm === null || item.distanceKm <= input.maxDistanceKm).sort((a, b) => (a.distanceKm ?? Number.MAX_SAFE_INTEGER) - (b.distanceKm ?? Number.MAX_SAFE_INTEGER));
+      return { items, pagination: { page, pageSize: input.pageSize, total, totalPages } };
     },
     listDentists: async (input) => {
       const search = `%${input.search.trim()}%`; const specialty = `%${input.specialty.trim()}%`;

@@ -176,6 +176,13 @@
       "when": 1786501240702,
       "tag": "0024_clammy_trish_tilby",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1786501349528,
+      "tag": "0025_blushing_mariko_yashida",
+      "breakpoints": true
     }
   ]
 }

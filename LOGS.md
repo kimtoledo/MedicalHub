@@ -63,6 +63,11 @@ Updated manually after each session or merged task.
 - Added migration `0024_clammy_trish_tilby.sql` and applied it locally
 - Verified 239 passing API tests and repository-wide TypeScript checks
 
+### 🔄 MVP 3 search and discovery
+- Added validated branch coordinates and distance-aware public clinic directory results
+- Existing publication boundaries remain enforced; near-me UI, open-slot resolution, ranking, and structured data remain queued
+- Added migration `0025_blushing_mariko_yashida.sql` and applied it locally
+
 ### ✅ MVP 2 treatment planning
 - Added tenant-scoped treatment plans and multi-item proposals directly from patient profiles
 - Added entitlement- and role-protected plan APIs with draft → approved → archived lifecycle and item progress/cancellation transitions
