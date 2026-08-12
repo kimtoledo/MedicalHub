@@ -120,6 +120,12 @@ Updated manually after each session or merged task.
 - Added migration `0033_previous_franklin_richards.sql` and applied it locally
 - Remaining provider evaluation, annotation UI, diagnostics assistant, and clinical validation are explicitly queued
 
+### ✅ MVP 3 kiosk check-in baseline
+- Added `kiosk.checkin` entitlement and branch/today-scoped public lookup and check-in endpoints with rate limits and identity revalidation
+- Added touch-optimized `/kiosk/{branchId}` UI with masked patient display, confirmation, and 60-second inactivity reset
+- Kiosk check-ins use row locking, appointment status history, and identifier-only audit metadata; no clinical data is exposed
+- Verified repository-wide TypeScript checks and the existing 239-test API suite
+
 ### ✅ MVP 2 treatment planning
 - Added tenant-scoped treatment plans and multi-item proposals directly from patient profiles
 - Added entitlement- and role-protected plan APIs with draft → approved → archived lifecycle and item progress/cancellation transitions

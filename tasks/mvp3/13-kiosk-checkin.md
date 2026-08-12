@@ -1,6 +1,6 @@
 # Kiosk Self Check-In
 
-> **Status:** 🔜 Future — MVP 3
+> **Status:** ✅ Done — MVP 3 kiosk baseline
 > **Proposal alignment:** Executive Summary §5 — Phase 3 (Kiosk check-in for bigger clinics)
 
 ---
@@ -21,6 +21,13 @@ Larger multi-dentist clinics with high patient volumes need a self-service check
 - No clinical data (medical history, treatment records, chart) is ever displayed on the kiosk.
 - Kiosk auto-resets to the home screen after 60 seconds of inactivity.
 - Kiosk is feature-gated (`FeatureKey.KIOSK_CHECKIN`).
+
+### Delivered
+
+- Added feature-gated `/kiosk/{branchId}` touch UI with patient-number or last-name+DOB lookup, masked identity display, confirmation flow, and 60-second inactivity reset.
+- Added branch- and Manila-today-scoped public lookup/check-in APIs with rate limits and exact identity revalidation on check-in.
+- Kiosk responses contain appointment-safe fields only; no medical history, clinical notes, treatment records, or prescriptions are returned.
+- Check-in transitions are row-locked, recorded in appointment status history, and written to the immutable audit trail as a kiosk-originated event.
 
 ---
 

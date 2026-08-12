@@ -20,7 +20,7 @@
 | `10-offline-mode.md` | Secure, minimal offline clinical access (threat-modeled) | ⛔ Blocked |
 | `11-platform-operations.md` | Support tooling, tenant export, retention, security alerts | 🔵 Active |
 | `12-ai-imaging.md` | AI radiograph analysis, oral health scoring, AI diagnostics assistant | 🔵 Active |
-| `13-kiosk-checkin.md` | Tablet self-check-in for high-volume clinic branches | 🔜 Future |
+| `13-kiosk-checkin.md` | Tablet self-check-in for high-volume clinic branches | ✅ Done |
 
 ---
 

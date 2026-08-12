@@ -105,6 +105,8 @@ import { registerPlatformOperationsRoutes } from './routes/platform-operations.j
 import type { PlatformOperationsService } from './platform/operations-service.js';
 import { registerAiImagingRoutes } from './routes/ai-imaging.js';
 import type { AiImagingService } from './clinic/ai-imaging-service.js';
+import { registerKioskRoutes } from './routes/kiosk.js';
+import type { KioskService } from './kiosk/service.js';
 
 export type BuildAppOptions = {
   config: ApiConfig;
@@ -160,6 +162,7 @@ export type BuildAppOptions = {
   integrations?: IntegrationService;
   platformOperations?: PlatformOperationsService;
   aiImaging?: AiImagingService;
+  kiosk?: KioskService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -208,6 +211,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   }
   if (options.publicBooking) {
     await registerPublicBookingRoutes(app, { booking: options.publicBooking });
+  }
+  if (options.kiosk) {
+    await registerKioskRoutes(app, { kiosk: options.kiosk });
   }
   if (options.auth) {
     await registerAuthRoutes(app, { auth: options.auth, config: options.config });
