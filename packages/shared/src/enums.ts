@@ -260,6 +260,11 @@ export const AuditAction = {
   INVENTORY_ITEM_UPDATED: 'inventory.item_updated',
   INVENTORY_TRANSACTION_RECORDED: 'inventory.transaction_recorded',
 
+  // Notifications
+  NOTIFICATION_QUEUED: 'notification.queued',
+  NOTIFICATION_SENT: 'notification.sent',
+  NOTIFICATION_FAILED: 'notification.failed',
+
   // Prescriptions
   PRESCRIPTION_ISSUED: 'prescription.issued',
 

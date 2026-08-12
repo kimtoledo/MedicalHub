@@ -50,6 +50,7 @@ import type { ClinicDashboardService } from './clinic/dashboard-service.js';
 import type { ClinicTreatmentPlansService } from './clinic/treatment-plans-service.js';
 import type { ClinicServiceCatalogService } from './clinic/service-catalog-service.js';
 import type { ClinicInventoryService } from './clinic/inventory-service.js';
+import type { NotificationService } from './notifications/service.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
 import { registerAdminDentistRoutes } from './routes/admin-dentists.js';
@@ -116,6 +117,7 @@ export type BuildAppOptions = {
   clinicTreatmentPlans?: ClinicTreatmentPlansService;
   clinicServiceCatalog?: ClinicServiceCatalogService;
   clinicInventory?: ClinicInventoryService;
+  notifications?: NotificationService;
   logger?: FastifyServerOptions['logger'];
 };
 

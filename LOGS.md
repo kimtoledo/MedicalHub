@@ -18,7 +18,10 @@ Updated manually after each session or merged task.
 
 ## In Progress
 
-_No active implementation task._
+### 🔄 MVP 2 notifications
+- Added a tenant-aware notification outbox with email/SMS channel and delivery status tracking, deduplication keys, retry metadata, and provider adapter boundaries.
+- Public booking creation now queues non-sensitive email confirmation content when a patient email is provided.
+- Remaining: appointment reminder scheduling, cancellation/reschedule and recall event wiring, and production provider credentials.
 
 ---
 

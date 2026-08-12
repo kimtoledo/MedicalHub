@@ -14,7 +14,7 @@
 | `04-prescriptions.md` | Prescription records, printable output, immutable snapshot | ✅ Done |
 | `05-clinical-files-media.md` | Radiographs, photos, consent docs, private storage | ✅ Done |
 | `06-inventory.md` | Item master, stock in/out, low-stock alerts | ✅ Done |
-| `07-notifications.md` | Email booking confirmations, reminders, cancellations | 🔜 Future |
+| `07-notifications.md` | Email booking confirmations, reminders, cancellations | 🔵 Active |
 | `08-recall-followup.md` | Recall rules, due dates, follow-up appointment creation | 🔜 Future |
 | `09-reports.md` | Operational, financial, and inventory reports | 🔜 Future |
 | `10-microsite-customization.md` | Theme presets, brand color, gallery, SEO fields | 🔜 Future |

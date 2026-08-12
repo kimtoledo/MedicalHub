@@ -43,6 +43,7 @@ import { createClinicDashboardService } from './clinic/dashboard-service.js';
 import { createClinicTreatmentPlansService } from './clinic/treatment-plans-service.js';
 import { createClinicServiceCatalogService } from './clinic/service-catalog-service.js';
 import { createClinicInventoryService } from './clinic/inventory-service.js';
+import { createNotificationService } from './notifications/service.js';
 
 const config = loadConfig();
 const database = await createDatabaseServices();
@@ -71,7 +72,8 @@ const adminSubscriptions = createAdminSubscriptionListService(database.db);
 const adminAudit = createAdminAuditService(database.db);
 const entitlements = createEntitlementService(database.db);
 const publicDirectory = createPublicDirectoryService(database.db);
-const publicBooking = createPublicBookingService(database.db);
+const notifications = createNotificationService(database.db);
+const publicBooking = createPublicBookingService(database.db, notifications);
 const clinicSettings = createClinicSettingsService(database.db);
 const clinicWorkspace = createClinicWorkspaceService(database.db);
 const clinicPatients = createClinicPatientsService(database.db);
@@ -121,6 +123,7 @@ const app = await buildApp({
   clinicTreatmentPlans,
   clinicServiceCatalog,
   clinicInventory,
+  notifications,
 });
 
 app.addHook('onClose', async () => {

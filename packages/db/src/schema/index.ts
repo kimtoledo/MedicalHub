@@ -19,4 +19,5 @@ export * from './hmo';
 export * from './treatment-plans';
 export * from './service-pricing';
 export * from './inventory';
+export * from './notifications';
 export * from './helpers';

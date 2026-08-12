@@ -11,6 +11,8 @@ import {
   services,
 } from '@dentra/db/schema';
 import { AuditAction } from '@dentra/shared';
+import type { NotificationService } from '../notifications/service.js';
+import { bookingConfirmationNotification } from '../notifications/service.js';
 
 const MANILA_OFFSET = '+08:00';
 const activeStatuses = ['pending', 'confirmed', 'checked_in', 'in_progress'] as const;
@@ -105,7 +107,7 @@ export function overlaps(slot: AvailableSlot, busy: Array<{ startsAt: Date; ends
   return busy.some((item) => item.startsAt.getTime() < end && (item.endsAt?.getTime() ?? Number.POSITIVE_INFINITY) > start);
 }
 
-export function createPublicBookingService(database: DB): PublicBookingService {
+export function createPublicBookingService(database: DB, notifications?: NotificationService): PublicBookingService {
   const loadContext = async (input: AvailabilityInput) => {
     const [context] = await database.select({ clinicId: clinics.id, clinicName: clinics.name, branchId: branches.id, branchName: branches.name, operatingHours: branches.operatingHours, serviceId: services.id, serviceName: services.name, durationMinutes: services.durationMinutes })
       .from(clinics).innerJoin(branches, eq(branches.clinicId, clinics.id)).innerJoin(services, eq(services.clinicId, clinics.id))
@@ -149,6 +151,9 @@ export function createPublicBookingService(database: DB): PublicBookingService {
       const [created] = await transaction.insert(appointments).values({ clinicId: context.clinicId, branchId: context.branchId, serviceId: context.serviceId, dentistId: selected.dentistId, status: 'pending', startsAt: new Date(requested.startsAt), endsAt: new Date(requested.endsAt), patientFirstName: input.patientFirstName, patientLastName: input.patientLastName, patientPhone: input.patientPhone, patientEmail: input.patientEmail || null, chiefComplaint: input.chiefComplaint }).returning({ id: appointments.id });
       await transaction.insert(appointmentStatusHistory).values({ appointmentId: created.id, clinicId: context.clinicId, fromStatus: null, toStatus: 'pending', reason: 'Public online booking' });
       await writeAudit(transaction, { actorId: null, actorEmail: null, clinicId: context.clinicId, entityType: 'appointment', entityId: created.id, action: AuditAction.APPOINTMENT_CREATED, metadata: JSON.stringify({ source: 'public_booking', branchId: context.branchId, serviceId: context.serviceId, dentistId: selected.dentistId }), ipAddress: request.ipAddress, userAgent: request.userAgent });
+      if (notifications && input.patientEmail) {
+        await notifications.enqueue(transaction as unknown as DB, bookingConfirmationNotification({ clinicId: context.clinicId, patientEmail: input.patientEmail, appointmentId: created.id, clinicName: context.clinicName, branchName: context.branchName, startsAt: requested.startsAt, dedupeKey: `booking-confirmation:${created.id}` }));
+      }
       const stamp = input.date.replaceAll('-', '');
       return { appointmentId: created.id, confirmationNumber: `DNT-${stamp}-${created.id.slice(0, 8).toUpperCase()}`, clinicName: context.clinicName, branchName: context.branchName, serviceName: context.serviceName, dentistName: `Dr. ${selected.firstName} ${selected.lastName}`, startsAt: requested.startsAt, endsAt: requested.endsAt, status: 'pending' as const };
     }),
