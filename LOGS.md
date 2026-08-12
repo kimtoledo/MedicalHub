@@ -108,6 +108,12 @@ Updated manually after each session or merged task.
 - Added `docs/THREAT_MODEL_OFFLINE_MODE.md` with assets, trust boundaries, threats, and required controls
 - No offline PHI cache, device enrollment, or sync code was implemented; the task remains blocked pending independent security review and explicit product approval
 
+### 🔄 MVP 3 platform operations baseline
+- Added auditable clinic support-access requests with written justification and time-boxed Super Admin review decisions
+- Added tenant export/offboarding request state metadata and protected processing controls; no silent record access or destructive deletion is performed
+- Added migration `0032_curly_risque.sql` and applied it locally
+- Verified repository-wide TypeScript checks; the existing API test suite remains green
+
 ### ✅ MVP 2 treatment planning
 - Added tenant-scoped treatment plans and multi-item proposals directly from patient profiles
 - Added entitlement- and role-protected plan APIs with draft → approved → archived lifecycle and item progress/cancellation transitions

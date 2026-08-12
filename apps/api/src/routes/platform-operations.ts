@@ -1,0 +1,29 @@
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { z } from 'zod';
+import { hasClinicAccess, isSuperAdmin } from '../auth/authorization.js';
+import { resolveRequestAuthorization } from '../auth/request.js';
+import type { AuthServices } from '../auth/types.js';
+import type { PlatformOperationsService } from '../platform/operations-service.js';
+import { OperationsError } from '../platform/operations-service.js';
+import { postgresUuidSchema } from '../validation.js';
+
+const clinic = z.object({ clinicId: postgresUuidSchema });
+const requestId = z.object({ requestId: postgresUuidSchema });
+const reason = z.object({ reason: z.string().trim().min(10).max(2000) }).strict();
+const review = z.object({ status: z.enum(['approved', 'denied']) }).strict();
+const exportReview = z.object({ status: z.enum(['processing', 'ready', 'failed', 'cancelled']), failureReason: z.string().trim().max(500).optional() }).strict();
+const adminRoles = ['clinic_owner', 'clinic_admin'] as const;
+function actor(request: FastifyRequest, context: { user: { id: string; email: string } }) { return { id: context.user.id, email: context.user.email, ipAddress: request.ip, userAgent: request.headers['user-agent'] }; }
+function error(reply: FastifyReply, caught: unknown) { if (caught instanceof OperationsError) return reply.status(caught.statusCode).send({ success: false, error: { code: caught.code, message: caught.message } }); throw caught; }
+async function clinicAuth(request: FastifyRequest, reply: FastifyReply, auth: AuthServices, clinicId: string) { const context = await resolveRequestAuthorization(request, auth); if (!context) { await reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } }); return null; } if (!hasClinicAccess(context, clinicId, [...adminRoles])) { await reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic Owner or Admin access is required' } }); return null; } return context; }
+async function adminAuth(request: FastifyRequest, reply: FastifyReply, auth: AuthServices) { const context = await resolveRequestAuthorization(request, auth); if (!context) { await reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } }); return null; } if (!isSuperAdmin(context)) { await reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Super Admin access is required' } }); return null; } return context; }
+
+export async function registerPlatformOperationsRoutes(app: FastifyInstance, options: { auth: AuthServices; operations: PlatformOperationsService }) {
+  app.post('/v1/clinic/:clinicId/operations/support-access', async (request, reply) => { const p = clinic.safeParse(request.params); const b = reason.safeParse(request.body); if (!p.success || !b.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'A written support justification is required' } }); const context = await clinicAuth(request, reply, options.auth, p.data.clinicId); if (!context) return; try { return reply.status(201).send({ success: true, data: await options.operations.requestSupportAccess(p.data.clinicId, b.data.reason, actor(request, context)) }); } catch (caught) { return error(reply, caught); } });
+  app.post('/v1/clinic/:clinicId/operations/exports', async (request, reply) => { const p = clinic.safeParse(request.params); if (!p.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid clinic identifier' } }); const context = await clinicAuth(request, reply, options.auth, p.data.clinicId); if (!context) return; try { return reply.status(201).send({ success: true, data: await options.operations.requestExport(p.data.clinicId, actor(request, context)) }); } catch (caught) { return error(reply, caught); } });
+  app.get('/v1/admin/operations/support-access', async (request, reply) => { const context = await adminAuth(request, reply, options.auth); if (!context) return; return reply.send({ success: true, data: await options.operations.listSupportAccess() }); });
+  app.patch('/v1/admin/operations/support-access/:requestId', async (request, reply) => { const p = requestId.safeParse(request.params); const b = review.safeParse(request.body); if (!p.success || !b.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid support-access review' } }); const context = await adminAuth(request, reply, options.auth); if (!context) return; try { return reply.send({ success: true, data: await options.operations.reviewSupportAccess(p.data.requestId, b.data.status, actor(request, context)) }); } catch (caught) { return error(reply, caught); } });
+  app.get('/v1/admin/operations/exports', async (request, reply) => { const context = await adminAuth(request, reply, options.auth); if (!context) return; return reply.send({ success: true, data: await options.operations.listExports() }); });
+  app.patch('/v1/admin/operations/exports/:requestId', async (request, reply) => { const p = requestId.safeParse(request.params); const b = exportReview.safeParse(request.body); if (!p.success || !b.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid export status' } }); const context = await adminAuth(request, reply, options.auth); if (!context) return; try { return reply.send({ success: true, data: await options.operations.markExport(p.data.requestId, b.data.status, actor(request, context), b.data.failureReason) }); } catch (caught) { return error(reply, caught); } });
+  app.get('/v1/admin/operations/clinics', async (request, reply) => { const context = await adminAuth(request, reply, options.auth); if (!context) return; return reply.send({ success: true, data: await options.operations.activeClinics() }); });
+}

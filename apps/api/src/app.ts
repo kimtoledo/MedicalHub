@@ -101,6 +101,8 @@ import { registerCustomDomainRoutes } from './routes/custom-domains.js';
 import type { CustomDomainService } from './domains/service.js';
 import { registerIntegrationRoutes } from './routes/integrations.js';
 import type { IntegrationService } from './integrations/service.js';
+import { registerPlatformOperationsRoutes } from './routes/platform-operations.js';
+import type { PlatformOperationsService } from './platform/operations-service.js';
 
 export type BuildAppOptions = {
   config: ApiConfig;
@@ -154,6 +156,7 @@ export type BuildAppOptions = {
   payments?: PaymentService;
   customDomains?: CustomDomainService;
   integrations?: IntegrationService;
+  platformOperations?: PlatformOperationsService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -315,6 +318,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (options.integrations) {
       await registerIntegrationRoutes(app, { auth: options.auth, integrations: options.integrations });
+    }
+    if (options.platformOperations) {
+      await registerPlatformOperationsRoutes(app, { auth: options.auth, operations: options.platformOperations });
     }
     if (options.clinicDashboard && options.entitlements) {
       await registerClinicDashboardRoutes(app, { auth: options.auth, entitlements: options.entitlements, dashboard: options.clinicDashboard });

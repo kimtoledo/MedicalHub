@@ -1,6 +1,6 @@
 # Platform Operations Maturity
 
-> **Status:** 🔜 Future — MVP 3
+> **Status:** 🔵 Active — support and export request baseline delivered
 
 ---
 
@@ -20,6 +20,13 @@ As Dentra.ph scales, the platform team needs proper tooling to support clinics, 
 - **Security alerts:** Automated alerts for anomalous patterns (e.g. unusual login geography, bulk data access from a single session).
 - **Feature-flag rollout:** Ability to enable new features for a subset of clinics before full release.
 - **Migration and maintenance tooling:** Safe schema migration scripts with rollback plans; per-tenant maintenance mode.
+
+### Delivered baseline
+
+- Added written-justification support-access requests with Super Admin approve/deny decisions, 30-minute approval expiry, and immutable audit events.
+- Added tenant export/offboarding request metadata with clinic-admin submission and Super Admin processing state controls; no export artifact or deletion runs silently.
+- Added a protected platform operations clinic inventory endpoint to support future health/retention dashboards.
+- Remaining: scoped support session enforcement, actual JSON/CSV export workers, retention/anonymization jobs, restore drills, alerting, feature rollouts, and maintenance mode.
 
 ---
 
