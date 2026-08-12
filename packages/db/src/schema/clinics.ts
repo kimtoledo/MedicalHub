@@ -13,6 +13,7 @@ export const publicationStatusEnum = pgEnum('publication_status', [
   'published',
   'unpublished',
 ]);
+export const clinicVerificationStatusEnum = pgEnum('clinic_verification_status', ['unverified', 'pending', 'verified']);
 
 /**
  * clinics — top-level tenant entity.
@@ -36,6 +37,7 @@ export const clinics = pgTable(
     prefix: varchar('prefix', { length: 8 }).notNull().default(''),
     status: clinicStatusEnum('status').notNull().default('trial'),
     publicationStatus: publicationStatusEnum('publication_status').notNull().default('draft'),
+    verificationStatus: clinicVerificationStatusEnum('verification_status').notNull().default('unverified'),
 
     // Contact & public info
     email: varchar('email', { length: 255 }),

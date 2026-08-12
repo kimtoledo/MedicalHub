@@ -68,6 +68,11 @@ Updated manually after each session or merged task.
 - Existing publication boundaries remain enforced; near-me UI, open-slot resolution, ranking, and structured data remain queued
 - Added migration `0025_blushing_mariko_yashida.sql` and applied it locally
 
+### ✅ MVP 3 verification and moderation baseline
+- Added private dentist/clinic verification submissions with expiry/review metadata and audited approve/reject/revoke workflows
+- Added protected clinic submission and Super Admin moderation APIs; public profiles never expose document references
+- Added migration `0026_volatile_pet_avengers.sql` and applied it locally
+
 ### ✅ MVP 2 treatment planning
 - Added tenant-scoped treatment plans and multi-item proposals directly from patient profiles
 - Added entitlement- and role-protected plan APIs with draft → approved → archived lifecycle and item progress/cancellation transitions

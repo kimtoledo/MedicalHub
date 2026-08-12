@@ -280,6 +280,9 @@ export const AuditAction = {
   SUBSCRIPTION_REVIEWED: 'subscription.reviewed',
   USAGE_RECORDED: 'usage.recorded',
   PERMISSION_UPDATED: 'permission.updated',
+  VERIFICATION_APPROVED: 'verification.approved',
+  VERIFICATION_REJECTED: 'verification.rejected',
+  VERIFICATION_REVOKED: 'verification.revoked',
 
   RECALL_RULE_CREATED: 'recall_rule.created',
   RECALL_RULE_UPDATED: 'recall_rule.updated',

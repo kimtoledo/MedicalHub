@@ -1,6 +1,6 @@
 # Verification and Moderation
 
-> **Status:** 🔜 Future — MVP 3
+> **Status:** ✅ Done — MVP 3 baseline
 
 ---
 
@@ -19,6 +19,12 @@ Trust is critical in healthcare. Patients need to know that dentists and clinics
 - Verification has an expiry strategy — the system alerts Super Admin when a verification is approaching expiry.
 - Revoked verifications remove the badge and log the reason in the audit trail.
 - Submission documents are stored privately and never exposed publicly.
+
+### Delivered
+
+- Added private verification submission metadata for dentists and clinics with document storage-key references, pending/reviewed/revoked states, expiry dates, and review reasons.
+- Added clinic/dentist submission and Super Admin review APIs; approval updates the public trust status and every decision is audited.
+- Public directory queries continue to require verified dentists; clinic verification is exposed as a trust-status field without exposing documents.
 
 ---
 

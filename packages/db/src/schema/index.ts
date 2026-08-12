@@ -25,4 +25,5 @@ export * from './microsite';
 export * from './subscription-operations';
 export * from './permissions';
 export * from './patient-portal';
+export * from './verification';
 export * from './helpers';

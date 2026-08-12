@@ -87,6 +87,8 @@ import type { ClinicPermissionsService } from './clinic/permissions-service.js';
 import { registerClinicPermissionRoutes } from './routes/clinic-permissions.js';
 import { registerPatientPortalRoutes } from './routes/patient-portal.js';
 import type { PatientPortalService } from './patient/portal-service.js';
+import { registerVerificationRoutes } from './routes/verification.js';
+import type { VerificationService } from './verification/service.js';
 
 export type BuildAppOptions = {
   config: ApiConfig;
@@ -133,6 +135,7 @@ export type BuildAppOptions = {
   subscriptionOperations?: SubscriptionOperationsService;
   clinicPermissions?: ClinicPermissionsService;
   patientPortal?: PatientPortalService;
+  verification?: VerificationService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -273,6 +276,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (options.patientPortal) {
       await registerPatientPortalRoutes(app, { portal: options.patientPortal });
+    }
+    if (options.verification) {
+      await registerVerificationRoutes(app, { auth: options.auth, verification: options.verification });
     }
     if (options.clinicDashboard && options.entitlements) {
       await registerClinicDashboardRoutes(app, { auth: options.auth, entitlements: options.entitlements, dashboard: options.clinicDashboard });
