@@ -1,6 +1,6 @@
 # Secure Offline-Limited Mode
 
-> **Status:** 🔜 Future — MVP 3
+> **Status:** ⛔ Blocked — threat model and security approval required
 > ⚠️ **Do not start this task without a completed threat model and explicit product approval.**
 
 ---
@@ -30,6 +30,10 @@ Some dentists work in areas with unreliable internet and need limited clinical a
 - Completed threat model documented and reviewed by a qualified party.
 - Explicit confirmation that the offline data scope and encryption approach meets the intended security bar.
 - Dedicated security review before any clinical data is stored offline on any device.
+
+### Current gate
+
+`docs/THREAT_MODEL_OFFLINE_MODE.md` records the draft threats and required controls. It is intentionally not an approval; no offline PHI storage or sync implementation has started.
 
 ---
 

@@ -104,6 +104,10 @@ Updated manually after each session or merged task.
 - Added migration `0031_illegal_leopardon.sql` and applied it locally; provider connectors, calendar/accounting exports, and delivery retries remain queued
 - Verified 239 passing API tests and repository-wide TypeScript checks
 
+### ⛔ MVP 3 offline mode security gate
+- Added `docs/THREAT_MODEL_OFFLINE_MODE.md` with assets, trust boundaries, threats, and required controls
+- No offline PHI cache, device enrollment, or sync code was implemented; the task remains blocked pending independent security review and explicit product approval
+
 ### ✅ MVP 2 treatment planning
 - Added tenant-scoped treatment plans and multi-item proposals directly from patient profiles
 - Added entitlement- and role-protected plan APIs with draft → approved → archived lifecycle and item progress/cancellation transitions
