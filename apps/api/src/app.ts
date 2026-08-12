@@ -49,6 +49,7 @@ import type { ClinicTreatmentsService } from './clinic/treatments-service.js';
 import type { ClinicDashboardService } from './clinic/dashboard-service.js';
 import type { ClinicTreatmentPlansService } from './clinic/treatment-plans-service.js';
 import type { ClinicServiceCatalogService } from './clinic/service-catalog-service.js';
+import type { ClinicInventoryService } from './clinic/inventory-service.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
 import { registerAdminDentistRoutes } from './routes/admin-dentists.js';
@@ -68,6 +69,7 @@ import { registerClinicTreatmentPlanRoutes } from './routes/clinic-treatment-pla
 import { registerClinicDashboardRoutes } from './routes/clinic-dashboard.js';
 import { registerClinicBillingRoutes } from './routes/clinic-billing.js';
 import { registerClinicServiceCatalogRoutes } from './routes/clinic-service-catalog.js';
+import { registerClinicInventoryRoutes } from './routes/clinic-inventory.js';
 import { registerClinicPrescriptionRoutes } from './routes/clinic-prescriptions.js';
 import { registerClinicFilesRoutes } from './routes/clinic-files.js';
 import { registerClinicAiRoutes } from './routes/clinic-ai.js';
@@ -113,6 +115,7 @@ export type BuildAppOptions = {
   clinicDashboard?: ClinicDashboardService;
   clinicTreatmentPlans?: ClinicTreatmentPlansService;
   clinicServiceCatalog?: ClinicServiceCatalogService;
+  clinicInventory?: ClinicInventoryService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -235,6 +238,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         entitlements: options.entitlements,
         serviceCatalog: options.clinicServiceCatalog,
       });
+    }
+    if (options.clinicInventory && options.entitlements) {
+      await registerClinicInventoryRoutes(app, { auth: options.auth, entitlements: options.entitlements, inventory: options.clinicInventory });
     }
     if (options.clinicDashboard && options.entitlements) {
       await registerClinicDashboardRoutes(app, { auth: options.auth, entitlements: options.entitlements, dashboard: options.clinicDashboard });

@@ -1,0 +1,28 @@
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { z } from 'zod';
+import { FeatureKey } from '@dentra/shared';
+import { requireClinicFeature } from '../clinic/access.js';
+import { InventoryError, type ClinicInventoryService } from '../clinic/inventory-service.js';
+import type { AuthServices, AuthorizationContext, ClinicRole } from '../auth/types.js';
+import type { EntitlementService } from '../entitlements/service.js';
+import { postgresUuidSchema } from '../validation.js';
+
+const clinicParams = z.object({ clinicId: postgresUuidSchema });
+const itemParams = z.object({ clinicId: postgresUuidSchema, itemId: postgresUuidSchema });
+const itemBody = z.object({ name: z.string().trim().min(2).max(200), sku: z.string().trim().max(100).nullable().optional(), category: z.string().trim().min(2).max(100).default('General'), unit: z.string().trim().min(1).max(50).default('piece'), supplier: z.string().trim().max(200).nullable().optional(), reorderLevel: z.string().regex(/^\d+(?:\.\d{1,3})?$/).default('0'), isActive: z.boolean().default(true) }).strict();
+const updateBody = itemBody.partial().strict().refine((value) => Object.keys(value).length > 0);
+const transactionBody = z.object({ direction: z.enum(['in', 'out', 'adjustment']), quantity: z.string().regex(/^-?\d+(?:\.\d{1,3})?$/), reason: z.string().trim().min(3).max(500), batchNumber: z.string().trim().max(100).nullable().optional(), expiresAt: z.string().datetime({ offset: true }).nullable().optional(), transactionDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).strict();
+const manageRoles = ['clinic_owner', 'clinic_admin', 'inventory_staff'] as const;
+const viewRoles = ['clinic_owner', 'clinic_admin', 'inventory_staff', 'receptionist', 'dental_assistant'] as const;
+
+function actor(request: FastifyRequest, auth: AuthorizationContext) { return { id: auth.user.id, email: auth.user.email, ipAddress: request.ip, userAgent: request.headers['user-agent'] }; }
+function error(reply: FastifyReply, caught: unknown) { if (caught instanceof InventoryError) return reply.status(caught.statusCode).send({ success: false, error: { code: caught.code, message: caught.message } }); throw caught; }
+
+export async function registerClinicInventoryRoutes(app: FastifyInstance, options: { auth: AuthServices; entitlements: EntitlementService; inventory: ClinicInventoryService }) {
+  const guard = (request: FastifyRequest, reply: FastifyReply, clinicId: string, roles: readonly ClinicRole[]) => requireClinicFeature(request, reply, options, clinicId, FeatureKey.INVENTORY_MANAGE, [...roles]);
+  app.get('/v1/clinic/:clinicId/inventory/items', async (request, reply) => { const params = clinicParams.safeParse(request.params); if (!params.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid clinic ID' } }); if (!await guard(request, reply, params.data.clinicId, viewRoles)) return; return reply.send({ success: true, data: await options.inventory.listItems(params.data.clinicId) }); });
+  app.post('/v1/clinic/:clinicId/inventory/items', async (request, reply) => { const params = clinicParams.safeParse(request.params); const body = itemBody.safeParse(request.body); if (!params.success || !body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid inventory item' } }); const auth = await guard(request, reply, params.data.clinicId, manageRoles); if (!auth) return; try { return reply.status(201).send({ success: true, data: await options.inventory.createItem(params.data.clinicId, body.data, actor(request, auth)) }); } catch (caught) { return error(reply, caught); } });
+  app.patch('/v1/clinic/:clinicId/inventory/items/:itemId', async (request, reply) => { const params = itemParams.safeParse(request.params); const body = updateBody.safeParse(request.body); if (!params.success || !body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid inventory item changes' } }); const auth = await guard(request, reply, params.data.clinicId, manageRoles); if (!auth) return; try { return reply.send({ success: true, data: await options.inventory.updateItem(params.data.clinicId, params.data.itemId, body.data, actor(request, auth)) }); } catch (caught) { return error(reply, caught); } });
+  app.post('/v1/clinic/:clinicId/inventory/items/:itemId/transactions', async (request, reply) => { const params = itemParams.safeParse(request.params); const body = transactionBody.safeParse(request.body); if (!params.success || !body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid stock transaction' } }); const auth = await guard(request, reply, params.data.clinicId, manageRoles); if (!auth) return; try { return reply.status(201).send({ success: true, data: await options.inventory.recordTransaction(params.data.clinicId, params.data.itemId, body.data, actor(request, auth)) }); } catch (caught) { return error(reply, caught); } });
+  app.get('/v1/clinic/:clinicId/inventory/items/:itemId/transactions', async (request, reply) => { const params = itemParams.safeParse(request.params); if (!params.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid inventory item' } }); if (!await guard(request, reply, params.data.clinicId, viewRoles)) return; const data = await options.inventory.listTransactions(params.data.clinicId, params.data.itemId); if (!data) return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'Inventory item not found' } }); return reply.send({ success: true, data }); });
+}

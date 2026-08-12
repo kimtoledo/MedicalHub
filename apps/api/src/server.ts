@@ -42,6 +42,7 @@ import { createClinicTreatmentsService } from './clinic/treatments-service.js';
 import { createClinicDashboardService } from './clinic/dashboard-service.js';
 import { createClinicTreatmentPlansService } from './clinic/treatment-plans-service.js';
 import { createClinicServiceCatalogService } from './clinic/service-catalog-service.js';
+import { createClinicInventoryService } from './clinic/inventory-service.js';
 
 const config = loadConfig();
 const database = await createDatabaseServices();
@@ -80,6 +81,7 @@ const clinicTreatments = createClinicTreatmentsService(database.db);
 const clinicDashboard = createClinicDashboardService(database.db);
 const clinicTreatmentPlans = createClinicTreatmentPlansService(database.db);
 const clinicServiceCatalog = createClinicServiceCatalogService(database.db);
+const clinicInventory = createClinicInventoryService(database.db);
 const app = await buildApp({
   config,
   checkDatabase: database.check,
@@ -118,6 +120,7 @@ const app = await buildApp({
   clinicDashboard,
   clinicTreatmentPlans,
   clinicServiceCatalog,
+  clinicInventory,
 });
 
 app.addHook('onClose', async () => {

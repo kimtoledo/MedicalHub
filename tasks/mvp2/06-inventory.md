@@ -1,6 +1,6 @@
 # Inventory
 
-> **Status:** 🔜 Future — MVP 2
+> **Status:** ✅ Done — immutable stock ledger and inventory controls shipped
 
 ---
 

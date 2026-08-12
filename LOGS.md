@@ -55,6 +55,15 @@ _No active implementation task._
 - Marked MVP 2 Tasks 04–05 complete for the current scope because the immutable prescription/amendment workflow and private tenant-scoped clinical-file upload/signed-access workflows were already delivered under MVP 1 Tasks 20–21
 - Deferred hardening remains explicitly documented in Task 05 (malware scanning, patient portal downloads, and video recordings)
 
+### ✅ MVP 2 inventory
+- Added tenant-scoped inventory item master with SKU, category, unit, supplier, reorder level, and active state
+- Added immutable stock-in, stock-out, and signed adjustment ledger transactions with batch/expiry metadata
+- Derived current stock from the ledger and reject stock-outs that exceed available quantity
+- Added low-stock and expiry indicators in the clinic settings inventory view
+- Added canonical `inventory.manage` entitlement and role-protected inventory APIs with audit events
+- Added migration `0018_burly_wolf_cub.sql` and applied it locally
+- Verified 238 passing API tests, repository-wide TypeScript checks, and web/API production builds (with expected build-time fetch warnings when the local API is not running)
+
 ### ✅ MVP 1 post-merge acceptance audit
 - Rechecked every MVP 1 task and implementation step after migration-history/content merges; Tasks 01–21 are now evidence-marked and the release checklist covers Increment 5 business basics
 - Enforced canonical feature entitlements and clinic-role authorization on every direct billing, payment, prescription, and clinical-file API, not only sidebar visibility

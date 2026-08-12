@@ -255,6 +255,11 @@ export const AuditAction = {
   SERVICE_STATUS_CHANGED: 'service.status_changed',
   SERVICE_PRICE_CHANGED: 'service.price_changed',
 
+  // Inventory
+  INVENTORY_ITEM_CREATED: 'inventory.item_created',
+  INVENTORY_ITEM_UPDATED: 'inventory.item_updated',
+  INVENTORY_TRANSACTION_RECORDED: 'inventory.transaction_recorded',
+
   // Prescriptions
   PRESCRIPTION_ISSUED: 'prescription.issued',
 

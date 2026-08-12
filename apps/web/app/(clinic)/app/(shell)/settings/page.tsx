@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { DollarSign, Settings, Shield } from "lucide-react";
+import { Archive, DollarSign, Settings, Shield } from "lucide-react";
 import ClinicMicrositeSettings from "@/components/app/ClinicMicrositeSettings";
 import { getClinicSession } from "@/lib/clinic-session";
 import { getClinicSettings } from "@/lib/clinic-settings";
@@ -10,6 +10,12 @@ const operationalSettings = [
     icon: DollarSign,
     label: "Service Pricing",
     description: "Set the price for each dental service offered by your clinic.",
+  },
+  {
+    href: "/app/settings/inventory",
+    icon: Archive,
+    label: "Inventory",
+    description: "Track stock, reorder levels, batches, and expiry alerts.",
   },
   {
     href: "/app/settings/hmo-payers",
