@@ -33,6 +33,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Reports workspace completion
+- Replaced the fixed 2020–2099 report request with Manila-aware presets, custom ranges, and URL-backed branch/dentist/status/service/payment filters
+- Added operational appointment details, dentist/service workload, financial payment/procedure, and inventory stock tables with usable responsive empty states
+- CSV downloads preserve selected filters and return report-specific tabular columns and filenames
+- Server-side role visibility now separates operational, financial, and inventory reports while retaining the canonical `reports.basic` entitlement check
+- Verified 261 passing API tests, repository-wide TypeScript checks, production web/API builds, and clean diff validation
+
 ### ✅ Live Super Admin dashboard
 - Replaced all hard-coded `/dentra-admin` KPIs, clinic statuses, and activity with protected live database aggregates and immutable audit events
 - Dashboard reports clinic statuses, current active/trial subscriptions, dentist profiles, all-time appointments, and rolling 30-day appointments
