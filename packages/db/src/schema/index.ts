@@ -30,4 +30,5 @@ export * from './reviews';
 export * from './organizations';
 export * from './online-payments';
 export * from './custom-domains';
+export * from './integrations';
 export * from './helpers';

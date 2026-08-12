@@ -97,6 +97,13 @@ Updated manually after each session or merged task.
 - Added normalized custom-domain records, DNS TXT instructions, verification checks, activation guards, and audit events
 - Added migration `0030_majestic_wendell_vaughn.sql` and applied it locally; SSL provisioning remains adapter/deployment work
 
+### 🔄 MVP 3 integrations and partner API
+- Added tenant-scoped hashed API keys with read scopes, revocation, last-use tracking, and one-time secret delivery
+- Added webhook subscription records with one-time signing secrets and event declarations
+- Added rate-limited read-only partner appointment export with a bounded date window and strict API-key tenant scope
+- Added migration `0031_illegal_leopardon.sql` and applied it locally; provider connectors, calendar/accounting exports, and delivery retries remain queued
+- Verified 239 passing API tests and repository-wide TypeScript checks
+
 ### ✅ MVP 2 treatment planning
 - Added tenant-scoped treatment plans and multi-item proposals directly from patient profiles
 - Added entitlement- and role-protected plan APIs with draft → approved → archived lifecycle and item progress/cancellation transitions

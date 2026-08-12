@@ -292,6 +292,9 @@ export const AuditAction = {
   DOMAIN_CHECKED: 'domain.checked',
   DOMAIN_VERIFIED: 'domain.verified',
   DOMAIN_ACTIVATED: 'domain.activated',
+  INTEGRATION_API_KEY_CREATED: 'integration.api_key_created',
+  INTEGRATION_API_KEY_REVOKED: 'integration.api_key_revoked',
+  INTEGRATION_WEBHOOK_CREATED: 'integration.webhook_created',
 
   RECALL_RULE_CREATED: 'recall_rule.created',
   RECALL_RULE_UPDATED: 'recall_rule.updated',

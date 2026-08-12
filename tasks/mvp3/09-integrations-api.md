@@ -1,6 +1,6 @@
 # Integrations and Partner API
 
-> **Status:** 🔜 Future — MVP 3
+> **Status:** 🔵 Active — partner API baseline delivered
 
 ---
 
@@ -19,6 +19,14 @@ Clinics and third-party developers need to connect Dentra.ph to external tools: 
 - Webhooks: clinics can subscribe to events (appointment created/updated, invoice paid) and receive verified payloads to their endpoint.
 - API key management: create, revoke, and rotate keys from clinic settings.
 - All API requests are rate-limited and logged.
+
+### Delivered baseline
+
+- Added hashed, one-time-visible clinic API keys with `appointments.read`, `invoices.read`, and `webhooks.manage` scopes plus revocation and last-use tracking.
+- Added clinic-admin webhook subscription management with one-time-visible signing secrets and event-type declarations.
+- Added rate-limited `GET /v1/partner/appointments` with tenant scope enforced by the API key and a bounded 31-day export window.
+- Added audit events for API-key and webhook creation/revocation; raw secrets are never persisted or logged.
+- Remaining: provider credential connectors, iCal/Google Calendar export, accounting formats, outbound delivery retries, and read-write partner resources.
 
 ---
 

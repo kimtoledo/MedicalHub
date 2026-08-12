@@ -55,6 +55,7 @@ import { createOrganizationService } from './organizations/service.js';
 import { createClinicAnalyticsService } from './clinic/analytics-service.js';
 import { createPaymentService } from './payments/service.js';
 import { createCustomDomainService } from './domains/service.js';
+import { createIntegrationService } from './integrations/service.js';
 
 const config = loadConfig();
 const database = await createDatabaseServices();
@@ -95,6 +96,7 @@ const organizations = createOrganizationService(database.db);
 const clinicAnalytics = createClinicAnalyticsService(database.db);
 const payments = createPaymentService(database.db);
 const customDomains = createCustomDomainService(database.db);
+const integrations = createIntegrationService(database.db);
 const publicBooking = createPublicBookingService(database.db, notifications);
 const clinicSettings = createClinicSettingsService(database.db);
 const clinicWorkspace = createClinicWorkspaceService(database.db);
@@ -152,6 +154,7 @@ const app = await buildApp({
   clinicAnalytics,
   payments,
   customDomains,
+  integrations,
   clinicDashboard,
   clinicTreatmentPlans,
   clinicServiceCatalog,
