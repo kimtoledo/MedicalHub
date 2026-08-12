@@ -30,6 +30,7 @@ import {
 import { createAdminPackageService } from './admin/packages-service.js';
 import { createAdminSubscriptionListService } from './admin/subscriptions-service.js';
 import { createAdminAuditService } from './admin/audit-service.js';
+import { createAdminDashboardService } from './admin/dashboard-service.js';
 import { createEntitlementService } from './entitlements/service.js';
 import { createPublicDirectoryService } from './public/directory-service.js';
 import { createPublicBookingService } from './public/booking-service.js';
@@ -88,6 +89,7 @@ const adminDentistProfileState = createAdminDentistProfileStateService(database.
 const adminPackages = createAdminPackageService(database.db);
 const adminSubscriptions = createAdminSubscriptionListService(database.db);
 const adminAudit = createAdminAuditService(database.db);
+const adminDashboard = createAdminDashboardService(database.db);
 const entitlements = createEntitlementService(database.db);
 const publicDirectory = createPublicDirectoryService(database.db);
 const notifications = createNotificationService(database.db);
@@ -145,6 +147,7 @@ const app = await buildApp({
   adminPackages,
   adminSubscriptions,
   adminAudit,
+  adminDashboard,
   entitlements,
   publicDirectory,
   publicBooking,

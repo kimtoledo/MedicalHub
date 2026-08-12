@@ -33,6 +33,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Live Super Admin dashboard
+- Replaced all hard-coded `/dentra-admin` KPIs, clinic statuses, and activity with protected live database aggregates and immutable audit events
+- Dashboard reports clinic statuses, current active/trial subscriptions, dentist profiles, all-time appointments, and rolling 30-day appointments
+- Recent activity intentionally excludes audit metadata, IP addresses, user agents, patient details, and clinical payloads; quick actions now point to the correct create/manage screens
+- Added responsive loading, empty, server-error/retry states and Super Admin authorization/aggregate normalization tests
+- Verified 257 passing API tests, repository-wide TypeScript checks, production web/API builds, and clean diff validation
+
 ### ✅ Dentist self-service professional profile
 - Replaced `/app/dentist/profile` with a responsive editor for biography, specialty, professional contact details, HTTPS photo URL, and PRC/license number
 - Added dentist-owned profile APIs that derive dentist identity from the active authenticated membership; client-supplied dentist IDs, verification state, publication state, slug, and affiliations are never authoritative

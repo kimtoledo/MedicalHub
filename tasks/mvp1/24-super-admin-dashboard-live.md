@@ -1,6 +1,6 @@
 # Live Super Admin Dashboard
 
-> **Status:** 🔲 Queued
+> **Status:** ✅ Done
 > **Priority:** P1
 
 ## What & Why
@@ -20,3 +20,10 @@ Replace the hard-coded `/dentra-admin` KPIs, clinic status counts, and recent ac
 
 - Patient-level or clinical-record drill-down.
 - Full platform observability, which belongs to MVP 3 platform operations.
+
+## Delivered — August 13, 2026
+
+- Protected live platform aggregates for clinic status, current subscription status, dentist profiles, and all-time/30-day appointments.
+- Recent activity sourced from immutable audit events without returning metadata, IP addresses, user agents, patient data, or clinical payloads.
+- Correct create/manage/audit quick-action destinations, accessible loading/empty/error/retry states, and responsive layouts.
+- Tests cover aggregate normalization and Super Admin-only authorization.

@@ -9,7 +9,7 @@
 | Priority | Finding | Task |
 |---|---|---|
 | Complete | Runtime readiness, ordered migration reconciliation, and truthful settings errors | [`mvp1/23-runtime-readiness-and-page-errors.md`](mvp1/23-runtime-readiness-and-page-errors.md) |
-| P1 | Super Admin dashboard uses hard-coded KPIs and activity | [`mvp1/24-super-admin-dashboard-live.md`](mvp1/24-super-admin-dashboard-live.md) |
+| Complete | Super Admin dashboard uses protected live aggregates and audit activity | [`mvp1/24-super-admin-dashboard-live.md`](mvp1/24-super-admin-dashboard-live.md) |
 | P2 | Super Admin Settings is a placeholder | [`mvp1/25-super-admin-settings.md`](mvp1/25-super-admin-settings.md) |
 | Complete | Clinic staff membership, roles, branch access, and permissions workspace | [`mvp1/26-clinic-staff-management.md`](mvp1/26-clinic-staff-management.md) |
 | Complete | Dentist-owned professional profile editor and public preview | [`mvp1/27-dentist-self-service-profile.md`](mvp1/27-dentist-self-service-profile.md) |
@@ -44,7 +44,7 @@
 ### Super Admin — 11 routes
 
 - Live: clinic, dentist, package, subscription, and audit management.
-- Presentation-only: `/dentra-admin` dashboard metrics and activity.
+- Live: `/dentra-admin` dashboard metrics and recent immutable audit activity.
 - Placeholder: `/dentra-admin/settings`.
 - Missing operational pages: verification/review moderation and platform support/export operations.
 

@@ -59,6 +59,8 @@ import { registerAdminDentistRoutes } from './routes/admin-dentists.js';
 import { registerAdminPackageRoutes } from './routes/admin-packages.js';
 import { registerAdminSubscriptionRoutes } from './routes/admin-subscriptions.js';
 import { registerAdminAuditRoutes } from './routes/admin-audit.js';
+import { registerAdminDashboardRoutes } from './routes/admin-dashboard.js';
+import type { AdminDashboardService } from './admin/dashboard-service.js';
 import { registerEntitlementRoutes } from './routes/entitlements.js';
 import { registerPublicDirectoryRoutes } from './routes/public-directory.js';
 import { registerPublicBookingRoutes } from './routes/public-booking.js';
@@ -138,6 +140,7 @@ export type BuildAppOptions = {
   adminPackages?: AdminPackageService;
   adminSubscriptions?: AdminSubscriptionListService;
   adminAudit?: AdminAuditService;
+  adminDashboard?: AdminDashboardService;
   entitlements?: EntitlementService;
   publicDirectory?: PublicDirectoryService;
   publicBooking?: PublicBookingService;
@@ -261,6 +264,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (options.adminAudit) {
       await registerAdminAuditRoutes(app, { auth: options.auth, audit: options.adminAudit });
+    }
+    if (options.adminDashboard) {
+      await registerAdminDashboardRoutes(app, { auth: options.auth, dashboard: options.adminDashboard });
     }
     if (options.entitlements) {
       await registerEntitlementRoutes(app, { auth: options.auth, entitlements: options.entitlements });
