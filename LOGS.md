@@ -89,6 +89,10 @@ Updated manually after each session or merged task.
 - Added `reports.advanced` and role gating; no patient names or clinical notes are returned
 - Verified 239 passing API tests and repository-wide TypeScript checks
 
+### ✅ MVP 3 online payment safety baseline
+- Added expiring hashed invoice payment links, provider-neutral HMAC webhook verification, idempotent event records, and invoice reconciliation
+- Added migration `0029_numerous_reavers.sql` and applied it locally; provider credentials remain environment-only
+
 ### ✅ MVP 2 treatment planning
 - Added tenant-scoped treatment plans and multi-item proposals directly from patient profiles
 - Added entitlement- and role-protected plan APIs with draft → approved → archived lifecycle and item progress/cancellation transitions

@@ -28,4 +28,5 @@ export * from './patient-portal';
 export * from './verification';
 export * from './reviews';
 export * from './organizations';
+export * from './online-payments';
 export * from './helpers';

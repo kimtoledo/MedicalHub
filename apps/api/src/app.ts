@@ -95,6 +95,8 @@ import { registerOrganizationRoutes } from './routes/organizations.js';
 import type { OrganizationService } from './organizations/service.js';
 import { registerClinicAnalyticsRoutes } from './routes/clinic-analytics.js';
 import type { ClinicAnalyticsService } from './clinic/analytics-service.js';
+import { registerOnlinePaymentRoutes } from './routes/online-payments.js';
+import type { PaymentService } from './payments/service.js';
 
 export type BuildAppOptions = {
   config: ApiConfig;
@@ -145,6 +147,7 @@ export type BuildAppOptions = {
   reviews?: ReviewService;
   organizations?: OrganizationService;
   clinicAnalytics?: ClinicAnalyticsService;
+  payments?: PaymentService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -297,6 +300,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (options.clinicAnalytics && options.entitlements) {
       await registerClinicAnalyticsRoutes(app, { auth: options.auth, entitlements: options.entitlements, analytics: options.clinicAnalytics });
+    }
+    if (options.payments && options.entitlements) {
+      await registerOnlinePaymentRoutes(app, { auth: options.auth, entitlements: options.entitlements, payments: options.payments });
     }
     if (options.clinicDashboard && options.entitlements) {
       await registerClinicDashboardRoutes(app, { auth: options.auth, entitlements: options.entitlements, dashboard: options.clinicDashboard });

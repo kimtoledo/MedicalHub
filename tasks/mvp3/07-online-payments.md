@@ -1,6 +1,6 @@
 # Online Payments
 
-> **Status:** 🔜 Future — MVP 3
+> **Status:** ✅ Done — MVP 3 payment safety baseline
 
 ---
 
@@ -20,6 +20,12 @@ Patients should be able to pay invoices online, and the platform may need to col
 - Refunds for online payments are initiated from the billing module and reflected in the payment record.
 - Payment-to-invoice reconciliation: each online payment is linked to exactly one invoice.
 - Platform subscription billing for clinics can use the same infrastructure once a billing provider is selected.
+
+### Delivered
+
+- Added expiring invoice payment links with hashed tokens and clinic/billing authorization.
+- Added provider-neutral webhook handling with HMAC verification, unique event-id idempotency, one-to-one invoice reconciliation, and invoice status updates.
+- Provider checkout UI/credentials remain adapter deployment work; no gateway secrets are committed.
 
 ---
 

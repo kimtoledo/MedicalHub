@@ -14,7 +14,7 @@
 | `04-reviews.md` | Patient review submission, moderation, clinic response | ✅ Done |
 | `05-enterprise-multibranch.md` | Organization hierarchy, consolidated reporting, regional roles | 🔵 Active |
 | `06-advanced-analytics.md` | Conversion, cohort, trend, and revenue analytics | ✅ Done |
-| `07-online-payments.md` | Patient checkout, webhooks, refunds, reconciliation | 🔜 Future |
+| `07-online-payments.md` | Patient checkout, webhooks, refunds, reconciliation | ✅ Done |
 | `08-custom-domains.md` | Clinic custom domain mapping, SSL, canonical redirects | 🔜 Future |
 | `09-integrations-api.md` | Partner API, webhooks, calendar/accounting export | 🔜 Future |
 | `10-offline-mode.md` | Secure, minimal offline clinical access (threat-modeled) | 🔜 Future |

@@ -286,6 +286,8 @@ export const AuditAction = {
   REVIEW_MODERATED: 'review.moderated',
   REVIEW_RESPONDED: 'review.responded',
   ORGANIZATION_CREATED: 'organization.created',
+  PAYMENT_LINK_CREATED: 'payment_link.created',
+  PAYMENT_WEBHOOK_PROCESSED: 'payment_webhook.processed',
 
   RECALL_RULE_CREATED: 'recall_rule.created',
   RECALL_RULE_UPDATED: 'recall_rule.updated',
