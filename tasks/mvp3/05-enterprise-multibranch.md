@@ -1,6 +1,6 @@
 # Enterprise Multi-Branch
 
-> **Status:** 🔜 Future — MVP 3
+> **Status:** 🔵 Active — organization baseline delivered
 
 ---
 
@@ -19,6 +19,12 @@ Large dental groups with many branches need organization-level reporting, centra
 - Regional/area manager role with visibility across their assigned branches.
 - Patient referral/transfer between branches within the same organization (with explicit patient consent).
 - Organization-level feature entitlements that cascade to member clinics.
+
+### Delivered baseline
+
+- Added organization, member-clinic, organization membership, role, and branch-scope data boundaries.
+- Added organization creation, clinic attachment, membership listing, and consolidated appointment/patient/revenue summary APIs with organization membership checks.
+- Remaining: organization-level entitlements, central service catalog, branch-scoped staff assignment UI, and consented patient transfers.
 
 ---
 

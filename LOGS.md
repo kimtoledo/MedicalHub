@@ -78,6 +78,12 @@ Updated manually after each session or merged task.
 - Added clinic responses and Super Admin moderation APIs with audit events
 - Added migration `0027_ambitious_sage.sql` and applied it locally
 
+### 🔄 MVP 3 enterprise multi-branch
+- Added organization and member-clinic boundaries, owner/admin/regional-manager/viewer roles, and organization-scoped consolidated summaries
+- Added organization creation, clinic attachment, and access-checked report APIs
+- Remaining: cascading entitlements, central catalog, staff branch assignment, and consented transfers
+- Added migration `0028_cultured_fenris.sql` and applied it locally
+
 ### ✅ MVP 2 treatment planning
 - Added tenant-scoped treatment plans and multi-item proposals directly from patient profiles
 - Added entitlement- and role-protected plan APIs with draft → approved → archived lifecycle and item progress/cancellation transitions

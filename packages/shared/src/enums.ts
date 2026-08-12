@@ -285,6 +285,7 @@ export const AuditAction = {
   VERIFICATION_REVOKED: 'verification.revoked',
   REVIEW_MODERATED: 'review.moderated',
   REVIEW_RESPONDED: 'review.responded',
+  ORGANIZATION_CREATED: 'organization.created',
 
   RECALL_RULE_CREATED: 'recall_rule.created',
   RECALL_RULE_UPDATED: 'recall_rule.updated',

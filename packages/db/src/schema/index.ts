@@ -27,4 +27,5 @@ export * from './permissions';
 export * from './patient-portal';
 export * from './verification';
 export * from './reviews';
+export * from './organizations';
 export * from './helpers';
