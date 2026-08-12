@@ -1,6 +1,6 @@
 # Prescriptions
 
-> **Status:** 🔜 Future — MVP 2
+> **Status:** ✅ Done — covered by MVP 1 e-Rx implementation
 > **Note:** The prescription builder (e-Rx) was promoted to MVP 1 — see `tasks/mvp1/20-prescriptions-erx.md`. This task remains as a reference and may be merged into the MVP 1 task or expanded with drug-interaction and pharmacy-integration features post-launch.
 
 ---

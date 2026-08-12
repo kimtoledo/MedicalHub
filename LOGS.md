@@ -51,6 +51,10 @@ _No active implementation task._
 - Added migration `0017_vengeful_magneto.sql` and applied it locally
 - Verified 236 passing API tests, repository-wide TypeScript checks, and web/API production builds (with expected build-time fetch warnings when the local API is not running)
 
+### ✅ MVP 2 prescription and clinical-file baseline reconciliation
+- Marked MVP 2 Tasks 04–05 complete for the current scope because the immutable prescription/amendment workflow and private tenant-scoped clinical-file upload/signed-access workflows were already delivered under MVP 1 Tasks 20–21
+- Deferred hardening remains explicitly documented in Task 05 (malware scanning, patient portal downloads, and video recordings)
+
 ### ✅ MVP 1 post-merge acceptance audit
 - Rechecked every MVP 1 task and implementation step after migration-history/content merges; Tasks 01–21 are now evidence-marked and the release checklist covers Increment 5 business basics
 - Enforced canonical feature entitlements and clinic-role authorization on every direct billing, payment, prescription, and clinical-file API, not only sidebar visibility

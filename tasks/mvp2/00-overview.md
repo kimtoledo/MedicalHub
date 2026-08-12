@@ -11,8 +11,8 @@
 | `01-treatment-planning.md` | Proposed treatment plans, multi-item, status tracking | ✅ Done |
 | `02-service-catalog-pricing.md` | Clinic procedure catalog, branch pricing, price history | ✅ Done |
 | `03-billing-payments.md` | Invoices, partial payments, refunds, audit | ✅ Done |
-| `04-prescriptions.md` | Prescription records, printable output, immutable snapshot | 🔜 Future |
-| `05-clinical-files-media.md` | Radiographs, photos, consent docs, private storage | 🔜 Future |
+| `04-prescriptions.md` | Prescription records, printable output, immutable snapshot | ✅ Done |
+| `05-clinical-files-media.md` | Radiographs, photos, consent docs, private storage | ✅ Done |
 | `06-inventory.md` | Item master, stock in/out, low-stock alerts | 🔜 Future |
 | `07-notifications.md` | Email booking confirmations, reminders, cancellations | 🔜 Future |
 | `08-recall-followup.md` | Recall rules, due dates, follow-up appointment creation | 🔜 Future |
