@@ -33,6 +33,12 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Guided HMO claim workflow
+- Replaced raw patient, membership, invoice, and encounter UUID entry with tenant-scoped patient search and eligible-record selection
+- Added active/current coverage summaries, outstanding-invoice amount ceilings, finalized encounter choices, loading/empty/error states, and direct claim-entry links from patient and invoice pages
+- Hardened backend creation against cross-patient relationships, mismatched payers, inactive or out-of-date coverage, non-outstanding invoices, unfinished encounters, and invalid claim amounts
+- Verified 264 passing API tests, 5 passing web tests, repository-wide TypeScript checks, production web/API builds, and clean diff validation
+
 ### ✅ Reports workspace completion
 - Replaced the fixed 2020–2099 report request with Manila-aware presets, custom ranges, and URL-backed branch/dentist/status/service/payment filters
 - Added operational appointment details, dentist/service workload, financial payment/procedure, and inventory stock tables with usable responsive empty states

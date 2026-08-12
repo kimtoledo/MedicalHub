@@ -14,7 +14,7 @@
 | Complete | Clinic staff membership, roles, branch access, and permissions workspace | [`mvp1/26-clinic-staff-management.md`](mvp1/26-clinic-staff-management.md) |
 | Complete | Dentist-owned professional profile editor and public preview | [`mvp1/27-dentist-self-service-profile.md`](mvp1/27-dentist-self-service-profile.md) |
 | Complete | Reports workspace has date/filter controls, detail tables, and CSV exports | [`mvp2/16-reports-workspace-completion.md`](mvp2/16-reports-workspace-completion.md) |
-| P1 | New HMO claim requires users to paste raw UUIDs | [`mvp2/17-hmo-claim-workflow-ux.md`](mvp2/17-hmo-claim-workflow-ux.md) |
+| Complete | Guided, tenant-safe HMO claim creation replaces raw UUID entry | [`mvp2/17-hmo-claim-workflow-ux.md`](mvp2/17-hmo-claim-workflow-ux.md) |
 | P1 | Patient portal baseline lacks signup, linking, request, logout, and polished detail workflows | [`mvp3/14-patient-portal-experience.md`](mvp3/14-patient-portal-experience.md) |
 | P1 | Verification APIs lack clinic/dentist submission and Super Admin review pages | [`mvp3/15-verification-moderation-ui.md`](mvp3/15-verification-moderation-ui.md) |
 | P1 | Review APIs lack patient submission, public review, clinic response, and moderation pages | [`mvp3/16-reviews-ui.md`](mvp3/16-reviews-ui.md) |
@@ -38,7 +38,7 @@
 
 - Live core workflows: dashboards, appointments, patients, encounters, odontogram, treatment records, prescriptions, billing, inventory, recalls, services, HMO payer management, remote consults, and self-service account profile.
 - Former placeholders `/app/staff` and `/app/dentist/profile` are now live management workspaces.
-- Incomplete: `/app/billing/hmo-claims/new`; reports and settings error handling are complete.
+- Guided HMO claim creation, reports, and settings error handling are complete.
 - API-only modules still needing pages: advanced analytics, online payment links, custom domains, integrations, organization management, and AI imaging.
 
 ### Super Admin — 11 routes

@@ -7,7 +7,7 @@
  * - Claim tracker with status transitions
  * - Billing linkage: when claim → paid, inserts an invoice_payment
  */
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, ilike, isNull, lte, or, sql } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
 import {
   hmoPayers,
@@ -168,6 +168,7 @@ export interface HmoService {
   deleteMembership(clinicId: string, patientId: string, membershipId: string): Promise<void>;
 
   // --- Claims ---
+  claimOptions(clinicId: string, input: { search?: string; patientId?: string }): Promise<Record<string, unknown>>;
   listClaims(clinicId: string, opts: { status?: string; page: number; pageSize: number }): Promise<{ data: ClaimListItem[]; total: number }>;
   getClaim(clinicId: string, claimId: string): Promise<ClaimDetail | null>;
   createClaim(clinicId: string, input: ClaimInput, actorId: string): Promise<HmoClaim>;
@@ -316,6 +317,23 @@ export function createHmoService(db: DB): HmoService {
 
     // ── Claims ──────────────────────────────────────────────────────────
 
+    async claimOptions(clinicId, input) {
+      if (!input.patientId) {
+        const term = `%${input.search?.trim() ?? ''}%`;
+        const rows = await db.select({ id: patients.id, patientNumber: patients.patientNumber, firstName: patients.firstName, lastName: patients.lastName }).from(patients).where(and(eq(patients.clinicId, clinicId), isNull(patients.deletedAt), eq(patients.status, 'active'), input.search ? or(ilike(patients.patientNumber, term), ilike(patients.firstName, term), ilike(patients.lastName, term), sql`${patients.firstName} || ' ' || ${patients.lastName} ilike ${term}`) : undefined)).orderBy(patients.lastName, patients.firstName).limit(20);
+        return { patients: rows.map((row) => ({ ...row, name: `${row.lastName}, ${row.firstName}` })) };
+      }
+      const [patient] = await db.select({ id: patients.id, patientNumber: patients.patientNumber, firstName: patients.firstName, lastName: patients.lastName }).from(patients).where(and(eq(patients.id, input.patientId), eq(patients.clinicId, clinicId), isNull(patients.deletedAt))).limit(1);
+      if (!patient) throw new HmoServiceError('NOT_FOUND', 'Patient not found in this clinic');
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date());
+      const [memberships, invoiceRows, encounterRows] = await Promise.all([
+        db.select({ id: patientHmoMemberships.id, hmoPayer: patientHmoMemberships.hmoPayer, payerName: patientHmoMemberships.payerNameSnapshot, cardNumber: patientHmoMemberships.cardNumber, memberName: patientHmoMemberships.memberName, coverageType: patientHmoMemberships.coverageType, effectiveDate: patientHmoMemberships.effectiveDate, expiryDate: patientHmoMemberships.expiryDate }).from(patientHmoMemberships).where(and(eq(patientHmoMemberships.clinicId, clinicId), eq(patientHmoMemberships.patientId, input.patientId), eq(patientHmoMemberships.isActive, 'true'), or(isNull(patientHmoMemberships.effectiveDate), lte(patientHmoMemberships.effectiveDate, today)), or(isNull(patientHmoMemberships.expiryDate), sql`${patientHmoMemberships.expiryDate} >= ${today}`))).orderBy(desc(patientHmoMemberships.createdAt)),
+        db.select({ id: invoices.id, invoiceNumber: invoices.invoiceNumber, encounterId: invoices.encounterId, status: invoices.status, totalAmountPhp: invoices.totalAmountPhp, issuedAt: invoices.issuedAt }).from(invoices).where(and(eq(invoices.clinicId, clinicId), eq(invoices.patientId, input.patientId), or(eq(invoices.status, 'pending'), eq(invoices.status, 'partially_paid')))).orderBy(desc(invoices.createdAt)),
+        db.select({ id: encounters.id, date: encounters.date, status: encounters.status }).from(encounters).where(and(eq(encounters.clinicId, clinicId), eq(encounters.patientId, input.patientId), eq(encounters.status, 'final'))).orderBy(desc(encounters.date)),
+      ]);
+      return { patient: { ...patient, name: `${patient.lastName}, ${patient.firstName}` }, memberships, invoices: invoiceRows, encounters: encounterRows };
+    },
+
     async listClaims(clinicId, { status, page, pageSize }) {
       const offset = (page - 1) * pageSize;
       const conditions = [eq(hmoClaims.clinicId, clinicId)];
@@ -420,7 +438,14 @@ export function createHmoService(db: DB): HmoService {
 
         // 3. Membership must belong to clinic AND patient (if provided)
         if (input.membershipId) {
-          const [mem] = await tx.select({ id: patientHmoMemberships.id })
+          const [mem] = await tx.select({
+            id: patientHmoMemberships.id,
+            hmoPayer: patientHmoMemberships.hmoPayer,
+            payerName: patientHmoMemberships.payerNameSnapshot,
+            isActive: patientHmoMemberships.isActive,
+            effectiveDate: patientHmoMemberships.effectiveDate,
+            expiryDate: patientHmoMemberships.expiryDate,
+          })
             .from(patientHmoMemberships)
             .where(and(
               eq(patientHmoMemberships.id, input.membershipId),
@@ -429,26 +454,36 @@ export function createHmoService(db: DB): HmoService {
             ))
             .limit(1);
           if (!mem) throw new HmoServiceError('NOT_FOUND', 'Membership not found for this patient/clinic');
+          if (mem.isActive !== 'true') throw new HmoServiceError('FORBIDDEN', 'The selected HMO membership is inactive');
+          const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date());
+          if (mem.effectiveDate && mem.effectiveDate > today) throw new HmoServiceError('FORBIDDEN', 'The selected HMO membership is not yet effective');
+          if (mem.expiryDate && mem.expiryDate < today) throw new HmoServiceError('FORBIDDEN', 'The selected HMO membership has expired');
+          if (input.hmoPayer && mem.hmoPayer !== input.hmoPayer) throw new HmoServiceError('FORBIDDEN', 'The selected payer does not match the HMO membership');
+          if (mem.payerName !== input.payerNameSnapshot.trim()) throw new HmoServiceError('FORBIDDEN', 'The payer name does not match the HMO membership');
         }
 
         // 4. Invoice must belong to clinic AND patient (if provided)
         if (input.invoiceId) {
-          const [inv] = await tx.select({ id: invoices.id, patientId: invoices.patientId })
+          const [inv] = await tx.select({ id: invoices.id, patientId: invoices.patientId, encounterId: invoices.encounterId, totalAmountPhp: invoices.totalAmountPhp, status: invoices.status })
             .from(invoices)
             .where(and(eq(invoices.id, input.invoiceId), eq(invoices.clinicId, clinicId)))
             .limit(1);
           if (!inv) throw new HmoServiceError('INVOICE_NOT_FOUND', 'Invoice not found in this clinic');
           if (inv.patientId !== input.patientId) throw new HmoServiceError('FORBIDDEN', 'Invoice does not belong to this patient');
+          if (!['pending', 'partially_paid'].includes(inv.status)) throw new HmoServiceError('FORBIDDEN', 'Only an outstanding invoice can be claimed');
+          if (Number(input.claimAmountPhp) > Number(inv.totalAmountPhp)) throw new HmoServiceError('FORBIDDEN', 'Claim amount cannot exceed the selected invoice total');
+          if (input.encounterId && inv.encounterId !== input.encounterId) throw new HmoServiceError('FORBIDDEN', 'Invoice and encounter do not belong to the same visit');
         }
 
         // 5. Encounter must belong to clinic AND patient (if provided)
         if (input.encounterId) {
-          const [enc] = await tx.select({ id: encounters.id, patientId: encounters.patientId })
+          const [enc] = await tx.select({ id: encounters.id, patientId: encounters.patientId, status: encounters.status })
             .from(encounters)
             .where(and(eq(encounters.id, input.encounterId), eq(encounters.clinicId, clinicId)))
             .limit(1);
           if (!enc) throw new HmoServiceError('NOT_FOUND', 'Encounter not found in this clinic');
           if (enc.patientId !== input.patientId) throw new HmoServiceError('FORBIDDEN', 'Encounter does not belong to this patient');
+          if (enc.status !== 'final') throw new HmoServiceError('FORBIDDEN', 'Only a finalized encounter can be claimed');
         }
 
         const inserted = await tx.insert(hmoClaims).values({

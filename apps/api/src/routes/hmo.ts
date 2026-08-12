@@ -53,7 +53,7 @@ const claimCreateBodySchema = z.object({
   invoiceId: z.string().uuid().optional(),
   encounterId: z.string().uuid().optional(),
   loaCode: z.string().max(100).optional(),
-  claimAmountPhp: z.string().regex(/^\d+(\.\d{1,2})?$/),
+  claimAmountPhp: z.string().regex(/^\d+(\.\d{1,2})?$/).refine((value) => Number(value) > 0, 'Claim amount must be greater than zero'),
   notes: z.string().max(1000).optional(),
 });
 
@@ -69,6 +69,7 @@ const listClaimsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
+const claimOptionsQuerySchema = z.object({ search: z.string().trim().max(100).optional(), patientId: uuidSchema.optional() }).refine((value) => Boolean(value.patientId || value.search), 'Search or patient ID is required');
 
 // ---------------------------------------------------------------------------
 // Auth helpers
@@ -82,6 +83,7 @@ function isAdminRole(authorization: AuthorizationContext, clinicId: string): boo
 function hmoErrStatus(err: HmoServiceError): number {
   return err.code === 'NOT_FOUND'           ? 404
     : err.code === 'INVOICE_NOT_FOUND'      ? 404
+    : err.code === 'FORBIDDEN'              ? 403
     : err.code === 'INVALID_TRANSITION'     ? 409
     : err.code === 'CLAIM_ALREADY_PAID'     ? 409
     : err.code === 'ALREADY_EXISTS'         ? 409
@@ -226,6 +228,16 @@ export async function registerHmoRoutes(
   });
 
   // ── Claims ─────────────────────────────────────────────────────────────
+
+  app.get('/v1/clinic/:clinicId/hmo/claim-options', async (req, reply) => {
+    const params = clinicParams.safeParse(req.params); const query = claimOptionsQuerySchema.safeParse(req.query);
+    if (!params.success || !query.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Enter a patient search or selection' } });
+    const authorization = await resolveRequestAuthorization(req, auth);
+    if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
+    if (!isSuperAdmin(authorization) && !hasClinicAccess(authorization, params.data.clinicId)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN' } });
+    try { return reply.send({ success: true, data: await hmo.claimOptions(params.data.clinicId, query.data) }); }
+    catch (err) { if (err instanceof HmoServiceError) return reply.status(hmoErrStatus(err)).send({ success: false, error: { code: err.code, message: err.message } }); throw err; }
+  });
 
   /** GET /v1/clinic/:clinicId/hmo/claims */
   app.get('/v1/clinic/:clinicId/hmo/claims', async (req, reply) => {

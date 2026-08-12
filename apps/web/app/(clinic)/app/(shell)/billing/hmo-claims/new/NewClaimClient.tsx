@@ -1,224 +1,31 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Shield, Loader2, AlertCircle } from "lucide-react";
-import type { HmoPayer } from "./types";
+import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { AlertCircle, ArrowLeft, CheckCircle2, Loader2, Search, Shield } from "lucide-react";
 
-export default function NewClaimClient({
-  clinicId,
-  payers,
-}: {
-  clinicId: string;
-  payers: HmoPayer[];
-}) {
-  const router = useRouter();
-  const [form, setForm] = useState({
-    patientId: "",
-    hmoPayer: "",
-    payerNameSnapshot: "",
-    membershipId: "",
-    invoiceId: "",
-    encounterId: "",
-    loaCode: "",
-    claimAmountPhp: "",
-    notes: "",
-  });
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+type Patient = { id: string; patientNumber: string; name: string };
+type Membership = { id: string; hmoPayer: string | null; payerName: string; cardNumber: string; memberName: string | null; coverageType: string; effectiveDate: string | null; expiryDate: string | null };
+type Invoice = { id: string; invoiceNumber: string; encounterId: string | null; status: string; totalAmountPhp: string; issuedAt: string | null };
+type Encounter = { id: string; date: string; status: string };
+type PatientOptions = { patient: Patient; memberships: Membership[]; invoices: Invoice[]; encounters: Encounter[] };
+async function request<T>(url: string, init?: RequestInit): Promise<T> { const response = await fetch(url, init); const payload = await response.json() as { success: boolean; data?: T; error?: { message?: string } }; if (!response.ok || !payload.success || !payload.data) throw new Error(payload.error?.message ?? "Request failed"); return payload.data; }
 
-  function set(key: keyof typeof form) {
-    return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-      const val = e.target.value;
-      setForm((f) => {
-        const next = { ...f, [key]: val };
-        // Auto-fill payer name snapshot when payer is selected
-        if (key === "hmoPayer") {
-          const payer = payers.find((p) => p.id === val);
-          next.payerNameSnapshot = payer?.name ?? f.payerNameSnapshot;
-        }
-        return next;
-      });
-    };
-  }
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.patientId.trim()) { setError("Patient ID is required."); return; }
-    if (!form.payerNameSnapshot.trim()) { setError("Payer name is required."); return; }
-    if (!form.claimAmountPhp || isNaN(parseFloat(form.claimAmountPhp))) {
-      setError("Claim amount must be a valid number.");
-      return;
-    }
-
-    setSubmitting(true);
-    setError(null);
-
-    const body: Record<string, string> = {
-      patientId: form.patientId.trim(),
-      payerNameSnapshot: form.payerNameSnapshot.trim(),
-      claimAmountPhp: parseFloat(form.claimAmountPhp).toFixed(2),
-    };
-    if (form.hmoPayer) body.hmoPayer = form.hmoPayer;
-    if (form.membershipId.trim()) body.membershipId = form.membershipId.trim();
-    if (form.invoiceId.trim()) body.invoiceId = form.invoiceId.trim();
-    if (form.encounterId.trim()) body.encounterId = form.encounterId.trim();
-    if (form.loaCode.trim()) body.loaCode = form.loaCode.trim();
-    if (form.notes.trim()) body.notes = form.notes.trim();
-
-    const res = await fetch(`/api/clinic/${clinicId}/hmo/claims`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-
-    const json = await res.json() as { success: boolean; data?: { id: string }; error?: { message: string } };
-    setSubmitting(false);
-
-    if (!res.ok || !json.success) {
-      setError(json.error?.message ?? "Failed to create claim.");
-      return;
-    }
-
-    router.push(`/app/billing/hmo-claims/${json.data!.id}`);
-  }
-
-  return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-2xl space-y-6">
-      <div>
-        <Link href="/app/billing/hmo-claims"
-          className="inline-flex items-center gap-1.5 text-sm text-violet-500 hover:text-violet-700 mb-2">
-          <ArrowLeft size={15} /> HMO Claims
-        </Link>
-        <h1 className="text-xl font-bold text-violet-900">New HMO Claim</h1>
-      </div>
-
-      <form onSubmit={submit} className="bg-white rounded-2xl border border-violet-200 p-6 shadow-sm space-y-4">
-        <div className="flex items-center gap-2 mb-1">
-          <Shield size={16} className="text-violet-500" />
-          <h2 className="font-semibold text-sm text-violet-900">Claim Details</h2>
-        </div>
-
-        {error && (
-          <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-sm text-red-700">
-            <AlertCircle size={14} className="flex-shrink-0 mt-0.5" /> {error}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-semibold text-violet-700 mb-1">Patient ID (UUID) *</label>
-            <input
-              required
-              value={form.patientId}
-              onChange={set("patientId")}
-              placeholder="Paste patient UUID from their profile"
-              className="w-full px-3 py-2 rounded-xl border border-violet-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 font-mono"
-            />
-            <p className="text-[10px] text-violet-400 mt-0.5">
-              Copy from the patient's profile URL or record.
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-violet-700 mb-1">HMO Payer</label>
-            <select
-              value={form.hmoPayer}
-              onChange={set("hmoPayer")}
-              className="w-full px-3 py-2 rounded-xl border border-violet-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-400"
-            >
-              <option value="">Select payer…</option>
-              {payers.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-              <option value="">— Other —</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-violet-700 mb-1">Payer Name *</label>
-            <input
-              required
-              value={form.payerNameSnapshot}
-              onChange={set("payerNameSnapshot")}
-              placeholder="e.g. Maxicare"
-              className="w-full px-3 py-2 rounded-xl border border-violet-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-violet-700 mb-1">LOA / Approval Code</label>
-            <input
-              value={form.loaCode}
-              onChange={set("loaCode")}
-              placeholder="e.g. LOA-2024-00001"
-              className="w-full px-3 py-2 rounded-xl border border-violet-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-violet-700 mb-1">Claim Amount (PHP) *</label>
-            <input
-              required
-              type="number"
-              min="0"
-              step="0.01"
-              value={form.claimAmountPhp}
-              onChange={set("claimAmountPhp")}
-              placeholder="0.00"
-              className="w-full px-3 py-2 rounded-xl border border-violet-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-violet-700 mb-1">Invoice ID (optional)</label>
-            <input
-              value={form.invoiceId}
-              onChange={set("invoiceId")}
-              placeholder="Invoice UUID"
-              className="w-full px-3 py-2 rounded-xl border border-violet-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 font-mono"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-violet-700 mb-1">Encounter ID (optional)</label>
-            <input
-              value={form.encounterId}
-              onChange={set("encounterId")}
-              placeholder="Encounter UUID"
-              className="w-full px-3 py-2 rounded-xl border border-violet-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 font-mono"
-            />
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-semibold text-violet-700 mb-1">Notes</label>
-            <textarea
-              value={form.notes}
-              onChange={set("notes")}
-              rows={2}
-              placeholder="Special instructions, additional info…"
-              className="w-full px-3 py-2 rounded-xl border border-violet-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none"
-            />
-          </div>
-        </div>
-
-        <div className="flex gap-2 pt-1">
-          <button
-            type="submit"
-            disabled={submitting}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60 transition-colors"
-          >
-            {submitting && <Loader2 size={14} className="animate-spin" />}
-            {submitting ? "Creating…" : "Create Claim"}
-          </button>
-          <Link href="/app/billing/hmo-claims"
-            className="px-4 py-2.5 text-sm text-violet-500 hover:text-violet-700">
-            Cancel
-          </Link>
-        </div>
-      </form>
-    </div>
-  );
+export default function NewClaimClient({ clinicId, initialSelection }: { clinicId: string; initialSelection: { patientId: string; invoiceId: string; encounterId: string } }) {
+  const router = useRouter(); const [search, setSearch] = useState(""); const [patients, setPatients] = useState<Patient[]>([]); const [options, setOptions] = useState<PatientOptions | null>(null); const [searching, setSearching] = useState(false); const [loadingPatient, setLoadingPatient] = useState(false); const [submitting, setSubmitting] = useState(false); const [error, setError] = useState<string | null>(null);
+  const [form, setForm] = useState({ membershipId: "", invoiceId: initialSelection.invoiceId, encounterId: initialSelection.encounterId, loaCode: "", claimAmountPhp: "", notes: "" });
+  async function selectPatient(patientId: string) { setLoadingPatient(true); setError(null); try { const data = await request<PatientOptions>(`/api/clinic/${clinicId}/hmo/claim-options?patientId=${encodeURIComponent(patientId)}`); setOptions(data); const invoice = data.invoices.find((item) => item.id === initialSelection.invoiceId); setForm((value) => ({ ...value, membershipId: data.memberships[0]?.id ?? "", invoiceId: invoice?.id ?? "", encounterId: initialSelection.encounterId || invoice?.encounterId || "", claimAmountPhp: invoice?.totalAmountPhp ?? "" })); setPatients([]); } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to load patient claim options"); } finally { setLoadingPatient(false); } }
+  useEffect(() => { if (initialSelection.patientId) void selectPatient(initialSelection.patientId); }, []);
+  async function findPatients(event: FormEvent) { event.preventDefault(); if (search.trim().length < 2) { setError("Enter at least 2 characters of a patient name or number."); return; } setSearching(true); setError(null); try { const data = await request<{ patients: Patient[] }>(`/api/clinic/${clinicId}/hmo/claim-options?search=${encodeURIComponent(search.trim())}`); setPatients(data.patients); } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to search patients"); } finally { setSearching(false); } }
+  const membership = options?.memberships.find((item) => item.id === form.membershipId); const invoice = options?.invoices.find((item) => item.id === form.invoiceId);
+  function chooseInvoice(id: string) { const selected = options?.invoices.find((item) => item.id === id); setForm((value) => ({ ...value, invoiceId: id, encounterId: selected?.encounterId ?? value.encounterId, claimAmountPhp: selected?.totalAmountPhp ?? value.claimAmountPhp })); }
+  async function submit(event: FormEvent) { event.preventDefault(); if (!options || !membership) { setError("Select an active HMO membership."); return; } const amount = Number(form.claimAmountPhp); if (!(amount > 0) || invoice && amount > Number(invoice.totalAmountPhp)) { setError(invoice ? "Claim amount must be positive and cannot exceed the invoice total." : "Enter a positive claim amount."); return; } setSubmitting(true); setError(null); try { const claim = await request<{ id: string }>(`/api/clinic/${clinicId}/hmo/claims`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ patientId: options.patient.id, membershipId: membership.id, hmoPayer: membership.hmoPayer ?? undefined, payerNameSnapshot: membership.payerName, invoiceId: form.invoiceId || undefined, encounterId: form.encounterId || undefined, loaCode: form.loaCode || undefined, claimAmountPhp: amount.toFixed(2), notes: form.notes || undefined }) }); router.push(`/app/billing/hmo-claims/${claim.id}`); } catch (caught) { setError(caught instanceof Error ? caught.message : "Failed to create claim"); setSubmitting(false); } }
+  return <main className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6 lg:p-8"><header><Link href="/app/billing/hmo-claims" className="mb-2 inline-flex items-center gap-1 text-sm text-violet-600"><ArrowLeft size={15} /> HMO Claims</Link><h1 className="text-2xl font-bold text-violet-900">New HMO Claim</h1><p className="mt-1 text-sm text-violet-500">Choose a patient and eligible clinic records—no IDs to copy.</p></header>{error && <div role="alert" className="flex gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"><AlertCircle size={16} />{error}</div>}
+    <section className="rounded-2xl border border-violet-100 bg-white p-5 shadow-sm"><h2 className="flex items-center gap-2 font-semibold text-violet-900"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-600 text-xs text-white">1</span> Select patient</h2>{options ? <div className="mt-4 flex items-center justify-between rounded-xl bg-violet-50 p-4"><div><p className="font-semibold text-violet-900">{options.patient.name}</p><p className="text-xs text-violet-500">{options.patient.patientNumber}</p></div><button onClick={() => { setOptions(null); setForm({ membershipId: "", invoiceId: "", encounterId: "", loaCode: "", claimAmountPhp: "", notes: "" }); }} className="text-xs font-semibold text-violet-700 underline">Change</button></div> : <><form onSubmit={findPatients} className="mt-4 flex gap-2"><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Patient number or name" className="h-11 min-w-0 flex-1 rounded-xl border border-violet-200 px-3" /><button disabled={searching} className="inline-flex h-11 items-center gap-2 rounded-xl bg-violet-600 px-4 text-sm font-semibold text-white">{searching ? <Loader2 className="animate-spin" size={16} /> : <Search size={16} />} Search</button></form>{!searching && patients.length > 0 && <div className="mt-3 divide-y rounded-xl border">{patients.map((patient) => <button key={patient.id} onClick={() => void selectPatient(patient.id)} className="flex w-full items-center justify-between p-3 text-left hover:bg-violet-50"><span className="font-medium text-slate-800">{patient.name}</span><span className="text-xs text-slate-500">{patient.patientNumber}</span></button>)}</div>}{!searching && search && patients.length === 0 && !error && <p className="mt-3 text-sm text-slate-500">No matching patients.</p>}</>}{loadingPatient && <div className="mt-3 flex items-center gap-2 text-sm text-violet-600"><Loader2 size={16} className="animate-spin" /> Loading coverage and eligible records…</div>}</section>
+    {options && <form onSubmit={submit} className="space-y-5"><section className="rounded-2xl border border-violet-100 bg-white p-5 shadow-sm"><h2 className="flex items-center gap-2 font-semibold text-violet-900"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-600 text-xs text-white">2</span> Coverage</h2>{!options.memberships.length ? <div className="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">No active, currently effective HMO membership is available for this patient. Add or reactivate coverage from the patient profile first.</div> : <div className="mt-4 grid gap-3">{options.memberships.map((item) => <label key={item.id} className={`cursor-pointer rounded-xl border p-4 ${form.membershipId === item.id ? "border-violet-500 bg-violet-50" : "border-slate-200"}`}><input type="radio" name="membership" checked={form.membershipId === item.id} onChange={() => setForm({ ...form, membershipId: item.id })} className="mr-2" /><strong>{item.payerName}</strong><p className="ml-6 mt-1 text-xs text-slate-500">Card {item.cardNumber} · {item.coverageType} · Expires {item.expiryDate ?? "No expiry"}</p></label>)}</div>}</section>
+      <section className="rounded-2xl border border-violet-100 bg-white p-5 shadow-sm"><h2 className="flex items-center gap-2 font-semibold text-violet-900"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-600 text-xs text-white">3</span> Eligible records and amount</h2><div className="mt-4 grid gap-4 sm:grid-cols-2"><label className="text-xs font-semibold text-violet-700">Outstanding invoice<select value={form.invoiceId} onChange={(e) => chooseInvoice(e.target.value)} className="mt-1 h-11 w-full rounded-xl border border-violet-200 px-3"><option value="">No linked invoice</option>{options.invoices.map((item) => <option key={item.id} value={item.id}>{item.invoiceNumber} · ₱{Number(item.totalAmountPhp).toLocaleString("en-PH")} · {item.status}</option>)}</select></label><label className="text-xs font-semibold text-violet-700">Finalized encounter<select value={form.encounterId} onChange={(e) => setForm({ ...form, encounterId: e.target.value })} className="mt-1 h-11 w-full rounded-xl border border-violet-200 px-3"><option value="">No linked encounter</option>{options.encounters.filter((item) => !invoice?.encounterId || item.id === invoice.encounterId).map((item) => <option key={item.id} value={item.id}>{item.date} · Final</option>)}</select></label><label className="text-xs font-semibold text-violet-700">Claim amount (PHP)<input required type="number" min="0.01" step="0.01" max={invoice?.totalAmountPhp} value={form.claimAmountPhp} onChange={(e) => setForm({ ...form, claimAmountPhp: e.target.value })} className="mt-1 h-11 w-full rounded-xl border border-violet-200 px-3" /></label><label className="text-xs font-semibold text-violet-700">LOA / approval code<input value={form.loaCode} onChange={(e) => setForm({ ...form, loaCode: e.target.value })} className="mt-1 h-11 w-full rounded-xl border border-violet-200 px-3" /></label><label className="sm:col-span-2 text-xs font-semibold text-violet-700">Notes<textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="mt-1 w-full rounded-xl border border-violet-200 p-3" /></label></div>{invoice && <div className="mt-4 flex items-center gap-2 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700"><CheckCircle2 size={16} /> Invoice {invoice.invoiceNumber}: ₱{Number(invoice.totalAmountPhp).toLocaleString("en-PH")} outstanding claim ceiling.</div>}</section>
+      <button disabled={submitting || !options.memberships.length} className="inline-flex h-11 items-center gap-2 rounded-xl bg-violet-600 px-5 text-sm font-semibold text-white disabled:opacity-50">{submitting ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}{submitting ? "Creating…" : "Create prepared claim"}</button>
+    </form>}
+  </main>;
 }

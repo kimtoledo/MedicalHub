@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Printer, CreditCard, CheckCircle, RotateCcw, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, Printer, CreditCard, CheckCircle, RotateCcw, Shield, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import type { InvoiceDetail } from "./page";
 
@@ -235,6 +235,14 @@ export default function InvoiceDetailClient({
             <ArrowLeft size={15} /> Back to Billing
           </Link>
           <div className="flex gap-2">
+            {isPending && (
+              <Link
+                href={`/app/billing/hmo-claims/new?patientId=${invoice.patient.id}&invoiceId=${invoice.id}${invoice.encounterId ? `&encounterId=${invoice.encounterId}` : ""}`}
+                className="flex items-center gap-1.5 rounded-xl border border-violet-200 px-4 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-50"
+              >
+                <Shield size={14} /> HMO Claim
+              </Link>
+            )}
             {isPending && (
               <button
                 onClick={() => setShowPayModal(true)}

@@ -103,10 +103,16 @@ export function HmoTab({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-xs text-violet-500">HMO card records for this patient</p>
-        <button onClick={() => setShowForm(true)}
-          className="inline-flex items-center gap-1 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-lg transition-colors">
-          <Plus size={12} /> Add HMO Card
-        </button>
+        <div className="flex flex-wrap justify-end gap-2">
+          <Link href={`/app/billing/hmo-claims/new?patientId=${patientId}`}
+            className="inline-flex items-center gap-1 rounded-lg border border-violet-200 px-3 py-1.5 text-xs font-semibold text-violet-700 transition-colors hover:bg-violet-50">
+            <Shield size={12} /> Create claim
+          </Link>
+          <button onClick={() => setShowForm(true)}
+            className="inline-flex items-center gap-1 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-lg transition-colors">
+            <Plus size={12} /> Add HMO Card
+          </button>
+        </div>
       </div>
 
       {showForm && (

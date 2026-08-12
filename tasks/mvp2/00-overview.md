@@ -24,7 +24,7 @@
 | `14-teledentistry.md` | Remote photo consult requests, dentist review queue | ✅ Done |
 | `15-hmo-insurance.md` | HMO payer catalog, patient coverage, claim documents & tracker | ✅ Done |
 | `16-reports-workspace-completion.md` | Date/filter controls, detailed reports, and usable CSV exports | ✅ Done |
-| `17-hmo-claim-workflow-ux.md` | Replace raw UUID fields with guided patient/invoice/encounter selection | 🔲 Queued |
+| `17-hmo-claim-workflow-ux.md` | Replace raw UUID fields with guided patient/invoice/encounter selection | ✅ Done |
 
 ---
 
