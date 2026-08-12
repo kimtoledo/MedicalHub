@@ -92,6 +92,7 @@ Updated manually after each session or merged task.
 ### ✅ MVP 3 online payment safety baseline
 - Added expiring hashed invoice payment links, provider-neutral HMAC webhook verification, idempotent event records, and invoice reconciliation
 - Added migration `0029_numerous_reavers.sql` and applied it locally; provider credentials remain environment-only
+- Hardened webhook signature comparison with length-checked constant-time equality; regex-based comparison is no longer used
 
 ### ✅ MVP 3 custom domain verification baseline
 - Added normalized custom-domain records, DNS TXT instructions, verification checks, activation guards, and audit events
