@@ -1,6 +1,6 @@
 # Treatment Planning
 
-> **Status:** 🔜 Future — MVP 2
+> **Status:** ✅ Done — tenant-scoped treatment planning shipped
 
 ---
 

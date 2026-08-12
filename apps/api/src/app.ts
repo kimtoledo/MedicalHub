@@ -47,6 +47,7 @@ import type { ClinicEncountersService } from './clinic/encounters-service.js';
 import type { ClinicOdontogramService } from './clinic/odontogram-service.js';
 import type { ClinicTreatmentsService } from './clinic/treatments-service.js';
 import type { ClinicDashboardService } from './clinic/dashboard-service.js';
+import type { ClinicTreatmentPlansService } from './clinic/treatment-plans-service.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
 import { registerAdminDentistRoutes } from './routes/admin-dentists.js';
@@ -62,6 +63,7 @@ import { registerClinicPatientRoutes } from './routes/clinic-patients.js';
 import { registerClinicEncounterRoutes } from './routes/clinic-encounters.js';
 import { registerClinicOdontogramRoutes } from './routes/clinic-odontogram.js';
 import { registerClinicTreatmentRoutes } from './routes/clinic-treatments.js';
+import { registerClinicTreatmentPlanRoutes } from './routes/clinic-treatment-plans.js';
 import { registerClinicDashboardRoutes } from './routes/clinic-dashboard.js';
 import { registerClinicBillingRoutes } from './routes/clinic-billing.js';
 import { registerClinicPrescriptionRoutes } from './routes/clinic-prescriptions.js';
@@ -107,6 +109,7 @@ export type BuildAppOptions = {
   clinicOdontogram?: ClinicOdontogramService;
   clinicTreatments?: ClinicTreatmentsService;
   clinicDashboard?: ClinicDashboardService;
+  clinicTreatmentPlans?: ClinicTreatmentPlansService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -215,6 +218,13 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (options.clinicTreatments && options.entitlements) {
       await registerClinicTreatmentRoutes(app, { auth: options.auth, entitlements: options.entitlements, treatments: options.clinicTreatments });
+    }
+    if (options.clinicTreatmentPlans && options.entitlements) {
+      await registerClinicTreatmentPlanRoutes(app, {
+        auth: options.auth,
+        entitlements: options.entitlements,
+        treatmentPlans: options.clinicTreatmentPlans,
+      });
     }
     if (options.clinicDashboard && options.entitlements) {
       await registerClinicDashboardRoutes(app, { auth: options.auth, entitlements: options.entitlements, dashboard: options.clinicDashboard });

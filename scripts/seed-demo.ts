@@ -131,6 +131,7 @@ const PRO_CORE_FEATURES = [
   FeatureKey.ODONTOGRAM,
   FeatureKey.ENCOUNTERS,
   FeatureKey.TREATMENT_RECORDS,
+  FeatureKey.TREATMENT_PLANS,
   FeatureKey.ROLES_MANAGE,
   FeatureKey.MICROSITE_PUBLISH,
   FeatureKey.BRANCHES_MULTI,

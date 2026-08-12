@@ -16,7 +16,21 @@ Updated manually after each session or merged task.
 
 ---
 
+## In Progress
+
+_No active implementation task._
+
+---
+
 ## Completed
+
+### ✅ MVP 2 treatment planning
+- Added tenant-scoped treatment plans and multi-item proposals directly from patient profiles
+- Added entitlement- and role-protected plan APIs with draft → approved → archived lifecycle and item progress/cancellation transitions
+- Linked completed plan items to matching performed treatment records and recorded identifier-only audit events for plan mutations
+- Added responsive dentist authoring/approval controls and clinic printable approved-plan summaries
+- Added migration `0015_useful_nocturne.sql`, enabled the treatment-plans entitlement for Professional and Enterprise packages, and verified migration application
+- Verified 231 passing API tests, repository-wide TypeScript checks, and clean diff validation
 
 ### ✅ MVP 1 post-merge acceptance audit
 - Rechecked every MVP 1 task and implementation step after migration-history/content merges; Tasks 01–21 are now evidence-marked and the release checklist covers Increment 5 business basics

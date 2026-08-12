@@ -93,6 +93,7 @@ export const FeatureKey = {
   ODONTOGRAM: 'clinical.odontogram',
   ENCOUNTERS: 'clinical.encounters',
   TREATMENT_RECORDS: 'clinical.treatment_records',
+  TREATMENT_PLANS: 'clinical.treatment_plans',
 
   // Staff features
   STAFF_MANAGE: 'staff.manage',
@@ -233,6 +234,10 @@ export const AuditAction = {
   ENCOUNTER_UPDATED: 'encounter.updated',
   ENCOUNTER_FINALIZED: 'encounter.finalized',
   TREATMENT_RECORDED: 'treatment.recorded',
+  TREATMENT_PLAN_CREATED: 'treatment_plan.created',
+  TREATMENT_PLAN_UPDATED: 'treatment_plan.updated',
+  TREATMENT_PLAN_STATUS_CHANGED: 'treatment_plan.status_changed',
+  TREATMENT_PLAN_ITEM_STATUS_CHANGED: 'treatment_plan_item.status_changed',
   ODONTOGRAM_EVENT: 'odontogram.event',
 
   // Billing

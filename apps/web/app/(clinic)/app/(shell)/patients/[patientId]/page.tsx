@@ -50,6 +50,8 @@ export default async function PatientPage({
         canUsePrescriptions={hasClinicalRole && Boolean(context.entitlements["clinical.prescriptions"])}
         canUseFiles={hasClinicalRole && Boolean(context.entitlements["clinical.radiographs"])}
         canUseHmo={Boolean(context.entitlements["hmo.claims"])}
+        canUseTreatmentPlans={hasClinicalRole && Boolean(context.entitlements["clinical.treatment_plans"])}
+        canManageTreatmentPlans={identity.membershipRole === "dentist"}
       />
     </>
   );

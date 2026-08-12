@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, ImageIcon, Shield } from "lucide-react";
+import { ClipboardList, FileText, ImageIcon, Shield } from "lucide-react";
 import FilesTab from "@/components/app/FilesTab";
 import { HmoTab } from "./PatientDetailClient";
 import PatientPrescriptionsTab from "./PatientPrescriptionsTab";
+import TreatmentPlansTab from "@/components/app/TreatmentPlansTab";
 
-type ExtensionTab = "prescriptions" | "files" | "hmo";
+type ExtensionTab = "treatmentPlans" | "prescriptions" | "files" | "hmo";
 
 export default function PatientRecordExtensions({
   clinicId,
@@ -15,6 +16,8 @@ export default function PatientRecordExtensions({
   canUsePrescriptions,
   canUseFiles,
   canUseHmo,
+  canUseTreatmentPlans,
+  canManageTreatmentPlans,
 }: {
   clinicId: string;
   patientId: string;
@@ -22,14 +25,21 @@ export default function PatientRecordExtensions({
   canUsePrescriptions: boolean;
   canUseFiles: boolean;
   canUseHmo: boolean;
+  canUseTreatmentPlans: boolean;
+  canManageTreatmentPlans: boolean;
 }) {
-  const initialTab: ExtensionTab = canUsePrescriptions
+  const initialTab: ExtensionTab = canUseTreatmentPlans
+    ? "treatmentPlans"
+    : canUsePrescriptions
     ? "prescriptions"
     : canUseFiles
       ? "files"
       : "hmo";
   const [tab, setTab] = useState<ExtensionTab>(initialTab);
   const tabs = [
+    ...(canUseTreatmentPlans
+      ? [{ id: "treatmentPlans" as const, label: "Treatment Plans", icon: ClipboardList }]
+      : []),
     ...(canUsePrescriptions
       ? [{ id: "prescriptions" as const, label: "Prescriptions", icon: FileText }]
       : []),
@@ -64,7 +74,9 @@ export default function PatientRecordExtensions({
           ))}
         </div>
 
-        {tab === "prescriptions" && canUsePrescriptions ? (
+        {tab === "treatmentPlans" && canUseTreatmentPlans ? (
+          <TreatmentPlansTab clinicId={clinicId} patientId={patientId} canManage={canManageTreatmentPlans} />
+        ) : tab === "prescriptions" && canUsePrescriptions ? (
           <PatientPrescriptionsTab clinicId={clinicId} patientId={patientId} />
         ) : tab === "files" && canUseFiles ? (
           <FilesTab
