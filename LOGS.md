@@ -93,6 +93,10 @@ Updated manually after each session or merged task.
 - Added expiring hashed invoice payment links, provider-neutral HMAC webhook verification, idempotent event records, and invoice reconciliation
 - Added migration `0029_numerous_reavers.sql` and applied it locally; provider credentials remain environment-only
 
+### ✅ MVP 3 custom domain verification baseline
+- Added normalized custom-domain records, DNS TXT instructions, verification checks, activation guards, and audit events
+- Added migration `0030_majestic_wendell_vaughn.sql` and applied it locally; SSL provisioning remains adapter/deployment work
+
 ### ✅ MVP 2 treatment planning
 - Added tenant-scoped treatment plans and multi-item proposals directly from patient profiles
 - Added entitlement- and role-protected plan APIs with draft → approved → archived lifecycle and item progress/cancellation transitions

@@ -288,6 +288,10 @@ export const AuditAction = {
   ORGANIZATION_CREATED: 'organization.created',
   PAYMENT_LINK_CREATED: 'payment_link.created',
   PAYMENT_WEBHOOK_PROCESSED: 'payment_webhook.processed',
+  DOMAIN_ADDED: 'domain.added',
+  DOMAIN_CHECKED: 'domain.checked',
+  DOMAIN_VERIFIED: 'domain.verified',
+  DOMAIN_ACTIVATED: 'domain.activated',
 
   RECALL_RULE_CREATED: 'recall_rule.created',
   RECALL_RULE_UPDATED: 'recall_rule.updated',

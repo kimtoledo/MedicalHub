@@ -1,0 +1,5 @@
+import { index, pgEnum, pgTable, text, timestamp, unique, uuid, varchar } from 'drizzle-orm/pg-core';
+import { clinics } from './clinics';
+import { id, timestamps } from './helpers';
+export const customDomainStatusEnum = pgEnum('custom_domain_status', ['pending_verification', 'verified', 'active', 'failed', 'disabled']);
+export const customDomains = pgTable('custom_domains', { id: id(), clinicId: uuid('clinic_id').notNull().references(() => clinics.id, { onDelete: 'cascade' }), hostname: varchar('hostname', { length: 255 }).notNull(), verificationToken: varchar('verification_token', { length: 128 }).notNull(), status: customDomainStatusEnum('status').notNull().default('pending_verification'), verifiedAt: timestamp('verified_at', { withTimezone: true }), activatedAt: timestamp('activated_at', { withTimezone: true }), lastCheckedAt: timestamp('last_checked_at', { withTimezone: true }), failureReason: text('failure_reason'), ...timestamps }, (t) => ({ hostnameUnique: unique('custom_domain_hostname_unique').on(t.hostname), clinicIdx: index('custom_domains_clinic_idx').on(t.clinicId) }));

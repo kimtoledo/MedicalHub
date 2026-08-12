@@ -1,6 +1,6 @@
 # Custom Domains
 
-> **Status:** 🔜 Future — MVP 3
+> **Status:** ✅ Done — MVP 3 domain verification baseline
 
 ---
 
@@ -19,6 +19,12 @@ Premium clinics want their microsite to appear at their own domain (e.g. `www.sm
 - Requests to the canonical Dentra.ph URL (`dentra.ph/clinic/[slug]`) redirect to the custom domain after activation.
 - If DNS is misconfigured or the domain expires, the microsite falls back to the canonical Dentra.ph URL with no downtime.
 - Custom domain activation and deactivation are recorded in the audit trail.
+
+### Delivered
+
+- Added normalized custom-domain records with unique hostnames, DNS TXT verification tokens, verification checks, activation state, and failure fallback metadata.
+- Added clinic-admin APIs for add/list/verify/activate; activation is impossible before verification and every state change is audited.
+- DNS/SSL provisioning remains an environment adapter concern; no domain is activated without an explicit verified state.
 
 ---
 
