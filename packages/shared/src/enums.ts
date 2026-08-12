@@ -224,6 +224,7 @@ export const AuditAction = {
   MEMBER_INVITED: 'member.invited',
   MEMBER_ROLE_CHANGED: 'member.role_changed',
   MEMBER_REMOVED: 'member.removed',
+  ACCOUNT_PROFILE_UPDATED: 'account.profile_updated',
 
   // Subscriptions / entitlements
   SUBSCRIPTION_ASSIGNED: 'subscription.assigned',

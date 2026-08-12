@@ -1,0 +1,70 @@
+# Dentra.ph Page Completion Audit
+
+> **Audit date:** August 12, 2026
+> **Scope:** 59 Next.js page routes — 11 public/patient pages, 37 Clinic PWA/dentist pages, and 11 Super Admin pages
+> **Purpose:** Identify visible placeholders, incomplete workflows, misleading error states, and backend capabilities that still lack usable pages.
+
+## Summary
+
+| Priority | Finding | Task |
+|---|---|---|
+| P0 | Pending migrations can break live pages; settings masks server errors as permission failures | [`mvp1/23-runtime-readiness-and-page-errors.md`](mvp1/23-runtime-readiness-and-page-errors.md) |
+| P1 | Super Admin dashboard uses hard-coded KPIs and activity | [`mvp1/24-super-admin-dashboard-live.md`](mvp1/24-super-admin-dashboard-live.md) |
+| P2 | Super Admin Settings is a placeholder | [`mvp1/25-super-admin-settings.md`](mvp1/25-super-admin-settings.md) |
+| P1 | Clinic Staff page is a placeholder despite permission APIs | [`mvp1/26-clinic-staff-management.md`](mvp1/26-clinic-staff-management.md) |
+| P1 | Dentist My Profile is a placeholder | [`mvp1/27-dentist-self-service-profile.md`](mvp1/27-dentist-self-service-profile.md) |
+| P1 | Reports page has no date/filter/export controls and shows only a subset of required reporting | [`mvp2/16-reports-workspace-completion.md`](mvp2/16-reports-workspace-completion.md) |
+| P1 | New HMO claim requires users to paste raw UUIDs | [`mvp2/17-hmo-claim-workflow-ux.md`](mvp2/17-hmo-claim-workflow-ux.md) |
+| P1 | Patient portal baseline lacks signup, linking, request, logout, and polished detail workflows | [`mvp3/14-patient-portal-experience.md`](mvp3/14-patient-portal-experience.md) |
+| P1 | Verification APIs lack clinic/dentist submission and Super Admin review pages | [`mvp3/15-verification-moderation-ui.md`](mvp3/15-verification-moderation-ui.md) |
+| P1 | Review APIs lack patient submission, public review, clinic response, and moderation pages | [`mvp3/16-reviews-ui.md`](mvp3/16-reviews-ui.md) |
+| P2 | Organization APIs lack an enterprise management workspace | [`mvp3/17-enterprise-organization-ui.md`](mvp3/17-enterprise-organization-ui.md) |
+| P2 | Advanced analytics APIs are not exposed in the Clinic PWA | [`mvp3/18-advanced-analytics-ui.md`](mvp3/18-advanced-analytics-ui.md) |
+| P1 | Payment-link APIs lack clinic controls and patient checkout/status pages | [`mvp3/19-online-payment-checkout-ui.md`](mvp3/19-online-payment-checkout-ui.md) |
+| P2 | Custom-domain APIs lack clinic settings UI | [`mvp3/20-custom-domain-settings-ui.md`](mvp3/20-custom-domain-settings-ui.md) |
+| P2 | Partner API/webhook capabilities lack key-management and export UI | [`mvp3/21-integrations-settings-ui.md`](mvp3/21-integrations-settings-ui.md) |
+| P2 | Platform support/export APIs lack an operations console | [`mvp3/22-platform-operations-console.md`](mvp3/22-platform-operations-console.md) |
+| P2 | AI imaging/score APIs lack radiograph and patient-profile UI | [`mvp3/23-ai-imaging-ui.md`](mvp3/23-ai-imaging-ui.md) |
+
+## Route review
+
+### Public and patient surfaces — 11 routes
+
+- Live: landing page, clinic/dentist directories and profiles, both booking flows, remote consult form, kiosk, and offline fallback.
+- Incomplete: `/portal` is an API demonstration baseline rather than a complete patient product experience.
+- Already tracked: location-aware discovery completion remains in `mvp3/02-search-discovery.md`.
+
+### Clinic and dentist workspace — 37 routes
+
+- Live core workflows: dashboards, appointments, patients, encounters, odontogram, treatment records, prescriptions, billing, inventory, recalls, services, HMO payer management, remote consults, and self-service account profile.
+- Placeholder: `/app/staff` and `/app/dentist/profile`.
+- Incomplete: `/app/reports`, `/app/billing/hmo-claims/new`, and error handling on `/app/settings`.
+- API-only modules still needing pages: advanced analytics, online payment links, custom domains, integrations, organization management, and AI imaging.
+
+### Super Admin — 11 routes
+
+- Live: clinic, dentist, package, subscription, and audit management.
+- Presentation-only: `/dentra-admin` dashboard metrics and activity.
+- Placeholder: `/dentra-admin/settings`.
+- Missing operational pages: verification/review moderation and platform support/export operations.
+
+## Existing active tasks retained
+
+No duplicate task was created for work already clearly scoped in these files:
+
+- `mvp2/07-notifications.md` — reminder/cancellation delivery wiring and provider completion.
+- `mvp3/02-search-discovery.md` — near-me UI, availability, ranking, and structured data.
+- `mvp3/05-enterprise-multibranch.md` — organization entitlements, central catalog, assignments, and transfers.
+- `mvp3/09-integrations-api.md` — connectors, exports, delivery retries, and partner-resource expansion.
+- `mvp3/11-platform-operations.md` — export workers, retention, restore drills, alerts, rollout, and maintenance mode.
+- `mvp3/12-ai-imaging.md` — provider evaluation, clinical validation, overlays, and diagnostics assistant.
+
+## Recommended execution order
+
+1. P0 runtime readiness and truthful errors.
+2. Clinic staff management and dentist self-profile.
+3. Live Super Admin dashboard and complete reports/HMO workflows.
+4. Patient portal and trust workflows.
+5. Enterprise, payments, domains, integrations, operations, analytics, and AI user interfaces.
+
+Every implementation task must preserve session-derived identity, `clinic_id` tenant filters, role and entitlement checks, immutable audit records, and protected-data cache exclusions.

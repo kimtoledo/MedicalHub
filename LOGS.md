@@ -23,9 +23,22 @@ Updated manually after each session or merged task.
 - Public booking creation now queues non-sensitive email confirmation content when a patient email is provided.
 - Remaining: appointment reminder scheduling, cancellation/reschedule event wiring, and production provider credentials.
 
+### 📋 Page completion backlog
+- Audited all 59 Next.js page routes across public/patient, Clinic PWA/dentist, and Super Admin surfaces
+- Added `tasks/PAGE_AUDIT.md` with route-group findings, priorities, dependencies, and recommended execution order
+- Added 17 discrete queued task files covering runtime readiness, three visible placeholders, incomplete reports/HMO/patient workflows, and API-only MVP 3 user interfaces
+- Highest priority is migration readiness and truthful page errors; `/app/settings` currently masks a missing-schema HTTP 500 as an authorization failure
+
 ---
 
 ## Completed
+
+### ✅ Self-service clinic account profile
+- Replaced the `/app/profile` placeholder with responsive personal-information editing, avatar preview, read-only email, and active clinic/branch/role summaries
+- Added session-derived `GET/PATCH /v1/profile` endpoints; users can update only their own first name, last name, phone, and HTTPS avatar URL
+- Profile audits record only changed field names and tenant context, never submitted contact values; no schema migration was required
+- Verified 246 passing API tests, repository-wide TypeScript checks, production web/API builds, live API health, and unauthenticated profile denial
+- The standalone web lint command remains interactive because the repository has no ESLint configuration; the Next.js production build completed its built-in lint/type validation
 
 ### ✅ Safe local frontend startup command
 - Added `npm run dev:safe` to replace a stale Dentra listener on local port 5001 before starting the Next.js development server
@@ -593,7 +606,10 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 
 > **Proposal alignment review (Aug 2026):** The executive summary PDF was reviewed. Features in the proposal's MVP that were deferred to MVP 2 have been promoted to MVP 1 Increment 5 (tasks #22–24). Three new features not in any task file were added: AI clinical assistance (#25, MVP 2), tele-dentistry (#26, MVP 2), HMO/insurance (#27, MVP 2), plus AI imaging and kiosk check-in added to MVP 3 docs.
 
-No MVP 1 implementation tasks remain queued. Tasks #22–27 are merged; the next planned product work is under `tasks/mvp2/` and `tasks/mvp3/`.
+The August 12 page audit added a prioritized completion backlog. MVP 1 page/runtime
+follow-ups are `tasks/mvp1/23`–`27`; MVP 2 workflow follow-ups are `16`–`17`;
+MVP 3 frontend completion tasks are `14`–`23`. See `tasks/PAGE_AUDIT.md` for the
+route findings, dependencies, and recommended execution order.
 
 ---
 
@@ -626,7 +642,8 @@ No MVP 1 implementation tasks remain queued. Tasks #22–27 are merged; the next
 
 ### Useful scripts
 ```bash
-npm run dev          # Start Next.js on port 5000
+npm run dev          # Start Next.js locally on port 5001
+npm run dev:safe     # Safely replace a stale local Dentra frontend process
 npm run api:dev      # Start Fastify API on port 3001
 npm run api:start    # Start the production API bundle
 npm run test         # Run workspace tests

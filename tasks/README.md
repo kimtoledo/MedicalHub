@@ -10,61 +10,10 @@ Each markdown file describes one discrete work item: what it is, what "done" loo
 ```
 tasks/
   README.md          ← you are here
-  mvp1/              ← Foundation + Core Dental Operations
-    00-overview.md
-    01-platform-foundation.md
-    02-super-admin-clinic-management.md
-    03-super-admin-dentist-management.md
-    04-super-admin-package-management.md
-    05-public-landing-site.md
-    06-clinic-microsite.md
-    07-dentist-profile-page.md
-    08-appointment-booking-public.md
-    09-clinic-pwa-shell.md
-    10-patient-management.md
-    11-clinical-encounter.md
-    12-odontogram.md
-    13-treatment-records.md
-    14-clinic-dashboard-live.md
-    15-audit-baseline.md
-    16-hardening-and-demo-data.md
-    17-dentra-brand-migration.md
-    18-inter-typography.md
-    19-billing-lite.md
-    20-prescriptions-erx.md
-    21-file-uploads-clinical.md
-  mvp2/              ← Complete Clinic Business Operations
-    00-overview.md
-    01-treatment-planning.md
-    02-service-catalog-pricing.md
-    03-billing-payments.md
-    04-prescriptions.md
-    05-clinical-files-media.md
-    06-inventory.md
-    07-notifications.md
-    08-recall-followup.md
-    09-reports.md
-    10-microsite-customization.md
-    11-subscription-operations.md
-    12-new-roles.md
-    13-ai-clinical-assistance.md
-    14-teledentistry.md
-    15-hmo-insurance.md
-  mvp3/              ← Ecosystem + Scale
-    00-overview.md
-    01-patient-portal.md
-    02-search-discovery.md
-    03-verification-moderation.md
-    04-reviews.md
-    05-enterprise-multibranch.md
-    06-advanced-analytics.md
-    07-online-payments.md
-    08-custom-domains.md
-    09-integrations-api.md
-    10-offline-mode.md
-    11-platform-operations.md
-    12-ai-imaging.md
-    13-kiosk-checkin.md
+  PAGE_AUDIT.md       ← route inventory, gap summary, priority, and task links
+  mvp1/              ← Foundation + Core Dental Operations (overview + numbered tasks)
+  mvp2/              ← Complete Clinic Business Operations (overview + numbered tasks)
+  mvp3/              ← Ecosystem + Scale (overview + numbered tasks)
 ```
 
 ---

@@ -21,6 +21,16 @@
 | `11-platform-operations.md` | Support tooling, tenant export, retention, security alerts | 🔵 Active |
 | `12-ai-imaging.md` | AI radiograph analysis, oral health scoring, AI diagnostics assistant | 🔵 Active |
 | `13-kiosk-checkin.md` | Tablet self-check-in for high-volume clinic branches | ✅ Done |
+| `14-patient-portal-experience.md` | Complete signup, linking, requests, details, and account UX | 🔲 Queued |
+| `15-verification-moderation-ui.md` | Private submissions and Super Admin verification queue | 🔲 Queued |
+| `16-reviews-ui.md` | Patient review, public display, response, and moderation UI | 🔲 Queued |
+| `17-enterprise-organization-ui.md` | Organization selector, membership, and consolidated workspace | 🔲 Queued |
+| `18-advanced-analytics-ui.md` | Tenant-scoped trends, rates, charts, and exports | 🔲 Queued |
+| `19-online-payment-checkout-ui.md` | Clinic payment links and public checkout/status pages | 🔲 Queued |
+| `20-custom-domain-settings-ui.md` | DNS instructions, verification, and activation UI | 🔲 Queued |
+| `21-integrations-settings-ui.md` | API keys, webhooks, calendar, and accounting export UI | 🔲 Queued |
+| `22-platform-operations-console.md` | Support-access and tenant export/offboarding queues | 🔲 Queued |
+| `23-ai-imaging-ui.md` | Advisory radiograph analysis and oral-health score UI | 🔲 Queued |
 
 ---
 

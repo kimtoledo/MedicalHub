@@ -23,6 +23,8 @@
 | `13-ai-clinical-assistance.md` | AI note auto-fill, voice-to-text, follow-up & treatment suggestions | ✅ Done |
 | `14-teledentistry.md` | Remote photo consult requests, dentist review queue | ✅ Done |
 | `15-hmo-insurance.md` | HMO payer catalog, patient coverage, claim documents & tracker | ✅ Done |
+| `16-reports-workspace-completion.md` | Date/filter controls, detailed reports, and usable CSV exports | 🔲 Queued |
+| `17-hmo-claim-workflow-ux.md` | Replace raw UUID fields with guided patient/invoice/encounter selection | 🔲 Queued |
 
 ---
 
