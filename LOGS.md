@@ -45,6 +45,12 @@ Updated manually after each session or merged task.
 - Added migration `0021_tiny_random.sql` and applied it locally
 - Verified 239 passing API tests and repository-wide TypeScript checks
 
+### ✅ MVP 2 subscription operations baseline
+- Added tenant-scoped subscription overview, audited clinic change requests, and Super Admin review with effective package assignment
+- Added period-scoped usage counters and explicit limit errors plus responsive subscription settings UI
+- Added migration `0022_fancy_captain_universe.sql` and applied it locally
+- Verified 239 passing API tests and repository-wide TypeScript checks
+
 ### ✅ MVP 2 treatment planning
 - Added tenant-scoped treatment plans and multi-item proposals directly from patient profiles
 - Added entitlement- and role-protected plan APIs with draft → approved → archived lifecycle and item progress/cancellation transitions

@@ -81,6 +81,8 @@ import { registerHmoRoutes } from './routes/hmo.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerClinicRecallRoutes } from './routes/clinic-recalls.js';
 import { registerClinicReportsRoutes } from './routes/clinic-reports.js';
+import { registerSubscriptionOperationRoutes } from './routes/subscription-operations.js';
+import type { SubscriptionOperationsService } from './clinic/subscription-operations-service.js';
 
 export type BuildAppOptions = {
   config: ApiConfig;
@@ -124,6 +126,7 @@ export type BuildAppOptions = {
   notifications?: NotificationService;
   clinicRecalls?: RecallService;
   clinicReports?: ClinicReportsService;
+  subscriptionOperations?: SubscriptionOperationsService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -255,6 +258,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (options.clinicReports && options.entitlements) {
       await registerClinicReportsRoutes(app, { auth: options.auth, entitlements: options.entitlements, reports: options.clinicReports });
+    }
+    if (options.subscriptionOperations && options.entitlements && options.adminClinicSettings) {
+      await registerSubscriptionOperationRoutes(app, { auth: options.auth, entitlements: options.entitlements, operations: options.subscriptionOperations, adminSettings: options.adminClinicSettings });
     }
     if (options.clinicDashboard && options.entitlements) {
       await registerClinicDashboardRoutes(app, { auth: options.auth, entitlements: options.entitlements, dashboard: options.clinicDashboard });

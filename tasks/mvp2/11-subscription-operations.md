@@ -1,6 +1,6 @@
 # Subscription Operations
 
-> **Status:** 🔜 Future — MVP 2
+> **Status:** ✅ Done — MVP 2 baseline
 
 ---
 
@@ -19,6 +19,12 @@ Clinics need the ability to view their subscription and request changes, and the
 - When a usage limit is reached, the relevant feature is blocked with a clear "upgrade required" message — not a silent failure.
 - Entitlement effective dates are enforced: a package that expires reverts the clinic to its previous entitlement state.
 - Payment automation for subscription changes remains manual in MVP 2 until a commercial provider is selected.
+
+### Delivered
+
+- Added clinic subscription overview and audited upgrade/downgrade/add-on request workflow with Super Admin review and package assignment on approval.
+- Added period-scoped usage counters with explicit `USAGE_LIMIT_REACHED` responses instead of silent feature failures.
+- Added responsive clinic subscription settings at `/app/settings/subscription`.
 
 ---
 

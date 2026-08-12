@@ -22,4 +22,5 @@ export * from './inventory';
 export * from './notifications';
 export * from './recalls';
 export * from './microsite';
+export * from './subscription-operations';
 export * from './helpers';

@@ -1,10 +1,16 @@
 import Link from "next/link";
-import { Archive, BarChart3, BellRing, DollarSign, Settings, Shield } from "lucide-react";
+import { Archive, BarChart3, BellRing, CreditCard, DollarSign, Settings, Shield } from "lucide-react";
 import ClinicMicrositeSettings from "@/components/app/ClinicMicrositeSettings";
 import { getClinicSession } from "@/lib/clinic-session";
 import { getClinicSettings } from "@/lib/clinic-settings";
 
 const operationalSettings = [
+  {
+    href: "/app/settings/subscription",
+    icon: CreditCard,
+    label: "Subscription",
+    description: "View feature access and request a package change.",
+  },
   {
     href: "/app/reports",
     icon: BarChart3,

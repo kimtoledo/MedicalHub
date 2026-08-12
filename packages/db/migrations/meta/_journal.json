@@ -155,6 +155,13 @@
       "when": 1786500850535,
       "tag": "0021_tiny_random",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1786500991771,
+      "tag": "0022_fancy_captain_universe",
+      "breakpoints": true
     }
   ]
 }

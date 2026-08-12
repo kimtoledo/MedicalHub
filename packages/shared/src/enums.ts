@@ -264,6 +264,9 @@ export const AuditAction = {
   NOTIFICATION_QUEUED: 'notification.queued',
   NOTIFICATION_SENT: 'notification.sent',
   NOTIFICATION_FAILED: 'notification.failed',
+  SUBSCRIPTION_REQUESTED: 'subscription.requested',
+  SUBSCRIPTION_REVIEWED: 'subscription.reviewed',
+  USAGE_RECORDED: 'usage.recorded',
 
   RECALL_RULE_CREATED: 'recall_rule.created',
   RECALL_RULE_UPDATED: 'recall_rule.updated',
