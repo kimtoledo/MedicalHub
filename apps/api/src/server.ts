@@ -47,7 +47,7 @@ import { createNotificationService } from './notifications/service.js';
 import { createRecallService } from './clinic/recall-service.js';
 import { createClinicReportsService } from './clinic/reports-service.js';
 import { createSubscriptionOperationsService } from './clinic/subscription-operations-service.js';
-import { createClinicPermissionsService } from './clinic/permissions-service.js';
+import { createClinicStaffService } from './clinic/staff-service.js';
 import { createPatientPortalService } from './patient/portal-service.js';
 import { createVerificationService } from './verification/service.js';
 import { createReviewService } from './reviews/service.js';
@@ -93,7 +93,7 @@ const notifications = createNotificationService(database.db);
 const clinicRecalls = createRecallService(database.db, notifications);
 const clinicReports = createClinicReportsService(database.db);
 const subscriptionOperations = createSubscriptionOperationsService(database.db);
-const clinicPermissions = createClinicPermissionsService(database.db);
+const clinicStaff = createClinicStaffService(database.db);
 const patientPortal = createPatientPortalService(database.db);
 const verification = createVerificationService(database.db);
 const reviews = createReviewService(database.db);
@@ -155,7 +155,7 @@ const app = await buildApp({
   clinicRecalls,
   clinicReports,
   subscriptionOperations,
-  clinicPermissions,
+  clinicStaff,
   patientPortal,
   verification,
   reviews,

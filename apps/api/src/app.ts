@@ -83,8 +83,8 @@ import { registerClinicRecallRoutes } from './routes/clinic-recalls.js';
 import { registerClinicReportsRoutes } from './routes/clinic-reports.js';
 import { registerSubscriptionOperationRoutes } from './routes/subscription-operations.js';
 import type { SubscriptionOperationsService } from './clinic/subscription-operations-service.js';
-import type { ClinicPermissionsService } from './clinic/permissions-service.js';
-import { registerClinicPermissionRoutes } from './routes/clinic-permissions.js';
+import type { ClinicStaffService } from './clinic/staff-service.js';
+import { registerClinicStaffRoutes } from './routes/clinic-staff.js';
 import { registerPatientPortalRoutes } from './routes/patient-portal.js';
 import type { PatientPortalService } from './patient/portal-service.js';
 import { registerVerificationRoutes } from './routes/verification.js';
@@ -153,7 +153,7 @@ export type BuildAppOptions = {
   clinicRecalls?: RecallService;
   clinicReports?: ClinicReportsService;
   subscriptionOperations?: SubscriptionOperationsService;
-  clinicPermissions?: ClinicPermissionsService;
+  clinicStaff?: ClinicStaffService;
   patientPortal?: PatientPortalService;
   verification?: VerificationService;
   reviews?: ReviewService;
@@ -307,8 +307,8 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     if (options.subscriptionOperations && options.entitlements && options.adminClinicSettings) {
       await registerSubscriptionOperationRoutes(app, { auth: options.auth, entitlements: options.entitlements, operations: options.subscriptionOperations, adminSettings: options.adminClinicSettings });
     }
-    if (options.clinicPermissions && options.entitlements) {
-      await registerClinicPermissionRoutes(app, { auth: options.auth, entitlements: options.entitlements, permissions: options.clinicPermissions });
+    if (options.clinicStaff && options.entitlements) {
+      await registerClinicStaffRoutes(app, { auth: options.auth, entitlements: options.entitlements, staff: options.clinicStaff });
     }
     if (options.patientPortal) {
       await registerPatientPortalRoutes(app, { portal: options.patientPortal });

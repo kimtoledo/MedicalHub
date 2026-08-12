@@ -33,6 +33,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Clinic staff and membership management
+- Replaced `/app/staff` with a responsive owner/admin workspace for staff invitations, active/pending/inactive membership states, roles, branch access, activation, removal, and permission overrides
+- Added tenant-filtered staff APIs with approved-role/permission validation, cross-tenant denial, self-elevation/removal protection, owner-only owner management, and last-active-owner enforcement
+- Staff mutations write atomic identifier/state-only audit events; invitation responses never expose password-setup secrets, and production delivery remains explicitly dependent on the notifications provider
+- Existing credential users can be attached immediately; new-user invitations remain visibly pending and support safe resend metadata without claiming email delivery
+- Verified 252 passing API tests, repository-wide TypeScript checks, production web/API builds, and clean diff validation
+
 ### ✅ Runtime readiness and truthful page errors
 - API startup, `npm run db:migrate`, and Replit post-merge setup now fail closed when required schema objects are missing, even if Drizzle itself reports no pending migrations
 - Added `npm run db:reconcile-order` and used it to apply skipped migrations `0015`–`0033` transactionally through Drizzle; the shared database readiness check and live API health pass
