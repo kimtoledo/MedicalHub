@@ -33,6 +33,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Patient portal experience completion
+- Replaced the `/portal` API demonstration with a mobile-first patient product covering signup, sign-in/out, appointment and invoice detail summaries, treatment plans, request history, and profile/security controls
+- Added patient-facing clinic linking by clinic slug and patient number with explicit consent, account-contact verification, safe link revocation/re-linking, and no raw UUID entry
+- Fixed single-contact account verification so a missing email or phone can no longer accidentally satisfy the clinic-record match; appointment requests now verify the appointment belongs to the linked clinic/patient
+- Added server-side session invalidation, typed request payload validation, cancellation/reschedule and contact-update workflows, plus loading, empty, error/retry, confirmation, and recovery-guidance states
+- Verified 267 passing API tests, 5 passing web tests, repository-wide TypeScript checks, production web/API builds, and clean diff validation
+
 ### ✅ Guided HMO claim workflow
 - Replaced raw patient, membership, invoice, and encounter UUID entry with tenant-scoped patient search and eligible-record selection
 - Added active/current coverage summaries, outstanding-invoice amount ceilings, finalized encounter choices, loading/empty/error states, and direct claim-entry links from patient and invoice pages

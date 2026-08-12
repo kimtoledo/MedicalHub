@@ -15,7 +15,7 @@
 | Complete | Dentist-owned professional profile editor and public preview | [`mvp1/27-dentist-self-service-profile.md`](mvp1/27-dentist-self-service-profile.md) |
 | Complete | Reports workspace has date/filter controls, detail tables, and CSV exports | [`mvp2/16-reports-workspace-completion.md`](mvp2/16-reports-workspace-completion.md) |
 | Complete | Guided, tenant-safe HMO claim creation replaces raw UUID entry | [`mvp2/17-hmo-claim-workflow-ux.md`](mvp2/17-hmo-claim-workflow-ux.md) |
-| P1 | Patient portal baseline lacks signup, linking, request, logout, and polished detail workflows | [`mvp3/14-patient-portal-experience.md`](mvp3/14-patient-portal-experience.md) |
+| Complete | Patient portal signup, consent linking, care summaries, requests, and account security UX | [`mvp3/14-patient-portal-experience.md`](mvp3/14-patient-portal-experience.md) |
 | P1 | Verification APIs lack clinic/dentist submission and Super Admin review pages | [`mvp3/15-verification-moderation-ui.md`](mvp3/15-verification-moderation-ui.md) |
 | P1 | Review APIs lack patient submission, public review, clinic response, and moderation pages | [`mvp3/16-reviews-ui.md`](mvp3/16-reviews-ui.md) |
 | P2 | Organization APIs lack an enterprise management workspace | [`mvp3/17-enterprise-organization-ui.md`](mvp3/17-enterprise-organization-ui.md) |
@@ -31,7 +31,7 @@
 ### Public and patient surfaces — 11 routes
 
 - Live: landing page, clinic/dentist directories and profiles, both booking flows, remote consult form, kiosk, and offline fallback.
-- Incomplete: `/portal` is an API demonstration baseline rather than a complete patient product experience.
+- Live: `/portal` supports patient signup/sign-in, explicit clinic linking and revocation, care summaries, clinic-reviewed requests, and account security guidance.
 - Already tracked: location-aware discovery completion remains in `mvp3/02-search-discovery.md`.
 
 ### Clinic and dentist workspace — 37 routes
