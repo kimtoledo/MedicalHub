@@ -27,6 +27,11 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ User manuals
+- Added the project-root `docs/` user manual set: general system guide, Super Admin manual, clinic staff/dentist manual, and patient manual
+- Documented current routes, roles, tenant/privacy boundaries, daily workflows, feature limitations, troubleshooting, and safe support handoff practices
+- Linked the manuals from `README.md` and `docs/README.md`; no credentials or secrets are stored in the manuals
+
 ### ✅ MVP 2 recall and follow-up
 - Added clinic-scoped recall rules by service and automatically created deduplicated patient recalls after treatment records are recorded
 - Added due/upcoming queue projection with contact, dismiss, due-date override, and audited follow-up booking actions with dentist overlap protection

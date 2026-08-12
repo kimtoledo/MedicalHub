@@ -135,6 +135,10 @@ Local URLs after startup:
 |---|---|
 | [`DEVELOPER.md`](DEVELOPER.md) | Installation, local DB setup, migration workflow, troubleshooting |
 | [`docs/README.md`](docs/README.md) | Full product spec — domain rules, roles, architecture |
+| [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) | General product and operating guide |
+| [`docs/USER_GUIDE_SUPER_ADMIN.md`](docs/USER_GUIDE_SUPER_ADMIN.md) | Super Admin platform operations manual |
+| [`docs/USER_GUIDE_CLINICS.md`](docs/USER_GUIDE_CLINICS.md) | Clinic staff and dentist manual |
+| [`docs/USER_GUIDE_PATIENTS.md`](docs/USER_GUIDE_PATIENTS.md) | Patient booking, portal, payment, and privacy manual |
 | [`docs/MVP_1.md`](docs/MVP_1.md) | MVP 1 detailed scope and acceptance criteria |
 | [`docs/MVP1_RELEASE_CHECKLIST.md`](docs/MVP1_RELEASE_CHECKLIST.md) | Verified MVP 1 release gates and evidence |
 | [`tasks/mvp1/00-overview.md`](tasks/mvp1/00-overview.md) | Completed MVP 1 implementation task checklist |

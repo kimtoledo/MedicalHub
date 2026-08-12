@@ -21,6 +21,13 @@ This repository is intended to be the shared source of truth for Replit Agent, C
 | Clinic PWA | `/app` | Clinic users |
 | Dentra.ph Super Admin | `/dentra-admin` | Platform users |
 
+## 1.1 User manuals
+
+- [`USER_GUIDE.md`](USER_GUIDE.md) — general product, roles, safety, and troubleshooting guide.
+- [`USER_GUIDE_SUPER_ADMIN.md`](USER_GUIDE_SUPER_ADMIN.md) — Super Admin clinic, dentist, subscription, moderation, audit, and operations procedures.
+- [`USER_GUIDE_CLINICS.md`](USER_GUIDE_CLINICS.md) — clinic staff and dentist daily workflows, clinical records, billing, inventory, HMO, and settings.
+- [`USER_GUIDE_PATIENTS.md`](USER_GUIDE_PATIENTS.md) — patient booking, portal, remote consultation, kiosk, payments, reviews, and privacy.
+
 ## 2. Demo deployment architecture
 
 For the demo stage, use a split deployment:
