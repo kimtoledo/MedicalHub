@@ -1,6 +1,6 @@
 # New Clinic Roles
 
-> **Status:** 🔜 Future — MVP 2
+> **Status:** ✅ Done — MVP 2
 
 ---
 
@@ -18,6 +18,12 @@ MVP 1 ships with three clinic roles: Owner/Admin, Dentist, and Receptionist/Assi
 - Clinic admin can customize permissions per staff member beyond the preset (add/remove individual permission flags).
 - All existing MVP 1 modules respect the updated permission matrix.
 - Permission changes generate an audit entry.
+
+### Delivered
+
+- Added effective permission presets for Cashier and Inventory Staff, with existing clinic roles mapped to the shared permission vocabulary.
+- Added tenant-scoped staff permission listing and audited membership-level permission overrides behind `roles.manage`.
+- Existing route role/entitlement guards remain enforced server-side; custom permissions are additive controls for the staff matrix.
 
 ---
 

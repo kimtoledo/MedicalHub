@@ -83,6 +83,8 @@ import { registerClinicRecallRoutes } from './routes/clinic-recalls.js';
 import { registerClinicReportsRoutes } from './routes/clinic-reports.js';
 import { registerSubscriptionOperationRoutes } from './routes/subscription-operations.js';
 import type { SubscriptionOperationsService } from './clinic/subscription-operations-service.js';
+import type { ClinicPermissionsService } from './clinic/permissions-service.js';
+import { registerClinicPermissionRoutes } from './routes/clinic-permissions.js';
 
 export type BuildAppOptions = {
   config: ApiConfig;
@@ -127,6 +129,7 @@ export type BuildAppOptions = {
   clinicRecalls?: RecallService;
   clinicReports?: ClinicReportsService;
   subscriptionOperations?: SubscriptionOperationsService;
+  clinicPermissions?: ClinicPermissionsService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -261,6 +264,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (options.subscriptionOperations && options.entitlements && options.adminClinicSettings) {
       await registerSubscriptionOperationRoutes(app, { auth: options.auth, entitlements: options.entitlements, operations: options.subscriptionOperations, adminSettings: options.adminClinicSettings });
+    }
+    if (options.clinicPermissions && options.entitlements) {
+      await registerClinicPermissionRoutes(app, { auth: options.auth, entitlements: options.entitlements, permissions: options.clinicPermissions });
     }
     if (options.clinicDashboard && options.entitlements) {
       await registerClinicDashboardRoutes(app, { auth: options.auth, entitlements: options.entitlements, dashboard: options.clinicDashboard });

@@ -51,6 +51,11 @@ Updated manually after each session or merged task.
 - Added migration `0022_fancy_captain_universe.sql` and applied it locally
 - Verified 239 passing API tests and repository-wide TypeScript checks
 
+### ✅ MVP 2 roles and permission matrix
+- Added Cashier and Inventory Staff effective permission presets plus tenant-scoped membership permission overrides
+- Added role-management API with audit events and migration `0023_abandoned_spirit.sql`
+- Verified 239 passing API tests, repository-wide TypeScript checks, and local migration application
+
 ### ✅ MVP 2 treatment planning
 - Added tenant-scoped treatment plans and multi-item proposals directly from patient profiles
 - Added entitlement- and role-protected plan APIs with draft → approved → archived lifecycle and item progress/cancellation transitions

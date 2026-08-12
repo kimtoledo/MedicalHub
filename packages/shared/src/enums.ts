@@ -21,6 +21,18 @@ export const ClinicRole = {
 } as const;
 export type ClinicRole = (typeof ClinicRole)[keyof typeof ClinicRole];
 
+export const PermissionKey = {
+  APPOINTMENTS: 'appointments.manage',
+  PATIENTS: 'patients.manage',
+  CLINICAL_RECORDS: 'clinical.records',
+  BILLING_INVOICES: 'billing.invoices',
+  BILLING_PAYMENTS: 'billing.payments',
+  INVENTORY: 'inventory.manage',
+  REPORTS: 'reports.basic',
+  MICROSITE: 'microsite.customize',
+} as const;
+export type PermissionKey = (typeof PermissionKey)[keyof typeof PermissionKey];
+
 // ---------------------------------------------------------------------------
 // Clinic / branch status
 // ---------------------------------------------------------------------------
@@ -267,6 +279,7 @@ export const AuditAction = {
   SUBSCRIPTION_REQUESTED: 'subscription.requested',
   SUBSCRIPTION_REVIEWED: 'subscription.reviewed',
   USAGE_RECORDED: 'usage.recorded',
+  PERMISSION_UPDATED: 'permission.updated',
 
   RECALL_RULE_CREATED: 'recall_rule.created',
   RECALL_RULE_UPDATED: 'recall_rule.updated',
