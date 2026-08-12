@@ -1,6 +1,6 @@
 # Patient Account and Portal
 
-> **Status:** 🔜 Future — MVP 3
+> **Status:** ✅ Done — MVP 3 baseline
 
 ---
 
@@ -19,6 +19,13 @@ Patients want to see their upcoming appointments, past invoices, and treatment s
 - Patients can submit contact detail updates — the clinic must review and confirm the change.
 - A patient account at Clinic A cannot see any records from Clinic B without a separate explicit consent/linking step.
 - Clinical records (encounter notes, odontogram, prescriptions) are not exposed in the patient portal without explicit dentist/clinic authorization.
+
+### Delivered
+
+- Added a separate patient-account/session boundary using scrypt-hashed credentials and an HttpOnly patient session cookie.
+- Added explicit per-clinic record linking with contact-match validation and consent tracking; no automatic cross-clinic matching occurs.
+- Added read-only portal access to linked appointments, invoices, and treatment-plan summaries, plus clinic-reviewed contact/appointment request records.
+- Added `/portal` and patient API proxy routes; clinical notes, odontograms, and prescriptions are intentionally excluded.
 
 ---
 

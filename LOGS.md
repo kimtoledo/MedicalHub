@@ -56,6 +56,13 @@ Updated manually after each session or merged task.
 - Added role-management API with audit events and migration `0023_abandoned_spirit.sql`
 - Verified 239 passing API tests, repository-wide TypeScript checks, and local migration application
 
+### ✅ MVP 3 patient portal baseline
+- Added separate patient accounts and sessions with scrypt password hashing and HttpOnly cookies
+- Added explicit consented clinic-record linking with contact matching and strict linked-patient tenant filters
+- Added read-only appointments, invoices, treatment-plan summaries, and reviewed request records at `/portal`
+- Added migration `0024_clammy_trish_tilby.sql` and applied it locally
+- Verified 239 passing API tests and repository-wide TypeScript checks
+
 ### ✅ MVP 2 treatment planning
 - Added tenant-scoped treatment plans and multi-item proposals directly from patient profiles
 - Added entitlement- and role-protected plan APIs with draft → approved → archived lifecycle and item progress/cancellation transitions

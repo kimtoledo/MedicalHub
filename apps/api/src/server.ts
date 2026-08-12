@@ -48,6 +48,7 @@ import { createRecallService } from './clinic/recall-service.js';
 import { createClinicReportsService } from './clinic/reports-service.js';
 import { createSubscriptionOperationsService } from './clinic/subscription-operations-service.js';
 import { createClinicPermissionsService } from './clinic/permissions-service.js';
+import { createPatientPortalService } from './patient/portal-service.js';
 
 const config = loadConfig();
 const database = await createDatabaseServices();
@@ -81,6 +82,7 @@ const clinicRecalls = createRecallService(database.db, notifications);
 const clinicReports = createClinicReportsService(database.db);
 const subscriptionOperations = createSubscriptionOperationsService(database.db);
 const clinicPermissions = createClinicPermissionsService(database.db);
+const patientPortal = createPatientPortalService(database.db);
 const publicBooking = createPublicBookingService(database.db, notifications);
 const clinicSettings = createClinicSettingsService(database.db);
 const clinicWorkspace = createClinicWorkspaceService(database.db);
@@ -131,6 +133,7 @@ const app = await buildApp({
   clinicReports,
   subscriptionOperations,
   clinicPermissions,
+  patientPortal,
   clinicDashboard,
   clinicTreatmentPlans,
   clinicServiceCatalog,
