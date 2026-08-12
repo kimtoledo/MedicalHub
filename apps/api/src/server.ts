@@ -60,6 +60,7 @@ import { createPlatformOperationsService } from './platform/operations-service.j
 import { createAiImagingService } from './clinic/ai-imaging-service.js';
 import { createKioskService } from './kiosk/service.js';
 import { createAccountProfileService } from './profile/service.js';
+import { createDentistProfileService } from './profile/dentist-profile-service.js';
 
 const config = loadConfig();
 const database = await createDatabaseServices();
@@ -106,6 +107,7 @@ const platformOperations = createPlatformOperationsService(database.db);
 const aiImaging = createAiImagingService(database.db);
 const kiosk = createKioskService(database.db, entitlements);
 const profiles = createAccountProfileService(database.db);
+const dentistProfiles = createDentistProfileService(database.db);
 const publicBooking = createPublicBookingService(database.db, notifications);
 const clinicSettings = createClinicSettingsService(database.db);
 const clinicWorkspace = createClinicWorkspaceService(database.db);
@@ -168,6 +170,7 @@ const app = await buildApp({
   aiImaging,
   kiosk,
   profiles,
+  dentistProfiles,
   clinicDashboard,
   clinicTreatmentPlans,
   clinicServiceCatalog,

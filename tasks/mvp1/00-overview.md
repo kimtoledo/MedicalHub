@@ -46,7 +46,7 @@
 | `24-super-admin-dashboard-live.md` | Replace presentation KPIs/activity with live platform aggregates | 🔲 Queued |
 | `25-super-admin-settings.md` | Replace platform settings placeholder with safe controls | 🔲 Queued |
 | `26-clinic-staff-management.md` | Staff invitations, roles, branches, activation, permissions | ✅ Done |
-| `27-dentist-self-service-profile.md` | Dentist-owned professional profile editor and preview | 🔲 Queued |
+| `27-dentist-self-service-profile.md` | Dentist-owned professional profile editor and preview | ✅ Done |
 
 ---
 

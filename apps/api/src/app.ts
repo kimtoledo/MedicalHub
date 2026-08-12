@@ -109,6 +109,8 @@ import { registerKioskRoutes } from './routes/kiosk.js';
 import type { KioskService } from './kiosk/service.js';
 import type { AccountProfileService } from './profile/service.js';
 import { registerProfileRoutes } from './routes/profile.js';
+import type { DentistProfileService } from './profile/dentist-profile-service.js';
+import { registerDentistProfileRoutes } from './routes/dentist-profile.js';
 
 export type BuildAppOptions = {
   config: ApiConfig;
@@ -166,6 +168,7 @@ export type BuildAppOptions = {
   aiImaging?: AiImagingService;
   kiosk?: KioskService;
   profiles?: AccountProfileService;
+  dentistProfiles?: DentistProfileService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -222,6 +225,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     await registerAuthRoutes(app, { auth: options.auth, config: options.config });
     if (options.profiles) {
       await registerProfileRoutes(app, { auth: options.auth, profiles: options.profiles });
+    }
+    if (options.dentistProfiles) {
+      await registerDentistProfileRoutes(app, { auth: options.auth, profiles: options.dentistProfiles });
     }
     if (options.adminClinics) {
       await registerAdminClinicRoutes(app, {

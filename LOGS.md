@@ -33,6 +33,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Dentist self-service professional profile
+- Replaced `/app/dentist/profile` with a responsive editor for biography, specialty, professional contact details, HTTPS photo URL, and PRC/license number
+- Added dentist-owned profile APIs that derive dentist identity from the active authenticated membership; client-supplied dentist IDs, verification state, publication state, slug, and affiliations are never authoritative
+- Added read-only affiliation/status summaries, public-profile preview, publication-readiness checklist, unsaved-change warning, and truthful loading/save/error states
+- Audits contain changed field names and tenant context only, not submitted professional values
+- Verified 255 passing API tests, repository-wide TypeScript checks, production web/API builds, and clean diff validation
+
 ### ✅ Clinic staff and membership management
 - Replaced `/app/staff` with a responsive owner/admin workspace for staff invitations, active/pending/inactive membership states, roles, branch access, activation, removal, and permission overrides
 - Added tenant-filtered staff APIs with approved-role/permission validation, cross-tenant denial, self-elevation/removal protection, owner-only owner management, and last-active-owner enforcement

@@ -1,12 +1,10 @@
-import AppStubPage from "@/components/app/AppStubPage";
-import { UserCircle } from "lucide-react";
+import { redirect } from "next/navigation";
+import DentistProfileEditor from "@/components/app/profile/DentistProfileEditor";
+import { getClinicSession } from "@/lib/clinic-session";
 
-export default function DentistProfilePage() {
-  return (
-    <AppStubPage
-      title="My Profile"
-      description="Manage your dentist profile, professional information, clinic affiliations, and public profile publication settings."
-      icon={<UserCircle size={28} className="text-violet-500" />}
-    />
-  );
+export default async function DentistProfilePage() {
+  const identity = await getClinicSession();
+  if (!identity) redirect("/cl-login");
+  if (identity.membershipRole !== "dentist" || !identity.dentistId) redirect("/app/profile");
+  return <DentistProfileEditor />;
 }

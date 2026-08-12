@@ -12,7 +12,7 @@
 | P1 | Super Admin dashboard uses hard-coded KPIs and activity | [`mvp1/24-super-admin-dashboard-live.md`](mvp1/24-super-admin-dashboard-live.md) |
 | P2 | Super Admin Settings is a placeholder | [`mvp1/25-super-admin-settings.md`](mvp1/25-super-admin-settings.md) |
 | Complete | Clinic staff membership, roles, branch access, and permissions workspace | [`mvp1/26-clinic-staff-management.md`](mvp1/26-clinic-staff-management.md) |
-| P1 | Dentist My Profile is a placeholder | [`mvp1/27-dentist-self-service-profile.md`](mvp1/27-dentist-self-service-profile.md) |
+| Complete | Dentist-owned professional profile editor and public preview | [`mvp1/27-dentist-self-service-profile.md`](mvp1/27-dentist-self-service-profile.md) |
 | P1 | Reports page has no date/filter/export controls and shows only a subset of required reporting | [`mvp2/16-reports-workspace-completion.md`](mvp2/16-reports-workspace-completion.md) |
 | P1 | New HMO claim requires users to paste raw UUIDs | [`mvp2/17-hmo-claim-workflow-ux.md`](mvp2/17-hmo-claim-workflow-ux.md) |
 | P1 | Patient portal baseline lacks signup, linking, request, logout, and polished detail workflows | [`mvp3/14-patient-portal-experience.md`](mvp3/14-patient-portal-experience.md) |
@@ -37,7 +37,7 @@
 ### Clinic and dentist workspace — 37 routes
 
 - Live core workflows: dashboards, appointments, patients, encounters, odontogram, treatment records, prescriptions, billing, inventory, recalls, services, HMO payer management, remote consults, and self-service account profile.
-- Placeholder: `/app/dentist/profile`; `/app/staff` is now a live management workspace.
+- Former placeholders `/app/staff` and `/app/dentist/profile` are now live management workspaces.
 - Incomplete: `/app/reports`, `/app/billing/hmo-claims/new`, and error handling on `/app/settings`.
 - API-only modules still needing pages: advanced analytics, online payment links, custom domains, integrations, organization management, and AI imaging.
 

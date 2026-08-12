@@ -219,6 +219,7 @@ export const AuditAction = {
   DENTIST_VERIFICATION_REVOKED: 'dentist.verification_revoked',
   DENTIST_PUBLISHED: 'dentist.published',
   DENTIST_UNPUBLISHED: 'dentist.unpublished',
+  DENTIST_PROFILE_UPDATED: 'dentist.profile_updated',
 
   // Membership / roles
   MEMBER_INVITED: 'member.invited',
