@@ -89,7 +89,7 @@ npm run db:migrate
 # then load the fully synthetic demo dataset
 npm run db:seed
 
-# 4. Start the frontend (port 5000)
+# 4. Start the frontend (local port 5001)
 npm run dev
 
 # 5. In another terminal, start the API (port 3001)
@@ -104,9 +104,9 @@ memberships resolved by the backend.
 
 Local URLs after startup:
 
-- Website and public directories: `http://localhost:5000`
-- Clinic login/PWA: `http://localhost:5000/cl-login` and `/app`
-- Super Admin: `http://localhost:5000/dentra-admin/login`
+- Website and public directories: `http://localhost:5001`
+- Clinic login/PWA: `http://localhost:5001/cl-login` and `/app`
+- Super Admin: `http://localhost:5001/dentra-admin/login`
 - API health: `http://localhost:3001/health`
 
 ## MVP 1 delivered

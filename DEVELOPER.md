@@ -93,7 +93,7 @@ Now open `.env` and fill in the values:
 | `BETTER_AUTH_SECRET` | Replit → Secrets → copy, or generate: `openssl rand -hex 32` |
 | `SUPER_ADMIN_PASSWORD` | Set a synthetic demo-only password of at least 10 characters |
 | `CLINIC_DEMO_PASSWORD` | Set a synthetic demo-only password of at least 10 characters for seeded clinic staff and dentists |
-| `NEXT_PUBLIC_APP_URL` | `http://localhost:5000` for local dev |
+| `NEXT_PUBLIC_APP_URL` | `http://localhost:5001` for local dev |
 | `NEXT_PUBLIC_API_URL` | `http://localhost:3001` for local dev |
 
 > ⚠️ **Never commit `.env`.** It is in `.gitignore`. If you accidentally stage it, run `git rm --cached .env`.
@@ -112,7 +112,7 @@ This connects to the Replit PostgreSQL using your `DATABASE_URL` and applies any
 npm run dev
 ```
 
-The Next.js app starts at [http://localhost:5000](http://localhost:5000).
+The Next.js app starts at [http://localhost:5001](http://localhost:5001).
 
 Start the API separately in another terminal:
 ```bash
@@ -169,7 +169,7 @@ All variables are documented in `.env.example`. Here is a summary:
 | `SESSION_SECRET` | Fallback | Legacy fallback when `BETTER_AUTH_SECRET` is omitted | Replit Secrets |
 | `SUPER_ADMIN_PASSWORD` | ✅ Demo seed | Initial/reset password for `admin@dentra.ph` when running `npm run db:seed` | Local `.env` / Replit Secrets |
 | `CLINIC_DEMO_PASSWORD` | ✅ Demo seed | Shared synthetic password for seeded clinic staff and dentist demo accounts | Local `.env` / Replit Secrets |
-| `NEXT_PUBLIC_APP_URL` | ✅ Frontend | Public URL of the Next.js app | `http://localhost:5000` locally |
+| `NEXT_PUBLIC_APP_URL` | ✅ Frontend | Public URL of the Next.js app | `http://localhost:5001` locally |
 | `NEXT_PUBLIC_API_URL` | ✅ Frontend | Public URL of the Fastify API | `http://localhost:3001` locally |
 | `API_INTERNAL_URL` | Optional | Server-only API URL for the Next.js auth proxy/session guard | Defaults to `NEXT_PUBLIC_API_URL` |
 | `BETTER_AUTH_URL` | ✅ API | Base URL for Better Auth | Same as API URL |
@@ -266,7 +266,8 @@ No manual step is needed on Replit after a merge.
 ### Frontend (Next.js)
 
 ```bash
-npm run dev          # starts at http://localhost:5000
+npm run dev          # starts locally at http://localhost:5001
+npm run dev:safe     # safely replaces a stale Dentra process, then starts the frontend
 npm run build        # production build
 ```
 
@@ -280,12 +281,12 @@ npm run api:start    # run the production bundle after npm run build
 ```
 
 After `npm run db:seed`, sign in at
-[http://localhost:5000/dentra-admin/login](http://localhost:5000/dentra-admin/login)
+[http://localhost:5001/dentra-admin/login](http://localhost:5001/dentra-admin/login)
 with `admin@dentra.ph` and the value of `SUPER_ADMIN_PASSWORD`. Re-running the
 seed updates that credential without creating a duplicate auth account.
 
 Clinic staff and dentists sign in at
-[http://localhost:5000/cl-login](http://localhost:5000/cl-login). Use one of the
+[http://localhost:5001/cl-login](http://localhost:5001/cl-login). Use one of the
 seeded clinic emails and the value of `CLINIC_DEMO_PASSWORD`; the application
 derives the user role from the authenticated clinic membership.
 
@@ -332,21 +333,18 @@ npm run dev
 
 ---
 
-### Port 5000 already in use
+### Local port 5001 already in use
 
-**Symptom:** `Error: listen EADDRINUSE: address already in use :::5000`
+**Symptom:** `Error: listen EADDRINUSE: address already in use :::5001`
 
 **Fix:**
 ```bash
-# Find what's using port 5000
-lsof -i :5000
-
-# Kill it (replace <PID> with the process ID from above)
-kill -9 <PID>
-
-# Then restart
-npm run dev
+# Safely stops a stale Dentra listener and restarts the frontend
+npm run dev:safe
 ```
+
+The safe-start command will not stop unrelated programs. It reports the process
+using port 5001 and leaves it untouched so you can decide whether to close it.
 
 ---
 

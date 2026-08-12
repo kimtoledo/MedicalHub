@@ -13,7 +13,7 @@ const environmentSchema = z.object({
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
     .default('info'),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
-  NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:5000'),
+  NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:5001'),
   CORS_ORIGINS: z.string().optional(),
   BETTER_AUTH_SECRET: z.string().min(32).optional(),
   SESSION_SECRET: z.string().min(32).optional(),

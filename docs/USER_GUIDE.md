@@ -12,7 +12,7 @@ The guide describes the current repository implementation. Some MVP 2 and MVP 3 
 
 | Surface | URL (local) | Who uses it | Purpose |
 |---|---|---|---|
-| Company website | `http://localhost:5000/` | Everyone | Product information and entry point |
+| Company website | `http://localhost:5001/` | Everyone | Product information and entry point |
 | Clinic directory | `/clinics` | Public visitors | Search published clinics |
 | Dentist directory | `/dentists` | Public visitors | Search verified, published dentists |
 | Clinic microsite | `/clinic/{clinicSlug}` | Public visitors | Clinic profile, branches, services, team, and booking |
@@ -26,7 +26,7 @@ The guide describes the current repository implementation. Some MVP 2 and MVP 3 
 | Super Admin panel | `/dentra-admin/*` | Super Admin | Clinics, dentists, packages, subscriptions, and audit |
 | Kiosk check-in | `/kiosk/{branchId}` | Clinic visitors | Branch-specific, today-only self check-in |
 
-For production, replace `http://localhost:5000` with the configured Dentra.ph frontend domain. The API is normally behind the frontend proxy; direct local API health checks use `http://localhost:3001/health` and `http://localhost:3001/v1/health`.
+For production, replace `http://localhost:5001` with the configured Dentra.ph frontend domain. The API is normally behind the frontend proxy; direct local API health checks use `http://localhost:3001/health` and `http://localhost:3001/v1/health`.
 
 ## 2. Account types and boundaries
 

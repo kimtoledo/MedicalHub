@@ -4,7 +4,8 @@
   "private": true,
   "description": "Dentra.ph — Multi-tenant dental SaaS platform for the Philippines",
   "scripts": {
-    "dev": "cd apps/web && npx next dev -p 5000",
+    "dev": "cd apps/web && npx next dev -p 5001",
+    "dev:safe": "./scripts/start-web-dev.sh",
     "api:dev": "npm run dev --workspace @dentra/api",
     "api:start": "npm run start --workspace @dentra/api",
     "build": "npm run build --workspace @dentra/web && npm run build --workspace @dentra/api",

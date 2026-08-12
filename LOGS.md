@@ -27,6 +27,11 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Safe local frontend startup command
+- Added `npm run dev:safe` to replace a stale Dentra listener on local port 5001 before starting the Next.js development server
+- The helper only stops Node/Next.js processes launched within this project; unrelated applications and macOS services are reported and left untouched
+- Moved local development URLs and API origin defaults to port 5001 to avoid the macOS AirPlay Receiver conflict; Replit remains on port 5000
+
 ### ✅ User manuals
 - Added the project-root `docs/` user manual set: general system guide, Super Admin manual, clinic staff/dentist manual, and patient manual
 - Documented current routes, roles, tenant/privacy boundaries, daily workflows, feature limitations, troubleshooting, and safe support handoff practices
