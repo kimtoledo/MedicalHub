@@ -21,11 +21,18 @@ Updated manually after each session or merged task.
 ### 🔄 MVP 2 notifications
 - Added a tenant-aware notification outbox with email/SMS channel and delivery status tracking, deduplication keys, retry metadata, and provider adapter boundaries.
 - Public booking creation now queues non-sensitive email confirmation content when a patient email is provided.
-- Remaining: appointment reminder scheduling, cancellation/reschedule and recall event wiring, and production provider credentials.
+- Remaining: appointment reminder scheduling, cancellation/reschedule event wiring, and production provider credentials.
 
 ---
 
 ## Completed
+
+### ✅ MVP 2 recall and follow-up
+- Added clinic-scoped recall rules by service and automatically created deduplicated patient recalls after treatment records are recorded
+- Added due/upcoming queue projection with contact, dismiss, due-date override, and audited follow-up booking actions with dentist overlap protection
+- Added responsive `/app/recalls` queue and settings navigation link; contact reminders enqueue non-sensitive notification-outbox messages
+- Added migration `0020_wild_mastermind.sql` and applied it locally
+- Verified 239 passing API tests, repository-wide TypeScript checks, and clean diff validation
 
 ### ✅ MVP 2 treatment planning
 - Added tenant-scoped treatment plans and multi-item proposals directly from patient profiles

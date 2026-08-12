@@ -51,6 +51,7 @@ import type { ClinicTreatmentPlansService } from './clinic/treatment-plans-servi
 import type { ClinicServiceCatalogService } from './clinic/service-catalog-service.js';
 import type { ClinicInventoryService } from './clinic/inventory-service.js';
 import type { NotificationService } from './notifications/service.js';
+import type { RecallService } from './clinic/recall-service.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
 import { registerAdminDentistRoutes } from './routes/admin-dentists.js';
@@ -77,6 +78,7 @@ import { registerClinicAiRoutes } from './routes/clinic-ai.js';
 import { registerRemoteConsultRoutes } from './routes/remote-consults.js';
 import { registerHmoRoutes } from './routes/hmo.js';
 import { registerHealthRoutes } from './routes/health.js';
+import { registerClinicRecallRoutes } from './routes/clinic-recalls.js';
 
 export type BuildAppOptions = {
   config: ApiConfig;
@@ -118,6 +120,7 @@ export type BuildAppOptions = {
   clinicServiceCatalog?: ClinicServiceCatalogService;
   clinicInventory?: ClinicInventoryService;
   notifications?: NotificationService;
+  clinicRecalls?: RecallService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -225,7 +228,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       await registerClinicOdontogramRoutes(app, { auth: options.auth, entitlements: options.entitlements, odontogram: options.clinicOdontogram });
     }
     if (options.clinicTreatments && options.entitlements) {
-      await registerClinicTreatmentRoutes(app, { auth: options.auth, entitlements: options.entitlements, treatments: options.clinicTreatments });
+      await registerClinicTreatmentRoutes(app, { auth: options.auth, entitlements: options.entitlements, treatments: options.clinicTreatments, recalls: options.clinicRecalls });
     }
     if (options.clinicTreatmentPlans && options.entitlements) {
       await registerClinicTreatmentPlanRoutes(app, {
@@ -243,6 +246,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (options.clinicInventory && options.entitlements) {
       await registerClinicInventoryRoutes(app, { auth: options.auth, entitlements: options.entitlements, inventory: options.clinicInventory });
+    }
+    if (options.clinicRecalls && options.entitlements) {
+      await registerClinicRecallRoutes(app, { auth: options.auth, entitlements: options.entitlements, recalls: options.clinicRecalls });
     }
     if (options.clinicDashboard && options.entitlements) {
       await registerClinicDashboardRoutes(app, { auth: options.auth, entitlements: options.entitlements, dashboard: options.clinicDashboard });

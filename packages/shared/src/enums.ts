@@ -265,6 +265,14 @@ export const AuditAction = {
   NOTIFICATION_SENT: 'notification.sent',
   NOTIFICATION_FAILED: 'notification.failed',
 
+  RECALL_RULE_CREATED: 'recall_rule.created',
+  RECALL_RULE_UPDATED: 'recall_rule.updated',
+  RECALL_CREATED: 'recall.created',
+  RECALL_CONTACTED: 'recall.contacted',
+  RECALL_DISMISSED: 'recall.dismissed',
+  RECALL_OVERRIDDEN: 'recall.overridden',
+  RECALL_BOOKED: 'recall.booked',
+
   // Prescriptions
   PRESCRIPTION_ISSUED: 'prescription.issued',
 

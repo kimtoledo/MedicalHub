@@ -15,7 +15,7 @@
 | `05-clinical-files-media.md` | Radiographs, photos, consent docs, private storage | ✅ Done |
 | `06-inventory.md` | Item master, stock in/out, low-stock alerts | ✅ Done |
 | `07-notifications.md` | Email booking confirmations, reminders, cancellations | 🔵 Active |
-| `08-recall-followup.md` | Recall rules, due dates, follow-up appointment creation | 🔜 Future |
+| `08-recall-followup.md` | Recall rules, due dates, follow-up appointment creation | ✅ Done |
 | `09-reports.md` | Operational, financial, and inventory reports | 🔜 Future |
 | `10-microsite-customization.md` | Theme presets, brand color, gallery, SEO fields | 🔜 Future |
 | `11-subscription-operations.md` | Upgrade/downgrade, add-ons, usage enforcement | 🔜 Future |

@@ -20,4 +20,5 @@ export * from './treatment-plans';
 export * from './service-pricing';
 export * from './inventory';
 export * from './notifications';
+export * from './recalls';
 export * from './helpers';

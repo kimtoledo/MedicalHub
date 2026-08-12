@@ -141,6 +141,13 @@
       "when": 1786499971057,
       "tag": "0019_ambitious_fat_cobra",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1786500246350,
+      "tag": "0020_wild_mastermind",
+      "breakpoints": true
     }
   ]
 }

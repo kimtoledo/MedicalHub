@@ -1,10 +1,16 @@
 import Link from "next/link";
-import { Archive, DollarSign, Settings, Shield } from "lucide-react";
+import { Archive, BellRing, DollarSign, Settings, Shield } from "lucide-react";
 import ClinicMicrositeSettings from "@/components/app/ClinicMicrositeSettings";
 import { getClinicSession } from "@/lib/clinic-session";
 import { getClinicSettings } from "@/lib/clinic-settings";
 
 const operationalSettings = [
+  {
+    href: "/app/recalls",
+    icon: BellRing,
+    label: "Recall Queue",
+    description: "Review due follow-ups and contact patients about their next visit.",
+  },
   {
     href: "/app/settings/services",
     icon: DollarSign,

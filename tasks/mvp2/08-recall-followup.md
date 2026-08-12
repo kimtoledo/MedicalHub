@@ -1,6 +1,6 @@
 # Recall and Follow-up
 
-> **Status:** 🔜 Future — MVP 2
+> **Status:** ✅ Done — MVP 2
 
 ---
 
@@ -18,6 +18,12 @@ Clinics need to proactively recall patients who are due for a check-up or a foll
 - Clinic staff can send a recall reminder (triggers a notification from task `07`), mark the patient as contacted, or dismiss the recall.
 - Clinic staff can manually override a recall due date.
 - A follow-up appointment can be booked directly from the recall queue entry.
+
+### Delivered
+
+- Added tenant-scoped recall rules and patient recall records with immutable treatment linkage and deduplication.
+- Completed recall creation from treatment records, due/upcoming queue projection, contact/dismiss/override actions, and audited follow-up booking with overlap protection.
+- Added a responsive clinic recall queue at `/app/recalls`; reminder delivery uses the notification outbox from Task 07.
 
 ---
 
