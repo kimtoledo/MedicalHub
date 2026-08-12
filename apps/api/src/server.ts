@@ -45,6 +45,7 @@ import { createClinicServiceCatalogService } from './clinic/service-catalog-serv
 import { createClinicInventoryService } from './clinic/inventory-service.js';
 import { createNotificationService } from './notifications/service.js';
 import { createRecallService } from './clinic/recall-service.js';
+import { createClinicReportsService } from './clinic/reports-service.js';
 
 const config = loadConfig();
 const database = await createDatabaseServices();
@@ -75,6 +76,7 @@ const entitlements = createEntitlementService(database.db);
 const publicDirectory = createPublicDirectoryService(database.db);
 const notifications = createNotificationService(database.db);
 const clinicRecalls = createRecallService(database.db, notifications);
+const clinicReports = createClinicReportsService(database.db);
 const publicBooking = createPublicBookingService(database.db, notifications);
 const clinicSettings = createClinicSettingsService(database.db);
 const clinicWorkspace = createClinicWorkspaceService(database.db);
@@ -122,6 +124,7 @@ const app = await buildApp({
   clinicOdontogram,
   clinicTreatments,
   clinicRecalls,
+  clinicReports,
   clinicDashboard,
   clinicTreatmentPlans,
   clinicServiceCatalog,

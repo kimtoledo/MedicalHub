@@ -1,6 +1,6 @@
 # Reports
 
-> **Status:** 🔜 Future — MVP 2
+> **Status:** ✅ Done — MVP 2 baseline
 
 ---
 
@@ -33,6 +33,11 @@ Clinic admins and dentists need data to run their practice effectively. Reports 
 **Export:**
 - All reports can be exported as CSV.
 - Reports cannot aggregate or reference data from another clinic.
+
+### Delivered
+
+- Added tenant-scoped operational, financial, and inventory report APIs with role and `reports.basic` entitlement checks.
+- Added CSV output and a responsive clinic reports summary at `/app/reports`.
 
 ---
 

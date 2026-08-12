@@ -34,6 +34,11 @@ Updated manually after each session or merged task.
 - Added migration `0020_wild_mastermind.sql` and applied it locally
 - Verified 239 passing API tests, repository-wide TypeScript checks, and clean diff validation
 
+### ✅ MVP 2 reports baseline
+- Added tenant-scoped operational appointment/patient, financial collections/outstanding, and inventory stock reports
+- Added role/entitlement-protected JSON and CSV report endpoints plus responsive `/app/reports` summary UI
+- Verified repository-wide TypeScript checks and existing API test suite
+
 ### ✅ MVP 2 treatment planning
 - Added tenant-scoped treatment plans and multi-item proposals directly from patient profiles
 - Added entitlement- and role-protected plan APIs with draft → approved → archived lifecycle and item progress/cancellation transitions

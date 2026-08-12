@@ -1,10 +1,16 @@
 import Link from "next/link";
-import { Archive, BellRing, DollarSign, Settings, Shield } from "lucide-react";
+import { Archive, BarChart3, BellRing, DollarSign, Settings, Shield } from "lucide-react";
 import ClinicMicrositeSettings from "@/components/app/ClinicMicrositeSettings";
 import { getClinicSession } from "@/lib/clinic-session";
 import { getClinicSettings } from "@/lib/clinic-settings";
 
 const operationalSettings = [
+  {
+    href: "/app/reports",
+    icon: BarChart3,
+    label: "Reports",
+    description: "Review clinic operations, collections, and stock summaries.",
+  },
   {
     href: "/app/recalls",
     icon: BellRing,

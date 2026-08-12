@@ -52,6 +52,7 @@ import type { ClinicServiceCatalogService } from './clinic/service-catalog-servi
 import type { ClinicInventoryService } from './clinic/inventory-service.js';
 import type { NotificationService } from './notifications/service.js';
 import type { RecallService } from './clinic/recall-service.js';
+import type { ClinicReportsService } from './clinic/reports-service.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAdminClinicRoutes } from './routes/admin-clinics.js';
 import { registerAdminDentistRoutes } from './routes/admin-dentists.js';
@@ -79,6 +80,7 @@ import { registerRemoteConsultRoutes } from './routes/remote-consults.js';
 import { registerHmoRoutes } from './routes/hmo.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerClinicRecallRoutes } from './routes/clinic-recalls.js';
+import { registerClinicReportsRoutes } from './routes/clinic-reports.js';
 
 export type BuildAppOptions = {
   config: ApiConfig;
@@ -121,6 +123,7 @@ export type BuildAppOptions = {
   clinicInventory?: ClinicInventoryService;
   notifications?: NotificationService;
   clinicRecalls?: RecallService;
+  clinicReports?: ClinicReportsService;
   logger?: FastifyServerOptions['logger'];
 };
 
@@ -249,6 +252,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (options.clinicRecalls && options.entitlements) {
       await registerClinicRecallRoutes(app, { auth: options.auth, entitlements: options.entitlements, recalls: options.clinicRecalls });
+    }
+    if (options.clinicReports && options.entitlements) {
+      await registerClinicReportsRoutes(app, { auth: options.auth, entitlements: options.entitlements, reports: options.clinicReports });
     }
     if (options.clinicDashboard && options.entitlements) {
       await registerClinicDashboardRoutes(app, { auth: options.auth, entitlements: options.entitlements, dashboard: options.clinicDashboard });
