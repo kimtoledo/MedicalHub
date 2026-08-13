@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { ChevronDown, MailPlus, RefreshCw, ShieldCheck, UserCog, UserMinus } from "lucide-react";
+import { ChevronDown, MailPlus, MapPin, RefreshCw, ShieldCheck, UserCog, UserMinus } from "lucide-react";
 
 type ClinicRole = "clinic_owner" | "clinic_admin" | "dentist" | "receptionist" | "dental_assistant" | "cashier" | "inventory_staff";
 type StaffMember = {
@@ -61,6 +61,8 @@ export default function StaffManager({ clinicId, currentUserId, currentRole }: {
   const [busy, setBusy] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [addingBranchFor, setAddingBranchFor] = useState<string | null>(null);
+  const [newBranchId, setNewBranchId] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,6 +85,14 @@ export default function StaffManager({ clinicId, currentUserId, currentRole }: {
       return true;
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to save change"); return false; }
     finally { setBusy(null); }
+  }
+
+  async function addBranch(userId: string, branchId: string) {
+    const saved = await mutate(`add-branch-${userId}`, `/api/clinic/${clinicId}/staff/branch-assignments`, {
+      method: "POST",
+      body: JSON.stringify({ userId, branchId }),
+    }, "Branch assignment added.");
+    if (saved) { setAddingBranchFor(null); setNewBranchId(""); }
   }
 
   async function invite(event: FormEvent<HTMLFormElement>) {
@@ -132,7 +142,7 @@ export default function StaffManager({ clinicId, currentUserId, currentRole }: {
               return (
                 <article key={member.membershipId} className="p-4 sm:p-5">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="font-semibold text-slate-900">{member.name || "Pending user"}{own ? " (You)" : ""}</h3><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${member.status === "active" ? "bg-emerald-100 text-emerald-700" : member.status === "pending" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}`}>{member.status}</span></div><p className="truncate text-sm text-slate-500">{member.email}</p><p className="mt-1 text-xs text-slate-500">{branch?.name ?? "All branches"} · {roleLabel(member.role)}</p></div>
+                    <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="font-semibold text-slate-900">{member.name || "Pending user"}{own ? " (You)" : ""}</h3><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${member.status === "active" ? "bg-emerald-100 text-emerald-700" : member.status === "pending" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}`}>{member.status}</span></div><p className="truncate text-sm text-slate-500">{member.email}</p><p className="mt-1 text-xs text-slate-500">{branch?.name ?? "All branches"} · {roleLabel(member.role)}{data.members.filter((other) => other.userId === member.userId).length > 1 && ` · also assigned to ${data.members.filter((other) => other.userId === member.userId && other.membershipId !== member.membershipId).length} other branch(es)`}</p></div>
                     <div className="grid gap-2 sm:grid-cols-2 lg:w-[34rem] lg:grid-cols-4">
                       <select aria-label={`Role for ${member.name}`} value={member.role} disabled={disabled || (member.role === "clinic_owner" && currentRole !== "clinic_owner")} onChange={(event) => void mutate(member.membershipId, `/api/clinic/${clinicId}/staff/${member.membershipId}`, { method: "PATCH", body: JSON.stringify({ role: event.target.value }) }, "Role updated.")} className="h-10 rounded-xl border border-slate-300 px-2 text-sm disabled:bg-slate-50">{roles.filter((role) => currentRole === "clinic_owner" || role.value !== "clinic_owner").map((role) => <option key={role.value} value={role.value}>{role.label}</option>)}</select>
                       <select aria-label={`Branch for ${member.name}`} value={member.branchId ?? ""} disabled={disabled} onChange={(event) => void mutate(member.membershipId, `/api/clinic/${clinicId}/staff/${member.membershipId}`, { method: "PATCH", body: JSON.stringify({ branchId: event.target.value || null }) }, "Branch access updated.")} className="h-10 rounded-xl border border-slate-300 px-2 text-sm disabled:bg-slate-50"><option value="">All branches</option>{data.branches.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
@@ -140,9 +150,23 @@ export default function StaffManager({ clinicId, currentUserId, currentRole }: {
                       <button disabled={disabled} onClick={() => { if (window.confirm(`Remove ${member.name} from this clinic?`)) void mutate(member.membershipId, `/api/clinic/${clinicId}/staff/${member.membershipId}`, { method: "DELETE" }, "Membership removed."); }} className="inline-flex h-10 items-center justify-center gap-1 rounded-xl border border-red-200 px-3 text-sm font-medium text-red-600 disabled:opacity-40"><UserMinus size={15} /> Remove</button>
                     </div>
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     {member.status === "pending" && <button disabled={busy === member.membershipId} onClick={() => void mutate(member.membershipId, `/api/clinic/${clinicId}/staff/${member.membershipId}/resend-invite`, { method: "POST" }, "Invitation timestamp refreshed; delivery is pending provider configuration.")} className="text-xs font-semibold text-violet-600 underline">Resend invitation</button>}
                     <button onClick={() => setExpanded(expanded === member.membershipId ? null : member.membershipId)} className="inline-flex items-center gap-1 text-xs font-semibold text-violet-600"><ShieldCheck size={14} /> Permissions <ChevronDown size={14} className={expanded === member.membershipId ? "rotate-180" : ""} /></button>
+                    {member.branchId !== null && member.status === "active" && (
+                      addingBranchFor === member.membershipId ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <select aria-label="Additional branch" value={newBranchId} onChange={(event) => setNewBranchId(event.target.value)} className="h-8 rounded-lg border border-slate-300 px-2 text-xs">
+                            <option value="">Select branch…</option>
+                            {data.branches.filter((branch) => !data.members.some((other) => other.userId === member.userId && other.branchId === branch.id)).map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+                          </select>
+                          <button disabled={!newBranchId || busy === `add-branch-${member.userId}`} onClick={() => void addBranch(member.userId, newBranchId)} className="rounded-lg bg-violet-600 px-2 py-1 text-xs font-semibold text-white disabled:opacity-50">Add</button>
+                          <button onClick={() => { setAddingBranchFor(null); setNewBranchId(""); }} className="text-xs text-slate-500">Cancel</button>
+                        </span>
+                      ) : (
+                        <button onClick={() => setAddingBranchFor(member.membershipId)} className="inline-flex items-center gap-1 text-xs font-semibold text-violet-600"><MapPin size={14} /> Add branch</button>
+                      )
+                    )}
                   </div>
                   {expanded === member.membershipId && <div className="mt-4 grid gap-2 rounded-xl bg-slate-50 p-3 sm:grid-cols-2 lg:grid-cols-4">{data.permissionKeys.map((permission) => <label key={permission} className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={member.permissions.includes(permission)} disabled={disabled || member.status !== "active"} onChange={(event) => void mutate(member.membershipId, `/api/clinic/${clinicId}/staff/${member.membershipId}/permissions`, { method: "PATCH", body: JSON.stringify({ permissionKey: permission, isEnabled: event.target.checked }) }, "Permission updated.")} className="h-4 w-4 rounded border-slate-300 text-violet-600" />{permissionLabels[permission] ?? permission}</label>)}</div>}
                 </article>

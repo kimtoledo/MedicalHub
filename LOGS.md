@@ -33,6 +33,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### 🔄 Branch-scoped staff assignment (enterprise multi-branch)
+- Staff can now be assigned to additional branches within the same clinic without a duplicate account, mirroring the existing `dentistBranchAssignments` pattern — a new `POST /v1/clinic/:clinicId/staff/branch-assignments` adds a second `clinicMemberships` row for the same user
+- Discovered the authorization layer already supported this (`getCallerBranchIds` aggregates across multiple membership rows per user, per its own code comment) — the actual gap was just that `invite()` blocked a second row for the same user+clinic, and there was no UI/endpoint to add one
+- Staff settings page shows an "Add branch" action per non-clinic-wide member; removing a row audits as a branch-assignment removal (not full offboarding) when the user still has other active rows
+- Verified 377 passing API tests (3 new), 5 passing web tests, repository-wide TypeScript checks, and production web/API builds
+- Remaining in `mvp3/05-enterprise-multibranch.md`: organization-level entitlements and central service catalog are structurally tractable but need a precedence-order product decision first; consented patient transfers need explicit semantics decided before any schema work, especially cross-clinic
+
 ### ✅ Search and Discovery — fully done
 - Added the final "Remaining" item: a "Near me" geolocation button on `/clinics` that requests `navigator.geolocation` and round-trips through the existing `latitude`/`longitude`/`maxDistanceKm` query params the backend already validated and consumed — no backend change needed, just the missing browser-side control, plus a "Clear location" toggle and persistence across pagination/filters
 - Verified end-to-end against a running dev server (toggled button state, "within X km of you" copy) rather than just typechecking

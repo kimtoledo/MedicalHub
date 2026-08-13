@@ -24,6 +24,7 @@ const updateBody = z.object({
   isActive: z.boolean().optional(),
 }).strict().refine((value) => Object.keys(value).length > 0, 'At least one change is required');
 const permissionBody = z.object({ permissionKey: z.enum(permissions), isEnabled: z.boolean() }).strict();
+const branchAssignmentBody = z.object({ userId: postgresUuidSchema, branchId: postgresUuidSchema }).strict();
 const adminRoles = ['clinic_owner', 'clinic_admin'] as const;
 
 function actor(request: FastifyRequest, auth: AuthorizationContext, clinicId: string): StaffActor {
@@ -88,6 +89,16 @@ export async function registerClinicStaffRoutes(app: FastifyInstance, options: {
     const auth = await requireClinicFeature(request, reply, options, params.data.clinicId, FeatureKey.STAFF_MANAGE, [...adminRoles]);
     if (!auth) return;
     try { return reply.send({ success: true, data: await options.staff.remove(params.data.clinicId, params.data.membershipId, actor(request, auth, params.data.clinicId)) }); }
+    catch (caught) { return sendError(reply, caught); }
+  });
+
+  app.post('/v1/clinic/:clinicId/staff/branch-assignments', async (request, reply) => {
+    const params = clinicParams.safeParse(request.params);
+    const body = branchAssignmentBody.safeParse(request.body);
+    if (!params.success || !body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid branch assignment' } });
+    const auth = await requireClinicFeature(request, reply, options, params.data.clinicId, FeatureKey.STAFF_MANAGE, [...adminRoles]);
+    if (!auth) return;
+    try { return reply.status(201).send({ success: true, data: await options.staff.addBranchAssignment(params.data.clinicId, body.data.userId, body.data.branchId, actor(request, auth, params.data.clinicId)) }); }
     catch (caught) { return sendError(reply, caught); }
   });
 

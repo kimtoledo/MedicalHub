@@ -269,6 +269,31 @@ export function createClinicStaffService(database: DB) {
       });
     },
 
+    /**
+     * Assigns an existing staff member to an ADDITIONAL branch within the
+     * same clinic — a second (or third...) clinicMemberships row for the
+     * same user, matching the same pattern dentistBranchAssignments already
+     * uses for dentists. No new user account is ever created here; this is
+     * exactly "assign to multiple branches without duplicate accounts."
+     */
+    addBranchAssignment: async (clinicId: string, userId: string, branchId: string, actor: StaffActor) => {
+      await assertBranch(database, clinicId, branchId);
+      return database.transaction(async (tx) => {
+        const existingRows = await tx.select({ id: clinicMemberships.id, role: clinicMemberships.role, branchId: clinicMemberships.branchId })
+          .from(clinicMemberships).where(and(eq(clinicMemberships.clinicId, clinicId), eq(clinicMemberships.userId, userId), eq(clinicMemberships.isActive, 'true')));
+        if (!existingRows.length) throw new ClinicStaffError('MEMBERSHIP_NOT_FOUND', 'This person has no active membership in this clinic yet — invite them first', 404);
+        if (existingRows.some((row) => row.branchId === null)) throw new ClinicStaffError('ALREADY_CLINIC_WIDE', 'This staff member already has clinic-wide access', 409);
+        if (existingRows.some((row) => row.branchId === branchId)) throw new ClinicStaffError('ASSIGNMENT_EXISTS', 'This staff member is already assigned to this branch', 409);
+        const role = existingRows[0].role;
+        if (role === 'clinic_owner' && actor.role !== 'clinic_owner') throw new ClinicStaffError('OWNER_REQUIRED', 'Only a clinic owner can manage owner access', 403);
+        const now = new Date().toISOString();
+        const [created] = await tx.insert(clinicMemberships).values({ clinicId, userId, role, branchId, isActive: 'true', invitedAt: now, joinedAt: now }).returning({ id: clinicMemberships.id });
+        if (!created) throw new ClinicStaffError('ASSIGNMENT_FAILED', 'Unable to add this branch assignment', 500);
+        await audit(tx as unknown as DB, actor, clinicId, created.id, AuditAction.MEMBER_BRANCH_ASSIGNMENT_ADDED, { userId, branchId, role });
+        return { membershipId: created.id };
+      });
+    },
+
     remove: async (clinicId: string, membershipId: string, actor: StaffActor) => database.transaction(async (tx) => {
       const [membership] = await tx.select({ id: clinicMemberships.id, userId: clinicMemberships.userId, role: clinicMemberships.role })
         .from(clinicMemberships)
@@ -280,8 +305,9 @@ export function createClinicStaffService(database: DB) {
         if (actor.role !== 'clinic_owner') throw new ClinicStaffError('OWNER_REQUIRED', 'Only a clinic owner can remove another owner', 403);
         await assertOwnerRemains(tx as unknown as DB, clinicId, membershipId);
       }
+      const otherRows = await tx.select({ id: clinicMemberships.id }).from(clinicMemberships).where(and(eq(clinicMemberships.clinicId, clinicId), eq(clinicMemberships.userId, membership.userId), ne(clinicMemberships.id, membershipId)));
       await tx.delete(clinicMemberships).where(and(eq(clinicMemberships.id, membershipId), eq(clinicMemberships.clinicId, clinicId)));
-      await audit(tx as unknown as DB, actor, clinicId, membershipId, AuditAction.MEMBER_REMOVED, { previousRole: membership.role });
+      await audit(tx as unknown as DB, actor, clinicId, membershipId, otherRows.length ? AuditAction.MEMBER_BRANCH_ASSIGNMENT_REMOVED : AuditAction.MEMBER_REMOVED, { previousRole: membership.role });
       return { membershipId };
     }),
 

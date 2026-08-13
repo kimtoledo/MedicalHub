@@ -226,6 +226,8 @@ export const AuditAction = {
   MEMBER_INVITE_RESENT: 'member.invite_resent',
   MEMBER_ROLE_CHANGED: 'member.role_changed',
   MEMBER_BRANCH_CHANGED: 'member.branch_changed',
+  MEMBER_BRANCH_ASSIGNMENT_ADDED: 'member.branch_assignment_added',
+  MEMBER_BRANCH_ASSIGNMENT_REMOVED: 'member.branch_assignment_removed',
   MEMBER_STATUS_CHANGED: 'member.status_changed',
   MEMBER_REMOVED: 'member.removed',
   ACCOUNT_PROFILE_UPDATED: 'account.profile_updated',

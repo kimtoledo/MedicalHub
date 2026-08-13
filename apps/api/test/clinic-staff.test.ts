@@ -33,6 +33,7 @@ function staff(overrides: Partial<ClinicStaffService> = {}): ClinicStaffService 
     invite: vi.fn(async () => ({ membershipId: MEMBERSHIP_ID, delivery: 'pending_provider' as const })),
     resendInvite: vi.fn(async () => ({ membershipId: MEMBERSHIP_ID, delivery: 'pending_provider' as const })),
     update: vi.fn(async () => ({ membershipId: MEMBERSHIP_ID })),
+    addBranchAssignment: vi.fn(async () => ({ membershipId: MEMBERSHIP_ID })),
     remove: vi.fn(async () => ({ membershipId: MEMBERSHIP_ID })),
     updatePermission: vi.fn(async () => ({ membershipId: MEMBERSHIP_ID, permissionKey: 'patients.manage', isEnabled: true })),
     ...overrides,
@@ -84,5 +85,29 @@ describe('clinic staff routes', () => {
     const response = await app!.inject({ method: 'PATCH', url: `/v1/clinic/${CLINIC_ID}/staff/${MEMBERSHIP_ID}`, headers: { cookie: 'session=test' }, payload: { isActive: false } });
     expect(response.statusCode).toBe(409);
     expect(response.json().error).toEqual({ code: 'LAST_OWNER_REQUIRED', message: 'The clinic must retain at least one active owner' });
+  });
+
+  it('adds an additional branch assignment for an existing staff member', async () => {
+    const branchId = '77777777-7777-4777-8777-777777777777';
+    const service = await setup(context());
+    const response = await app!.inject({ method: 'POST', url: `/v1/clinic/${CLINIC_ID}/staff/branch-assignments`, headers: { cookie: 'session=test' }, payload: { userId: USER_ID, branchId } });
+    expect(response.statusCode).toBe(201);
+    expect(service.addBranchAssignment).toHaveBeenCalledWith(CLINIC_ID, USER_ID, branchId, expect.objectContaining({ id: USER_ID, role: 'clinic_owner' }));
+  });
+
+  it('surfaces a conflict when the staff member already covers that branch', async () => {
+    const branchId = '77777777-7777-4777-8777-777777777777';
+    const service = staff({ addBranchAssignment: vi.fn(async () => { throw new ClinicStaffError('ASSIGNMENT_EXISTS', 'This staff member is already assigned to this branch', 409); }) });
+    await setup(context(), service);
+    const response = await app!.inject({ method: 'POST', url: `/v1/clinic/${CLINIC_ID}/staff/branch-assignments`, headers: { cookie: 'session=test' }, payload: { userId: USER_ID, branchId } });
+    expect(response.statusCode).toBe(409);
+    expect(response.json().error.code).toBe('ASSIGNMENT_EXISTS');
+  });
+
+  it('denies non-admin roles from adding a branch assignment', async () => {
+    const service = await setup(context('receptionist'));
+    const response = await app!.inject({ method: 'POST', url: `/v1/clinic/${CLINIC_ID}/staff/branch-assignments`, headers: { cookie: 'session=test' }, payload: { userId: USER_ID, branchId: '77777777-7777-4777-8777-777777777777' } });
+    expect(response.statusCode).toBe(403);
+    expect(service.addBranchAssignment).not.toHaveBeenCalled();
   });
 });
