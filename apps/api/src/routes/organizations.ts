@@ -15,6 +15,8 @@ const catalogItemBody = z.object({ name: z.string().trim().min(2).max(200), cate
 const catalogItemUpdate = catalogItemBody.partial();
 const catalogItemParams = org.extend({ itemId: postgresUuidSchema });
 const adoptBody = z.object({ clinicId: postgresUuidSchema, itemId: postgresUuidSchema }).strict();
+const grantEntitlementBody = z.object({ featureKey: z.string().trim().min(2).max(100), isEnabled: z.boolean(), expiresAt: z.string().datetime().optional() }).strict();
+const entitlementFeatureParams = org.extend({ featureKey: z.string().trim().min(2).max(100) });
 const actor = (request: FastifyRequest, auth: { user: { id: string; email: string } }) => ({ id: auth.user.id, email: auth.user.email, ipAddress: request.ip, userAgent: request.headers['user-agent'] });
 const sendError = (reply: any, caught: unknown) => { if (caught instanceof OrganizationError) return reply.status(caught.statusCode).send({ success: false, error: { code: caught.code, message: caught.message } }); throw caught; };
 
@@ -82,5 +84,23 @@ export async function registerOrganizationRoutes(app: FastifyInstance, options: 
     if (!params.success || !body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid catalog adoption request' } });
     if (!auth) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'Sign-in required' } });
     try { return reply.status(201).send({ success: true, data: await options.organizations.adoptCatalogItem(params.data.organizationId, body.data.clinicId, body.data.itemId, actor(request, auth)) }); } catch (caught) { return sendError(reply, caught); }
+  });
+  app.get('/v1/organizations/:organizationId/entitlements', async (request, reply) => {
+    const params = org.safeParse(request.params); const auth = await resolveRequestAuthorization(request, options.auth);
+    if (!params.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid organization' } });
+    if (!auth) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'Sign-in required' } });
+    try { return reply.send({ success: true, data: await options.organizations.listEntitlements(params.data.organizationId, auth.user.id) }); } catch (caught) { return sendError(reply, caught); }
+  });
+  app.post('/v1/organizations/:organizationId/entitlements', async (request, reply) => {
+    const params = org.safeParse(request.params); const body = grantEntitlementBody.safeParse(request.body); const auth = await resolveRequestAuthorization(request, options.auth);
+    if (!params.success || !body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid entitlement grant' } });
+    if (!auth) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'Sign-in required' } });
+    try { return reply.status(201).send({ success: true, data: await options.organizations.grantEntitlement(params.data.organizationId, { featureKey: body.data.featureKey, isEnabled: body.data.isEnabled, expiresAt: body.data.expiresAt ? new Date(body.data.expiresAt) : null }, actor(request, auth)) }); } catch (caught) { return sendError(reply, caught); }
+  });
+  app.delete('/v1/organizations/:organizationId/entitlements/:featureKey', async (request, reply) => {
+    const params = entitlementFeatureParams.safeParse(request.params); const auth = await resolveRequestAuthorization(request, options.auth);
+    if (!params.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid entitlement' } });
+    if (!auth) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'Sign-in required' } });
+    try { return reply.send({ success: true, data: await options.organizations.revokeEntitlement(params.data.organizationId, params.data.featureKey, actor(request, auth)) }); } catch (caught) { return sendError(reply, caught); }
   });
 }

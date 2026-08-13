@@ -1,6 +1,6 @@
 import { and, count, countDistinct, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
-import { appointments, branches, clinicMemberships, clinics, invoices, organizationClinics, organizationMemberships, organizationServices, organizations, patients, services, users } from '@dentra/db/schema';
+import { appointments, branches, clinicMemberships, clinics, invoices, organizationClinics, organizationEntitlements, organizationMemberships, organizationServices, organizations, patients, services, users } from '@dentra/db/schema';
 import { writeAudit } from '@dentra/db/audit';
 import { AuditAction } from '@dentra/shared';
 
@@ -157,6 +157,35 @@ export function createOrganizationService(database: DB) {
       const [created] = await database.insert(services).values({ clinicId, organizationServiceId: item.id, name: item.name, category: item.category, description: item.description, durationMinutes: item.durationMinutes, isBookable: true }).returning({ id: services.id });
       await writeAudit(database, { actorId: actor.id, actorEmail: actor.email, clinicId, entityType: 'service', entityId: created.id, action: AuditAction.ORGANIZATION_SERVICE_ADOPTED, metadata: JSON.stringify({ organizationId, organizationServiceId: item.id }), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
       return created;
+    },
+
+    // ---------------------------------------------------------------------
+    // Organization-wide entitlement grants — org owner/admin manage; these
+    // are evaluated by entitlements/service.ts as a fallback BELOW a
+    // clinic's own override and package base, never above them.
+    // ---------------------------------------------------------------------
+
+    listEntitlements: async (organizationId: string, userId: string) => {
+      const access = await member(organizationId, userId);
+      if (!access) throw new OrganizationError('FORBIDDEN', 'Organization access is required', 403);
+      return database.select({ id: organizationEntitlements.id, featureKey: organizationEntitlements.featureKey, isEnabled: organizationEntitlements.isEnabled, expiresAt: organizationEntitlements.expiresAt, grantedBy: organizationEntitlements.grantedBy, createdAt: organizationEntitlements.createdAt }).from(organizationEntitlements).where(eq(organizationEntitlements.organizationId, organizationId)).orderBy(organizationEntitlements.featureKey);
+    },
+
+    grantEntitlement: async (organizationId: string, input: { featureKey: string; isEnabled: boolean; expiresAt?: Date | null }, actor: Actor) => {
+      const access = await member(organizationId, actor.id);
+      if (!access || !['owner', 'admin'].includes(access.role)) throw new OrganizationError('FORBIDDEN', 'Organization administrator access is required', 403);
+      const [row] = await database.insert(organizationEntitlements).values({ organizationId, featureKey: input.featureKey, isEnabled: input.isEnabled, grantedBy: actor.id, expiresAt: input.expiresAt ?? null }).onConflictDoUpdate({ target: [organizationEntitlements.organizationId, organizationEntitlements.featureKey], set: { isEnabled: input.isEnabled, grantedBy: actor.id, expiresAt: input.expiresAt ?? null, updatedAt: new Date() } }).returning();
+      await writeAudit(database, { actorId: actor.id, actorEmail: actor.email, clinicId: null, entityType: 'organization_entitlement', entityId: row.id, action: AuditAction.ORGANIZATION_ENTITLEMENT_GRANTED, metadata: JSON.stringify({ organizationId, featureKey: input.featureKey, isEnabled: input.isEnabled }), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
+      return row;
+    },
+
+    revokeEntitlement: async (organizationId: string, featureKey: string, actor: Actor) => {
+      const access = await member(organizationId, actor.id);
+      if (!access || !['owner', 'admin'].includes(access.role)) throw new OrganizationError('FORBIDDEN', 'Organization administrator access is required', 403);
+      const deleted = await database.delete(organizationEntitlements).where(and(eq(organizationEntitlements.organizationId, organizationId), eq(organizationEntitlements.featureKey, featureKey))).returning();
+      if (!deleted.length) throw new OrganizationError('NOT_FOUND', 'No organization-wide grant exists for this feature', 404);
+      await writeAudit(database, { actorId: actor.id, actorEmail: actor.email, clinicId: null, entityType: 'organization_entitlement', entityId: deleted[0].id, action: AuditAction.ORGANIZATION_ENTITLEMENT_GRANTED, metadata: JSON.stringify({ organizationId, featureKey, removed: true }), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
+      return { removed: true };
     },
   };
 }

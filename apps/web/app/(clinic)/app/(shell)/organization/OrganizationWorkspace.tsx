@@ -1,7 +1,20 @@
 'use client';
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Building2, Loader2, Network, CircleDollarSign, Users, CalendarDays, ClipboardList } from 'lucide-react';
+import { AlertCircle, Building2, Loader2, Network, CircleDollarSign, Users, CalendarDays, ClipboardList, ToggleRight, Trash2 } from 'lucide-react';
+
+const FEATURE_KEYS = [
+  'appointments.manage', 'appointments.calendar', 'booking.public',
+  'patients.manage', 'clinical.records', 'clinical.odontogram', 'clinical.encounters', 'clinical.treatment_records', 'clinical.treatment_plans',
+  'staff.manage', 'roles.manage',
+  'billing.invoices', 'billing.payments', 'billing.service_catalog', 'clinical.prescriptions',
+  'inventory.manage', 'clinical.radiographs',
+  'ai.notes', 'ai.recall', 'ai.treatment_sequence', 'ai.imaging',
+  'teledentistry', 'hmo.claims',
+  'reports.basic', 'reports.advanced',
+  'microsite.publish', 'microsite.customize',
+  'branches.multi', 'kiosk.checkin',
+];
 
 type OrganizationRow = { id: string; name: string; slug: string; role: Role };
 type Role = 'owner' | 'admin' | 'regional_manager' | 'viewer';
@@ -9,6 +22,7 @@ type ClinicOption = { id: string; name: string; slug: string };
 type Workspace = { organization: { id: string; name: string; slug: string; description: string | null }; access: { role: Role; branchIds: string[] }; clinics: Array<{ clinicId: string; clinicName: string; branchId: string | null; branchName: string | null; branchActive: boolean | null }>; members: Array<{ id: string; userId: string; name: string; email: string; role: Role; branchIds: string[] }> };
 type Report = { clinicCount: number; branchCount: number; appointments: number; patients: number; revenuePhp: string; scope: string };
 type CatalogItem = { id: string; name: string; category: string; description: string | null; durationMinutes: string | number; basePricePhp: string | null; isActive: string | boolean };
+type EntitlementGrant = { id: string; featureKey: string; isEnabled: boolean; expiresAt: string | null };
 type ApiResponse<T> = { success: boolean; data?: T; error?: { message?: string } };
 
 async function read<T>(response: Response, fallback: string): Promise<T> {
@@ -30,6 +44,9 @@ export default function OrganizationWorkspace({ currentClinicId, canCreate }: { 
   const [catalogPrice, setCatalogPrice] = useState('');
   const [adoptItemId, setAdoptItemId] = useState('');
   const [adoptClinicId, setAdoptClinicId] = useState('');
+  const [entitlementGrants, setEntitlementGrants] = useState<EntitlementGrant[]>([]);
+  const [grantFeatureKey, setGrantFeatureKey] = useState('');
+  const [grantEnabled, setGrantEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,15 +72,16 @@ export default function OrganizationWorkspace({ currentClinicId, canCreate }: { 
   }, []);
 
   const loadWorkspace = useCallback(async () => {
-    if (!selectedId) { setWorkspace(null); setReport(null); setCatalog([]); return; }
+    if (!selectedId) { setWorkspace(null); setReport(null); setCatalog([]); setEntitlementGrants([]); return; }
     setLoading(true); setError(null);
     try {
-      const [details, summary, catalogRows] = await Promise.all([
+      const [details, summary, catalogRows, entitlementRows] = await Promise.all([
         read<Workspace>(await fetch(`/api/organizations/${selectedId}/workspace`, { cache: 'no-store' }), 'Unable to load organization workspace'),
         read<Report>(await fetch(`/api/organizations/${selectedId}/report`, { cache: 'no-store' }), 'Unable to load organization summary'),
         read<CatalogItem[]>(await fetch(`/api/organizations/${selectedId}/service-catalog`, { cache: 'no-store' }), 'Unable to load service catalog'),
+        read<EntitlementGrant[]>(await fetch(`/api/organizations/${selectedId}/entitlements`, { cache: 'no-store' }), 'Unable to load organization entitlements'),
       ]);
-      setWorkspace(details); setReport(summary); setCatalog(catalogRows);
+      setWorkspace(details); setReport(summary); setCatalog(catalogRows); setEntitlementGrants(entitlementRows);
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to load organization workspace'); }
     finally { setLoading(false); }
   }, [selectedId]);
@@ -110,6 +128,20 @@ export default function OrganizationWorkspace({ currentClinicId, canCreate }: { 
       setMessage('Catalog item adopted into the clinic price list.');
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to adopt catalog item'); } finally { setSaving(false); }
   }
+  async function grantEntitlement(event: FormEvent) {
+    event.preventDefault(); if (!selectedId || !grantFeatureKey) return; setSaving(true); setError(null); setMessage(null);
+    try {
+      await read(await fetch(`/api/organizations/${selectedId}/entitlements`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ featureKey: grantFeatureKey, isEnabled: grantEnabled }) }), 'Unable to grant entitlement');
+      setGrantFeatureKey(''); setMessage('Organization-wide entitlement saved.'); await loadWorkspace();
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to grant entitlement'); } finally { setSaving(false); }
+  }
+  async function revokeEntitlement(featureKey: string) {
+    if (!selectedId) return; setSaving(true); setError(null); setMessage(null);
+    try {
+      await read(await fetch(`/api/organizations/${selectedId}/entitlements/${encodeURIComponent(featureKey)}`, { method: 'DELETE' }), 'Unable to revoke entitlement');
+      setMessage('Organization-wide entitlement removed.'); await loadWorkspace();
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to revoke entitlement'); } finally { setSaving(false); }
+  }
 
   if (loading && !organizations.length && !workspace) return <main className="p-4 sm:p-6 lg:p-8"><div className="flex items-center gap-2 rounded-2xl bg-white p-8 text-violet-600"><Loader2 className="animate-spin" /> Loading organization workspace…</div></main>;
   return <main className="p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-6xl space-y-6">
@@ -125,7 +157,8 @@ export default function OrganizationWorkspace({ currentClinicId, canCreate }: { 
       <section className="rounded-2xl border border-violet-100 bg-white"><div className="flex items-center gap-2 border-b border-violet-100 p-5"><ClipboardList className="text-violet-600" size={18} /><h2 className="font-bold text-violet-950">Central service catalog</h2></div><p className="px-5 pt-4 text-xs text-slate-500">Catalog items set a group-wide base price. A clinic adopts an item to add it to its own service list, then may still override the price locally at any time.</p>{catalog.length ? <div className="divide-y divide-violet-50">{catalog.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 p-4"><div><p className="text-sm font-semibold text-slate-800">{item.name}</p><p className="text-xs text-slate-500">{item.category} · {item.durationMinutes} min{item.basePricePhp ? ` · ₱${Number(item.basePricePhp).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : ''}</p></div>{String(item.isActive) !== 'true' && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">Inactive</span>}</div>)}</div> : <p className="p-5 pt-3 text-sm text-slate-500">No catalog items yet.</p>}
       {manageable && <form onSubmit={createCatalogItem} className="grid gap-3 border-t border-violet-100 p-5 sm:grid-cols-2"><label className="text-sm font-semibold">Item name<input required minLength={2} maxLength={200} value={catalogName} onChange={(event) => setCatalogName(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-violet-200 px-3" /></label><label className="text-sm font-semibold">Category<input required maxLength={100} value={catalogCategory} onChange={(event) => setCatalogCategory(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-violet-200 px-3" /></label><label className="text-sm font-semibold">Duration (minutes)<input required type="number" min={5} max={480} value={catalogDuration} onChange={(event) => setCatalogDuration(Number(event.target.value))} className="mt-1 h-11 w-full rounded-xl border border-violet-200 px-3" /></label><label className="text-sm font-semibold">Base price (₱, optional)<input inputMode="decimal" value={catalogPrice} onChange={(event) => setCatalogPrice(event.target.value)} placeholder="e.g. 2500.00" className="mt-1 h-11 w-full rounded-xl border border-violet-200 px-3" /></label><button disabled={saving} className="rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50 sm:col-span-2">{saving ? 'Adding…' : 'Add catalog item'}</button></form>}</section>
       {manageable && catalog.length > 0 && <form onSubmit={adoptCatalogItem} className="rounded-2xl border border-violet-100 bg-white p-5"><h2 className="font-bold text-violet-950">Adopt a catalog item into a clinic</h2><p className="mt-1 text-xs text-slate-500">The clinic must belong to this organization.</p><div className="mt-4 grid gap-3 sm:grid-cols-2"><select required value={adoptClinicId} onChange={(event) => setAdoptClinicId(event.target.value)} className="h-11 w-full rounded-xl border border-violet-200 px-3"><option value="">Select clinic</option>{groupedClinics.map(([clinicId, clinic]) => <option key={clinicId} value={clinicId}>{clinic.name}</option>)}</select><select required value={adoptItemId} onChange={(event) => setAdoptItemId(event.target.value)} className="h-11 w-full rounded-xl border border-violet-200 px-3"><option value="">Select catalog item</option>{catalog.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div><button disabled={saving} className="mt-3 w-full rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">Adopt into clinic</button></form>}
-      <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5"><h2 className="font-bold text-amber-900">Enterprise roadmap handoff</h2><p className="mt-1 text-sm text-amber-800">Organization-level entitlement cascading, cross-clinic staff assignments, and consented patient transfers remain tracked in MVP 3 Task 05 and are not implied by this workspace.</p></section>
+      {manageable && <section className="rounded-2xl border border-violet-100 bg-white"><div className="flex items-center gap-2 border-b border-violet-100 p-5"><ToggleRight className="text-violet-600" size={18} /><h2 className="font-bold text-violet-950">Organization-wide feature entitlements</h2></div><p className="px-5 pt-4 text-xs text-slate-500">A group-wide grant fills the gap only when a clinic's own subscription package doesn't already cover a feature — it never overrides a clinic's own explicit setting or its subscribed package.</p>{entitlementGrants.length ? <div className="divide-y divide-violet-50">{entitlementGrants.map((grant) => <div key={grant.id} className="flex flex-wrap items-center justify-between gap-2 p-4"><div><p className="font-mono text-sm font-semibold text-slate-800">{grant.featureKey}</p>{grant.expiresAt && <p className="text-xs text-slate-500">Expires {new Date(grant.expiresAt).toLocaleDateString('en-PH')}</p>}</div><div className="flex items-center gap-2"><span className={`rounded-full px-3 py-1 text-xs font-semibold ${grant.isEnabled ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{grant.isEnabled ? 'Enabled' : 'Disabled'}</span><button onClick={() => void revokeEntitlement(grant.featureKey)} disabled={saving} className="rounded-lg border border-red-200 p-1.5 text-red-600 hover:bg-red-50 disabled:opacity-50"><Trash2 size={14} /></button></div></div>)}</div> : <p className="p-5 pt-3 text-sm text-slate-500">No organization-wide entitlement grants yet.</p>}<form onSubmit={grantEntitlement} className="grid gap-3 border-t border-violet-100 p-5 sm:grid-cols-2"><label className="text-sm font-semibold">Feature key<select required value={grantFeatureKey} onChange={(event) => setGrantFeatureKey(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-violet-200 px-3"><option value="">Select feature</option>{FEATURE_KEYS.map((key) => <option key={key} value={key}>{key}</option>)}</select></label><label className="text-sm font-semibold">Grant<select value={grantEnabled ? 'true' : 'false'} onChange={(event) => setGrantEnabled(event.target.value === 'true')} className="mt-1 h-11 w-full rounded-xl border border-violet-200 px-3"><option value="true">Enable for the group</option><option value="false">Disable for the group</option></select></label><button disabled={saving} className="rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50 sm:col-span-2">{saving ? 'Saving…' : 'Save entitlement'}</button></form></section>}
+      <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5"><h2 className="font-bold text-amber-900">Enterprise roadmap handoff</h2><p className="mt-1 text-sm text-amber-800">Cross-clinic staff assignments and consented patient transfers remain tracked in MVP 3 Task 05 and are not implied by this workspace.</p></section>
     </>}
   </div></main>;
 }

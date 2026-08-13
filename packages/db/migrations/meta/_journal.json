@@ -281,6 +281,13 @@
       "when": 40,
       "tag": "0039_striped_bill_hollister",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1786621125731,
+      "tag": "0040_mighty_onslaught",
+      "breakpoints": true
     }
   ]
 }

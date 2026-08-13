@@ -301,6 +301,7 @@ export const AuditAction = {
   ORGANIZATION_SERVICE_CREATED: 'organization.service_created',
   ORGANIZATION_SERVICE_UPDATED: 'organization.service_updated',
   ORGANIZATION_SERVICE_ADOPTED: 'organization.service_adopted',
+  ORGANIZATION_ENTITLEMENT_GRANTED: 'organization.entitlement_granted',
   PAYMENT_LINK_CREATED: 'payment_link.created',
   PAYMENT_LINK_CANCELLED: 'payment_link.cancelled',
   PAYMENT_WEBHOOK_PROCESSED: 'payment_webhook.processed',

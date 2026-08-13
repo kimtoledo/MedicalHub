@@ -8,3 +8,4 @@ async function handler(request: NextRequest, context: { params: { path?: string[
 export const GET = handler;
 export const POST = handler;
 export const PATCH = handler;
+export const DELETE = handler;

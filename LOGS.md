@@ -56,6 +56,13 @@ Updated manually after each session or merged task.
 - Verified all four flag states (untargeted, targeted, removed, full rollout) end-to-end against a real seeded clinic
 - Verified 395 passing API tests, repository-wide TypeScript checks, and production web/API builds
 
+### ✅ Organization-level feature entitlements (enterprise multi-branch)
+- User decision: an organization-wide entitlement grant only fills the gap when a clinic's own subscription package doesn't already have an opinion on a feature — it never overrides the clinic's own explicit override or its subscribed package
+- New `organization_entitlements` table (unique per org+featureKey); `entitlements/service.ts`'s `resolve()` gained a fourth fallback tier: clinic override → clinic's package base → organization-wide grant → unavailable, mirroring the shape of the central-service-catalog fallback added earlier in the session
+- New endpoints: `GET/POST /v1/organizations/:organizationId/entitlements`, `DELETE .../entitlements/:featureKey`; minimal UI added to the organization workspace (grant list, add-grant form, revoke button)
+- Verified all three states end-to-end against a real seeded clinic: no grant (unavailable), org grant fills the gap (`source: 'organization'`), and a clinic's own override still wins over a conflicting org grant
+- Verified 394 passing API tests, repository-wide TypeScript checks, and production web/API builds
+
 ### ✅ Search and Discovery — fully done
 - Added the final "Remaining" item: a "Near me" geolocation button on `/clinics` that requests `navigator.geolocation` and round-trips through the existing `latitude`/`longitude`/`maxDistanceKm` query params the backend already validated and consumed — no backend change needed, just the missing browser-side control, plus a "Clear location" toggle and persistence across pagination/filters
 - Verified end-to-end against a running dev server (toggled button state, "within X km of you" copy) rather than just typechecking

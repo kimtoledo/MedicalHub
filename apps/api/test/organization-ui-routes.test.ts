@@ -14,7 +14,7 @@ const ORGANIZATION_ID = '77777777-7777-4777-8777-777777777777';
 const BRANCH_ID = '88888888-8888-4888-8888-888888888888';
 const context: AuthorizationContext = { user: { id: USER_ID, email: 'owner@example.test', name: 'Owner', platformRole: null }, strategies: ['clinicMember'], clinicMemberships: [{ clinicId: CLINIC_ID, branchId: null, role: 'clinic_owner', dentistId: null }] };
 
-function organizationsMock() { return { create: vi.fn(), eligibleClinics: vi.fn(async () => []), attachClinic: vi.fn(), listMine: vi.fn(async () => []), workspace: vi.fn(async () => ({ organization: {}, access: {}, clinics: [], members: [] })), report: vi.fn(async () => ({})), upsertMember: vi.fn(), listCatalog: vi.fn(async () => []), createCatalogItem: vi.fn(), updateCatalogItem: vi.fn(), adoptCatalogItem: vi.fn() } as unknown as OrganizationService; }
+function organizationsMock() { return { create: vi.fn(), eligibleClinics: vi.fn(async () => []), attachClinic: vi.fn(), listMine: vi.fn(async () => []), workspace: vi.fn(async () => ({ organization: {}, access: {}, clinics: [], members: [] })), report: vi.fn(async () => ({})), upsertMember: vi.fn(), listCatalog: vi.fn(async () => []), createCatalogItem: vi.fn(), updateCatalogItem: vi.fn(), adoptCatalogItem: vi.fn(), listEntitlements: vi.fn(async () => []), grantEntitlement: vi.fn(), revokeEntitlement: vi.fn() } as unknown as OrganizationService; }
 function auth(value: AuthorizationContext | null): AuthServices { return { handler: vi.fn(), getSession: vi.fn(async () => value ? ({ session: { id: 'session', userId: value.user.id, expiresAt: new Date('2030-01-01') }, user: value.user }) : null), resolveAuthorization: vi.fn(async () => value) }; }
 let app: FastifyInstance | undefined;
 afterEach(async () => { await app?.close(); app = undefined; });
@@ -71,5 +71,36 @@ describe('enterprise organization UI routes', () => {
     const response = await app!.inject({ method: 'POST', url: `/v1/organizations/${ORGANIZATION_ID}/service-catalog/adopt`, headers: { cookie: 'session=test' }, payload: { clinicId: OTHER_CLINIC_ID, itemId: '99999999-9999-4999-8999-999999999999' } });
     expect(response.statusCode).toBe(403);
     expect(response.json().error.code).toBe('CLINIC_NOT_IN_ORGANIZATION');
+  });
+
+  it('lists organization-wide entitlement grants for a member', async () => {
+    const organizations = await setup();
+    vi.mocked(organizations.listEntitlements).mockResolvedValueOnce([{ id: '99999999-9999-4999-8999-999999999999', featureKey: 'ai.imaging', isEnabled: true, expiresAt: null }] as never);
+    const response = await app!.inject({ method: 'GET', url: `/v1/organizations/${ORGANIZATION_ID}/entitlements`, headers: { cookie: 'session=test' } });
+    expect(response.statusCode).toBe(200);
+    expect(organizations.listEntitlements).toHaveBeenCalledWith(ORGANIZATION_ID, USER_ID);
+  });
+
+  it('lets an org admin grant an organization-wide entitlement', async () => {
+    const organizations = await setup();
+    vi.mocked(organizations.grantEntitlement).mockResolvedValueOnce({ id: '99999999-9999-4999-8999-999999999999' } as never);
+    const response = await app!.inject({ method: 'POST', url: `/v1/organizations/${ORGANIZATION_ID}/entitlements`, headers: { cookie: 'session=test' }, payload: { featureKey: 'ai.imaging', isEnabled: true } });
+    expect(response.statusCode).toBe(201);
+    expect(organizations.grantEntitlement).toHaveBeenCalledWith(ORGANIZATION_ID, expect.objectContaining({ featureKey: 'ai.imaging', isEnabled: true }), expect.objectContaining({ id: USER_ID }));
+  });
+
+  it('maps a forbidden entitlement grant from a non-admin org member', async () => {
+    const organizations = await setup();
+    vi.mocked(organizations.grantEntitlement).mockRejectedValueOnce(new OrganizationError('FORBIDDEN', 'Organization administrator access is required', 403));
+    const response = await app!.inject({ method: 'POST', url: `/v1/organizations/${ORGANIZATION_ID}/entitlements`, headers: { cookie: 'session=test' }, payload: { featureKey: 'ai.imaging', isEnabled: true } });
+    expect(response.statusCode).toBe(403);
+  });
+
+  it('lets an org admin revoke an organization-wide entitlement', async () => {
+    const organizations = await setup();
+    vi.mocked(organizations.revokeEntitlement).mockResolvedValueOnce({ removed: true } as never);
+    const response = await app!.inject({ method: 'DELETE', url: `/v1/organizations/${ORGANIZATION_ID}/entitlements/ai.imaging`, headers: { cookie: 'session=test' } });
+    expect(response.statusCode).toBe(200);
+    expect(organizations.revokeEntitlement).toHaveBeenCalledWith(ORGANIZATION_ID, 'ai.imaging', expect.objectContaining({ id: USER_ID }));
   });
 });
