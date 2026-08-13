@@ -4,8 +4,8 @@ import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
 import {
   appointmentStatusHistory, appointments, branches, clinicReviews, clinicalFiles, clinics,
-  encounters, hmoClaims, hmoPayers, inventoryItems, inventoryTransactions, invoiceLineItems,
-  invoicePayments, invoiceTransactions, invoices, odontogramEvents, patientDentalHistories,
+  encounters, featureFlagClinics, featureFlags, hmoClaims, hmoPayers, inventoryItems, inventoryTransactions,
+  invoiceLineItems, invoicePayments, invoiceTransactions, invoices, odontogramEvents, patientDentalHistories,
   patientHmoMemberships, patientMedicalHistories, patients, prescriptionItems, prescriptions,
   services, supportAccessRequests, tenantExportRequests, treatmentPlanItems, treatmentPlans,
   treatmentRecords, users,
@@ -152,5 +152,50 @@ export function createPlatformOperationsService(database: DB) {
       return { buffer, filename: `dentra-export-${row.id}.json` };
     },
     activeClinics: async () => database.select({ id: clinics.id, name: clinics.name, status: clinics.status, createdAt: clinics.createdAt }).from(clinics).orderBy(asc(clinics.name)),
+    listFeatureFlags: async () => {
+      const flags = await database.select().from(featureFlags).orderBy(desc(featureFlags.createdAt));
+      const targets = await database.select({ flagId: featureFlagClinics.flagId, clinicId: featureFlagClinics.clinicId, clinicName: clinics.name }).from(featureFlagClinics).innerJoin(clinics, eq(featureFlagClinics.clinicId, clinics.id));
+      const byFlag = new Map<string, Array<{ clinicId: string; clinicName: string }>>();
+      for (const target of targets) { const list = byFlag.get(target.flagId) ?? []; list.push({ clinicId: target.clinicId, clinicName: target.clinicName }); byFlag.set(target.flagId, list); }
+      return flags.map((flag) => ({ ...flag, clinics: byFlag.get(flag.id) ?? [] }));
+    },
+    createFeatureFlag: async (input: { key: string; name: string; description?: string | null }, actor: OperationsActor) => {
+      const [existing] = await database.select({ id: featureFlags.id }).from(featureFlags).where(eq(featureFlags.key, input.key)).limit(1);
+      if (existing) throw new OperationsError('FLAG_KEY_TAKEN', 'A feature flag with this key already exists', 409);
+      const [row] = await database.insert(featureFlags).values({ key: input.key, name: input.name, description: input.description ?? null }).returning();
+      if (!row) throw new OperationsError('FLAG_CREATE_FAILED', 'Unable to create feature flag', 500);
+      await writeAudit(database, { actorId: actor.id, actorEmail: actor.email, entityType: 'feature_flag', entityId: row.id, action: AuditAction.FEATURE_FLAG_CREATED, metadata: JSON.stringify({ key: input.key }), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
+      return row;
+    },
+    setFeatureFlagRollout: async (flagId: string, enabledByDefault: boolean, actor: OperationsActor) => {
+      const [row] = await database.update(featureFlags).set({ enabledByDefault }).where(eq(featureFlags.id, flagId)).returning();
+      if (!row) throw new OperationsError('FLAG_NOT_FOUND', 'Feature flag not found', 404);
+      await writeAudit(database, { actorId: actor.id, actorEmail: actor.email, entityType: 'feature_flag', entityId: flagId, action: AuditAction.FEATURE_FLAG_ROLLOUT_UPDATED, metadata: JSON.stringify({ enabledByDefault }), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
+      return row;
+    },
+    addFeatureFlagClinic: async (flagId: string, clinicId: string, actor: OperationsActor) => {
+      const [flag] = await database.select({ id: featureFlags.id }).from(featureFlags).where(eq(featureFlags.id, flagId)).limit(1);
+      if (!flag) throw new OperationsError('FLAG_NOT_FOUND', 'Feature flag not found', 404);
+      const [clinicRow] = await database.select({ id: clinics.id }).from(clinics).where(eq(clinics.id, clinicId)).limit(1);
+      if (!clinicRow) throw new OperationsError('CLINIC_NOT_FOUND', 'Clinic not found', 404);
+      const [existing] = await database.select({ id: featureFlagClinics.id }).from(featureFlagClinics).where(and(eq(featureFlagClinics.flagId, flagId), eq(featureFlagClinics.clinicId, clinicId))).limit(1);
+      if (existing) throw new OperationsError('CLINIC_ALREADY_TARGETED', 'This clinic already has the flag enabled', 409);
+      const [row] = await database.insert(featureFlagClinics).values({ flagId, clinicId }).returning();
+      await writeAudit(database, { actorId: actor.id, actorEmail: actor.email, clinicId, entityType: 'feature_flag', entityId: flagId, action: AuditAction.FEATURE_FLAG_CLINIC_ADDED, metadata: JSON.stringify({}), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
+      return row;
+    },
+    removeFeatureFlagClinic: async (flagId: string, clinicId: string, actor: OperationsActor) => {
+      const deleted = await database.delete(featureFlagClinics).where(and(eq(featureFlagClinics.flagId, flagId), eq(featureFlagClinics.clinicId, clinicId))).returning();
+      if (!deleted.length) throw new OperationsError('CLINIC_NOT_TARGETED', 'This clinic is not targeted by the flag', 404);
+      await writeAudit(database, { actorId: actor.id, actorEmail: actor.email, clinicId, entityType: 'feature_flag', entityId: flagId, action: AuditAction.FEATURE_FLAG_CLINIC_REMOVED, metadata: JSON.stringify({}), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
+      return { removed: true };
+    },
+    isFeatureEnabledForClinic: async (key: string, clinicId: string) => {
+      const [flag] = await database.select({ id: featureFlags.id, enabledByDefault: featureFlags.enabledByDefault }).from(featureFlags).where(eq(featureFlags.key, key)).limit(1);
+      if (!flag) return false;
+      if (flag.enabledByDefault) return true;
+      const [targeted] = await database.select({ id: featureFlagClinics.id }).from(featureFlagClinics).where(and(eq(featureFlagClinics.flagId, flag.id), eq(featureFlagClinics.clinicId, clinicId))).limit(1);
+      return Boolean(targeted);
+    },
   };
 }

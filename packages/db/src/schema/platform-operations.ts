@@ -1,4 +1,4 @@
-import { index, pgEnum, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, index, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { clinics } from './clinics';
 import { id, timestamps } from './helpers';
 
@@ -31,5 +31,29 @@ export const tenantExportRequests = pgTable('tenant_export_requests', {
   ...timestamps,
 }, (t) => ({ clinicIdx: index('tenant_export_clinic_idx').on(t.clinicId, t.status), statusIdx: index('tenant_export_status_idx').on(t.status) }));
 
+// Rolling out a new feature to a subset of clinics before full release.
+// enabledByDefault === true means every clinic gets it (full release);
+// otherwise only clinics with a row in featureFlagClinics get it.
+export const featureFlags = pgTable('feature_flags', {
+  id: id(),
+  key: varchar('key', { length: 100 }).notNull(),
+  name: varchar('name', { length: 200 }).notNull(),
+  description: text('description'),
+  enabledByDefault: boolean('enabled_by_default').notNull().default(false),
+  ...timestamps,
+}, (t) => ({ keyUnique: uniqueIndex('feature_flags_key_unique').on(t.key) }));
+
+export const featureFlagClinics = pgTable('feature_flag_clinics', {
+  id: id(),
+  flagId: uuid('flag_id').notNull().references(() => featureFlags.id, { onDelete: 'cascade' }),
+  clinicId: uuid('clinic_id').notNull().references(() => clinics.id, { onDelete: 'cascade' }),
+  ...timestamps,
+}, (t) => ({
+  flagClinicUnique: uniqueIndex('feature_flag_clinics_unique').on(t.flagId, t.clinicId),
+  clinicIdx: index('feature_flag_clinics_clinic_idx').on(t.clinicId),
+}));
+
 export type SupportAccessRequest = typeof supportAccessRequests.$inferSelect;
 export type TenantExportRequest = typeof tenantExportRequests.$inferSelect;
+export type FeatureFlag = typeof featureFlags.$inferSelect;
+export type FeatureFlagClinic = typeof featureFlagClinics.$inferSelect;

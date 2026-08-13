@@ -13,7 +13,7 @@ const REQUEST_ID = '44444444-4444-4444-8444-444444444444';
 function clinicContext(role: ClinicRole): AuthorizationContext { return { user: { id: '22222222-2222-4222-8222-222222222222', email: 'staff@example.test', name: 'Staff', platformRole: null }, strategies: ['clinicMember'], clinicMemberships: [{ clinicId: CLINIC_ID, branchId: null, role, dentistId: null }] }; }
 function adminContext(): AuthorizationContext { return { user: { id: '66666666-6666-4666-8666-666666666666', email: 'admin@example.test', name: 'Admin', platformRole: 'super_admin' }, strategies: ['superAdmin'], clinicMemberships: [] }; }
 function auth(value: AuthorizationContext): AuthServices { return { handler: vi.fn(), getSession: vi.fn(async () => ({ session: { id: 'session', userId: value.user.id, expiresAt: new Date('2030-01-01') }, user: value.user })), resolveAuthorization: vi.fn(async () => value) }; }
-function operations(overrides: Record<string, unknown> = {}): PlatformOperationsService { return { requestSupportAccess: vi.fn(), listSupportAccess: vi.fn(async () => []), reviewSupportAccess: vi.fn(), requestExport: vi.fn(), listExports: vi.fn(async () => []), markExport: vi.fn(), generateExport: vi.fn(), downloadUrl: vi.fn(), streamExport: vi.fn(async () => null), activeClinics: vi.fn(async () => []), ...overrides } as unknown as PlatformOperationsService; }
+function operations(overrides: Record<string, unknown> = {}): PlatformOperationsService { return { requestSupportAccess: vi.fn(), listSupportAccess: vi.fn(async () => []), reviewSupportAccess: vi.fn(), requestExport: vi.fn(), listExports: vi.fn(async () => []), markExport: vi.fn(), generateExport: vi.fn(), downloadUrl: vi.fn(), streamExport: vi.fn(async () => null), activeClinics: vi.fn(async () => []), listFeatureFlags: vi.fn(async () => []), createFeatureFlag: vi.fn(), setFeatureFlagRollout: vi.fn(), addFeatureFlagClinic: vi.fn(), removeFeatureFlagClinic: vi.fn(), isFeatureEnabledForClinic: vi.fn(async () => false), ...overrides } as unknown as PlatformOperationsService; }
 
 let app: FastifyInstance | undefined;
 afterEach(async () => { await app?.close(); app = undefined; });
@@ -154,5 +154,60 @@ describe('platform operations console API', () => {
     const response = await app!.inject({ method: 'GET', url: '/v1/admin/operations/clinics', headers: { cookie: 'session=test' } });
     expect(response.statusCode).toBe(200);
     expect(response.json().data).toHaveLength(1);
+  });
+
+  it('lets a Super Admin create a feature flag', async () => {
+    const service = operations({ createFeatureFlag: vi.fn(async () => ({ id: '11111111-1111-4111-8111-111111111111', key: 'new-odontogram', name: 'New odontogram', enabledByDefault: false })) });
+    await setup(adminContext(), service);
+    const response = await app!.inject({ method: 'POST', url: '/v1/admin/operations/feature-flags', headers: { cookie: 'session=test' }, payload: { key: 'new-odontogram', name: 'New odontogram' } });
+    expect(response.statusCode).toBe(201);
+    expect(service.createFeatureFlag).toHaveBeenCalledWith({ key: 'new-odontogram', name: 'New odontogram' }, expect.objectContaining({ id: '66666666-6666-4666-8666-666666666666' }));
+  });
+
+  it('rejects a feature flag key with invalid characters', async () => {
+    const service = operations();
+    await setup(adminContext(), service);
+    const response = await app!.inject({ method: 'POST', url: '/v1/admin/operations/feature-flags', headers: { cookie: 'session=test' }, payload: { key: 'New Odontogram!', name: 'New odontogram' } });
+    expect(response.statusCode).toBe(400);
+    expect(service.createFeatureFlag).not.toHaveBeenCalled();
+  });
+
+  it('denies clinic staff from managing feature flags', async () => {
+    const service = operations();
+    await setup(clinicContext('clinic_owner'), service);
+    const response = await app!.inject({ method: 'GET', url: '/v1/admin/operations/feature-flags', headers: { cookie: 'session=test' } });
+    expect(response.statusCode).toBe(403);
+    expect(service.listFeatureFlags).not.toHaveBeenCalled();
+  });
+
+  it('lets a Super Admin flip a flag to full rollout', async () => {
+    const service = operations({ setFeatureFlagRollout: vi.fn(async () => ({ id: '11111111-1111-4111-8111-111111111111', enabledByDefault: true })) });
+    await setup(adminContext(), service);
+    const response = await app!.inject({ method: 'PATCH', url: '/v1/admin/operations/feature-flags/11111111-1111-4111-8111-111111111111', headers: { cookie: 'session=test' }, payload: { enabledByDefault: true } });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().data.enabledByDefault).toBe(true);
+  });
+
+  it('lets a Super Admin target a clinic for a limited rollout', async () => {
+    const service = operations({ addFeatureFlagClinic: vi.fn(async () => ({ id: 'target-1', flagId: '11111111-1111-4111-8111-111111111111', clinicId: CLINIC_ID })) });
+    await setup(adminContext(), service);
+    const response = await app!.inject({ method: 'POST', url: `/v1/admin/operations/feature-flags/11111111-1111-4111-8111-111111111111/clinics/${CLINIC_ID}`, headers: { cookie: 'session=test' } });
+    expect(response.statusCode).toBe(201);
+    expect(service.addFeatureFlagClinic).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111', CLINIC_ID, expect.objectContaining({ id: '66666666-6666-4666-8666-666666666666' }));
+  });
+
+  it('surfaces a conflict when the clinic is already targeted', async () => {
+    const service = operations({ addFeatureFlagClinic: vi.fn(async () => { throw new OperationsError('CLINIC_ALREADY_TARGETED', 'This clinic already has the flag enabled', 409); }) });
+    await setup(adminContext(), service);
+    const response = await app!.inject({ method: 'POST', url: `/v1/admin/operations/feature-flags/11111111-1111-4111-8111-111111111111/clinics/${CLINIC_ID}`, headers: { cookie: 'session=test' } });
+    expect(response.statusCode).toBe(409);
+  });
+
+  it('lets a Super Admin remove a clinic from a limited rollout', async () => {
+    const service = operations({ removeFeatureFlagClinic: vi.fn(async () => ({ removed: true })) });
+    await setup(adminContext(), service);
+    const response = await app!.inject({ method: 'DELETE', url: `/v1/admin/operations/feature-flags/11111111-1111-4111-8111-111111111111/clinics/${CLINIC_ID}`, headers: { cookie: 'session=test' } });
+    expect(response.statusCode).toBe(200);
+    expect(service.removeFeatureFlagClinic).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111', CLINIC_ID, expect.objectContaining({ id: '66666666-6666-4666-8666-666666666666' }));
   });
 });

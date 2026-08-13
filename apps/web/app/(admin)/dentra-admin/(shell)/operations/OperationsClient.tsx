@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import {
   ShieldAlert, DatabaseBackup, Building2, AlertCircle, Loader2,
-  Check, X, Clock3, Play, Download,
+  Check, X, Clock3, Play, Download, Flag, Plus, Trash2,
 } from 'lucide-react';
 
 type SupportAccessRequest = {
@@ -34,6 +34,15 @@ type TenantExportRequest = {
 };
 
 type ClinicSummary = { id: string; name: string; status: string; createdAt: string };
+
+type FeatureFlag = {
+  id: string;
+  key: string;
+  name: string;
+  description: string | null;
+  enabledByDefault: boolean;
+  clinics: Array<{ clinicId: string; clinicName: string }>;
+};
 
 const SUPPORT_STATUS_STYLES: Record<SupportAccessRequest['status'], string> = {
   pending: 'bg-amber-100 text-amber-700',
@@ -219,6 +228,125 @@ function TenantExportSection() {
   );
 }
 
+function FeatureFlagsSection() {
+  const [flags, setFlags] = useState<FeatureFlag[]>([]);
+  const [clinics, setClinics] = useState<ClinicSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [key, setKey] = useState('');
+  const [name, setName] = useState('');
+  const [targetClinicId, setTargetClinicId] = useState<Record<string, string>>({});
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const [flagsResponse, clinicsResponse] = await Promise.all([
+      fetch('/api/admin/operations/feature-flags', { cache: 'no-store' }),
+      fetch('/api/admin/operations/clinics', { cache: 'no-store' }),
+    ]);
+    const flagsPayload = await flagsResponse.json();
+    const clinicsPayload = await clinicsResponse.json();
+    setLoading(false);
+    if (!flagsResponse.ok) { setError(flagsPayload.error?.message ?? 'Unable to load feature flags.'); return; }
+    setError(null);
+    setFlags(flagsPayload.data);
+    if (clinicsResponse.ok) setClinics(clinicsPayload.data);
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  async function createFlag(event: FormEvent) {
+    event.preventDefault();
+    setBusyId('create'); setError(null);
+    const response = await fetch('/api/admin/operations/feature-flags', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, name }) });
+    setBusyId(null);
+    if (!response.ok) { const payload = await response.json().catch(() => null); setError(payload?.error?.message ?? 'Unable to create this feature flag.'); return; }
+    setKey(''); setName('');
+    await load();
+  }
+
+  async function setRollout(flagId: string, enabledByDefault: boolean) {
+    setBusyId(flagId);
+    const response = await fetch(`/api/admin/operations/feature-flags/${flagId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabledByDefault }) });
+    setBusyId(null);
+    if (!response.ok) { const payload = await response.json().catch(() => null); setError(payload?.error?.message ?? 'Unable to update this rollout.'); return; }
+    await load();
+  }
+
+  async function addClinic(flagId: string) {
+    const clinicId = targetClinicId[flagId];
+    if (!clinicId) return;
+    setBusyId(flagId);
+    const response = await fetch(`/api/admin/operations/feature-flags/${flagId}/clinics/${clinicId}`, { method: 'POST' });
+    setBusyId(null);
+    if (!response.ok) { const payload = await response.json().catch(() => null); setError(payload?.error?.message ?? 'Unable to target this clinic.'); return; }
+    setTargetClinicId((current) => ({ ...current, [flagId]: '' }));
+    await load();
+  }
+
+  async function removeClinic(flagId: string, clinicId: string) {
+    setBusyId(flagId);
+    const response = await fetch(`/api/admin/operations/feature-flags/${flagId}/clinics/${clinicId}`, { method: 'DELETE' });
+    setBusyId(null);
+    if (!response.ok) { const payload = await response.json().catch(() => null); setError(payload?.error?.message ?? 'Unable to remove this clinic.'); return; }
+    await load();
+  }
+
+  return (
+    <section className="rounded-2xl border border-violet-100 bg-white p-5">
+      <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-violet-900"><Flag size={15} /> Feature-flag rollout</h2>
+      <p className="mb-3 text-xs text-slate-500">Target a new feature at a subset of clinics before flipping it on for everyone. Application code decides what each flag key gates — creating one here only controls who it applies to.</p>
+      <form onSubmit={createFlag} className="mb-4 flex flex-wrap items-end gap-2 rounded-xl bg-slate-50 p-3">
+        <label className="text-xs font-semibold text-slate-600">Key<input required value={key} onChange={(event) => setKey(event.target.value)} placeholder="new-odontogram" className="mt-1 block h-9 w-44 rounded-lg border border-violet-200 px-2 text-sm" /></label>
+        <label className="text-xs font-semibold text-slate-600">Name<input required value={name} onChange={(event) => setName(event.target.value)} placeholder="New odontogram" className="mt-1 block h-9 w-56 rounded-lg border border-violet-200 px-2 text-sm" /></label>
+        <button disabled={busyId === 'create'} className="flex h-9 items-center gap-1 rounded-lg bg-violet-600 px-3 text-xs font-semibold text-white disabled:opacity-60">
+          {busyId === 'create' ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Add flag
+        </button>
+      </form>
+      {loading ? (
+        <p className="text-xs text-slate-400">Loading…</p>
+      ) : flags.length === 0 ? (
+        <p className="text-xs text-slate-400">No feature flags yet.</p>
+      ) : (
+        <ul className="space-y-2">
+          {flags.map((flag) => {
+            const untargeted = clinics.filter((clinic) => !flag.clinics.some((row) => row.clinicId === clinic.id));
+            return (
+              <li key={flag.id} className="rounded-xl border border-violet-50 px-3 py-2.5">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-violet-900">{flag.name} <span className="font-mono text-xs text-slate-400">{flag.key}</span></p>
+                    <p className="text-xs text-slate-500">{flag.enabledByDefault ? 'Enabled for every clinic' : `Targeted at ${flag.clinics.length} clinic${flag.clinics.length === 1 ? '' : 's'}`}</p>
+                  </div>
+                  <button onClick={() => void setRollout(flag.id, !flag.enabledByDefault)} disabled={busyId === flag.id} className={`rounded-lg px-2 py-1 text-xs font-semibold disabled:opacity-60 ${flag.enabledByDefault ? 'border border-slate-200 text-slate-500 hover:bg-slate-50' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
+                    {flag.enabledByDefault ? 'Revert to subset' : 'Roll out to everyone'}
+                  </button>
+                </div>
+                {!flag.enabledByDefault && (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    {flag.clinics.map((row) => (
+                      <span key={row.clinicId} className="flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-xs text-violet-700">
+                        {row.clinicName}
+                        <button onClick={() => void removeClinic(flag.id, row.clinicId)} disabled={busyId === flag.id} className="text-violet-400 hover:text-red-600"><Trash2 size={10} /></button>
+                      </span>
+                    ))}
+                    <select value={targetClinicId[flag.id] ?? ''} onChange={(event) => setTargetClinicId((current) => ({ ...current, [flag.id]: event.target.value }))} className="h-7 rounded-lg border border-violet-200 px-1.5 text-xs">
+                      <option value="">Add clinic…</option>
+                      {untargeted.map((clinic) => <option key={clinic.id} value={clinic.id}>{clinic.name}</option>)}
+                    </select>
+                    <button onClick={() => void addClinic(flag.id)} disabled={busyId === flag.id || !targetClinicId[flag.id]} className="rounded-lg border border-violet-200 px-2 py-0.5 text-xs font-semibold text-violet-700 disabled:opacity-50">Add</button>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {error && <p role="alert" className="mt-3 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+    </section>
+  );
+}
+
 function PlatformInventorySection() {
   const [clinics, setClinics] = useState<ClinicSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -272,6 +400,7 @@ export default function OperationsClient() {
 
         <SupportAccessSection />
         <TenantExportSection />
+        <FeatureFlagsSection />
         <PlatformInventorySection />
       </div>
     </main>

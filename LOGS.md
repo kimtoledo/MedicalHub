@@ -48,6 +48,14 @@ Updated manually after each session or merged task.
 - Verified the 3-tier price resolution end-to-end against a real seeded clinic (org base price resolves with `priceSource: 'organization'`; a clinic-level price edit correctly reverts `priceSource` to `'base'`)
 - Verified 383 passing API tests, repository-wide TypeScript checks, and production web/API builds
 
+### ✅ Feature-flag rollout (platform operations)
+- A Super Admin can create a feature flag (a `key` + display name) and target it at a specific subset of clinics, then flip it to `enabledByDefault` for everyone once ready for full release — new `feature_flags`/`feature_flag_clinics` tables, `isFeatureEnabledForClinic(key, clinicId)` exported for future feature code to gate on
+- Minimal UI added to the Super Admin operations console: create a flag, add/remove targeted clinics, toggle full rollout
+- Investigated scoped support-session enforcement (the other item in `mvp3/11-platform-operations.md`'s remaining list) but did not build it: the existing support-access approval flow is a request/audit record only, nothing gates real data access on it today, and wiring that in requires a product decision on which route families count as "support access to tenant data" — not guessable from the code alone
+- Hit the *exact same* silent-migration-skip class of bug as the service-catalog work, one level deeper this time: drizzle's migrator compares against a single `max(created_at)` already in the tracking table, and the earlier session's manual reconciliation had left that max slightly ahead of "now," so this session's newly generated migration was silently skipped again. Root-caused it to two genuinely anomalous entries in the committed `_journal.json` (`0013_hmo_claims`/`0014_merge_history_reconciliation` carry `when` timestamps further in the future than every migration through the one just added) and fixed it permanently by renumbering every journal `when` and the matching `__drizzle_migrations.created_at` row to a small sequential integer — with the user's explicit approval before running the raw `UPDATE` against the dev database
+- Verified all four flag states (untargeted, targeted, removed, full rollout) end-to-end against a real seeded clinic
+- Verified 395 passing API tests, repository-wide TypeScript checks, and production web/API builds
+
 ### ✅ Search and Discovery — fully done
 - Added the final "Remaining" item: a "Near me" geolocation button on `/clinics` that requests `navigator.geolocation` and round-trips through the existing `latitude`/`longitude`/`maxDistanceKm` query params the backend already validated and consumed — no backend change needed, just the missing browser-side control, plus a "Clear location" toggle and persistence across pagination/filters
 - Verified end-to-end against a running dev server (toggled button state, "within X km of you" copy) rather than just typechecking

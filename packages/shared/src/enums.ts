@@ -317,6 +317,10 @@ export const AuditAction = {
   TENANT_EXPORT_REQUESTED: 'tenant_export.requested',
   TENANT_EXPORT_GENERATED: 'tenant_export.generated',
   TENANT_EXPORT_DOWNLOAD_LINK_ISSUED: 'tenant_export.download_link_issued',
+  FEATURE_FLAG_CREATED: 'feature_flag.created',
+  FEATURE_FLAG_ROLLOUT_UPDATED: 'feature_flag.rollout_updated',
+  FEATURE_FLAG_CLINIC_ADDED: 'feature_flag.clinic_added',
+  FEATURE_FLAG_CLINIC_REMOVED: 'feature_flag.clinic_removed',
 
   RECALL_RULE_CREATED: 'recall_rule.created',
   RECALL_RULE_UPDATED: 'recall_rule.updated',
