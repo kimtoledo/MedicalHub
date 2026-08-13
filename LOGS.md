@@ -33,6 +33,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Custom domain settings UI
+- Added `/app/settings/domains`: add/normalize a hostname, view DNS TXT instructions with copy buttons, recheck verification, and activate — linked from the Clinic Settings hub
+- Extended the list endpoint to also return the verification token so DNS instructions remain visible after a reload instead of only at creation time
+- Activation stays disabled in the UI until a domain is verified, matching the server's own conditional-update guard
+- Status badges cover pending verification, verified, active, and failed (with reason); active domains show truthful copy that SSL/canonical redirect provisioning is an infrastructure-layer concern and that DNS/certificate issues fall back to the canonical Dentra.ph URL with no downtime
+- Verified 306 passing API tests (6 new), 5 passing web tests, repository-wide TypeScript checks, production web/API builds, and clean diff validation
+
 ### ✅ Online payment checkout UI
 - Added clinic-facing invoice payment-link management (create, one-time copyable URL, list, cancel) to the invoice detail page, gated by `billing.payments` entitlement and role
 - Added `GET .../payment-links` and `POST .../payment-links/:linkId/cancel` API endpoints; cancellation only applies to active links and is audited
