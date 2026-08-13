@@ -356,6 +356,42 @@ function CalendarFeedSection({ apiKeys: initial, clinicId }: { apiKeys: ApiKey[]
   );
 }
 
+function todayManila() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+}
+
+function AccountingExportSection({ clinicId }: { clinicId: string }) {
+  const [from, setFrom] = useState(() => { const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().slice(0, 10); });
+  const [to, setTo] = useState(todayManila);
+  const [error, setError] = useState<string | null>(null);
+
+  function download() {
+    if (to < from) { setError("The end date must be on or after the start date."); return; }
+    if (new Date(to).getTime() - new Date(from).getTime() > 366 * 86_400_000) { setError("Date range cannot exceed 366 days."); return; }
+    setError(null);
+    window.location.href = `/api/clinic/${clinicId}/integrations/accounting-export.csv?from=${from}&to=${to}`;
+  }
+
+  return (
+    <section className="rounded-2xl border border-violet-100 bg-white p-5">
+      <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-violet-900"><FileSpreadsheet size={15} /> Accounting export</h2>
+      <p className="mb-3 text-xs text-slate-500">A software-agnostic CSV ledger — invoice issued, payment received, refund, and adjustment rows — for import into any Philippine accounting tool. No file binaries, staff accounts, or clinical notes are included.</p>
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="text-xs font-semibold text-violet-700">From
+          <input type="date" value={from} onChange={(event) => setFrom(event.target.value)} className="mt-1 block rounded-lg border border-violet-200 px-2 py-1.5 text-sm" />
+        </label>
+        <label className="text-xs font-semibold text-violet-700">To
+          <input type="date" value={to} onChange={(event) => setTo(event.target.value)} className="mt-1 block rounded-lg border border-violet-200 px-2 py-1.5 text-sm" />
+        </label>
+        <button onClick={download} className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700">
+          <FileSpreadsheet size={12} /> Download CSV
+        </button>
+      </div>
+      {error && <p role="alert" className="mt-2 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+    </section>
+  );
+}
+
 export default function IntegrationsClient({ apiKeys, webhooks, clinicId }: { apiKeys: ApiKey[]; webhooks: Webhook[]; clinicId: string }) {
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6 lg:p-8">
@@ -377,19 +413,7 @@ export default function IntegrationsClient({ apiKeys, webhooks, clinicId }: { ap
       <ApiKeysSection apiKeys={apiKeys} clinicId={clinicId} />
       <WebhooksSection webhooks={webhooks} clinicId={clinicId} />
       <CalendarFeedSection apiKeys={apiKeys} clinicId={clinicId} />
-
-      <section className="rounded-2xl border border-dashed border-violet-200 bg-white p-5">
-        <h2 className="mb-3 text-sm font-bold text-violet-900">Coming soon</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="flex items-start gap-3 rounded-xl bg-slate-50 p-3 opacity-70">
-            <FileSpreadsheet size={18} className="mt-0.5 flex-shrink-0 text-slate-400" />
-            <div>
-              <p className="text-sm font-semibold text-slate-500">Accounting export</p>
-              <p className="text-xs text-slate-400">Not yet available — Philippine accounting formats are still being built.</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <AccountingExportSection clinicId={clinicId} />
     </div>
   );
 }

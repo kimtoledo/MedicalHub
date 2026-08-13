@@ -14,6 +14,8 @@ const keyBody = z.object({ name: z.string().trim().min(2).max(120), scopes: z.ar
 const icsQuery = z.object({ key: z.string().min(10) }).strict();
 const webhookBody = z.object({ name: z.string().trim().min(2).max(120), endpointUrl: z.string().url().max(500), eventTypes: z.array(z.string().trim().min(3).max(100)).min(1).max(20) }).strict();
 const rangeQuery = z.object({ from: z.string().datetime({ offset: true }).optional(), to: z.string().datetime({ offset: true }).optional() }).strict();
+const dateOnly = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const ledgerQuery = z.object({ from: dateOnly, to: dateOnly }).strict();
 const adminRoles = ['clinic_owner', 'clinic_admin'] as const;
 
 function error(reply: FastifyReply, caught: unknown) {
@@ -56,6 +58,11 @@ function icsCalendar(events: Awaited<ReturnType<IntegrationService['appointments
   }).join('\r\n');
   return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Dentra.ph//Appointments//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', body, 'END:VCALENDAR'].filter(Boolean).join('\r\n');
 }
+const csvEscape = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+function ledgerCsv(rows: Awaited<ReturnType<IntegrationService['accountingLedger']>>) {
+  const headers = ['date', 'type', 'reference', 'description', 'amountPhp', 'paymentMethod'];
+  return `${headers.map(csvEscape).join(',')}\n${rows.map((row) => headers.map((header) => csvEscape((row as Record<string, unknown>)[header])).join(',')).join('\n')}\n`;
+}
 
 export async function registerIntegrationRoutes(app: FastifyInstance, options: { auth: AuthServices; integrations: IntegrationService }) {
   app.get('/v1/clinic/:clinicId/integrations/api-keys', async (request, reply) => { const p = clinic.safeParse(request.params); if (!p.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid clinic identifier' } }); const context = await authorize(request, reply, options.auth, p.data.clinicId); if (!context) return; return reply.send({ success: true, data: await options.integrations.listKeys(p.data.clinicId) }); });
@@ -65,6 +72,15 @@ export async function registerIntegrationRoutes(app: FastifyInstance, options: {
   app.post('/v1/clinic/:clinicId/integrations/webhooks', async (request, reply) => { const p = clinic.safeParse(request.params); const b = webhookBody.safeParse(request.body); if (!p.success || !b.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid webhook request' } }); const context = await authorize(request, reply, options.auth, p.data.clinicId); if (!context) return; try { return reply.status(201).send({ success: true, data: await options.integrations.createWebhook(p.data.clinicId, b.data, actor(request, context)) }); } catch (caught) { return error(reply, caught); } });
   app.post('/v1/clinic/:clinicId/integrations/webhooks/:webhookId/disable', async (request, reply) => { const p = webhookId.safeParse(request.params); if (!p.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid webhook identifier' } }); const context = await authorize(request, reply, options.auth, p.data.clinicId); if (!context) return; try { return reply.send({ success: true, data: await options.integrations.disableWebhook(p.data.clinicId, p.data.webhookId, actor(request, context)) }); } catch (caught) { return error(reply, caught); } });
   app.get('/v1/clinic/:clinicId/integrations/webhooks/:webhookId/deliveries', async (request, reply) => { const p = webhookId.safeParse(request.params); if (!p.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid webhook identifier' } }); const context = await authorize(request, reply, options.auth, p.data.clinicId); if (!context) return; return reply.send({ success: true, data: await options.integrations.listDeliveries(p.data.clinicId, p.data.webhookId) }); });
+  app.get('/v1/clinic/:clinicId/integrations/accounting-export.csv', async (request, reply) => {
+    const p = clinic.safeParse(request.params);
+    const q = ledgerQuery.safeParse(request.query);
+    if (!p.success || !q.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'A valid clinic id and from/to (YYYY-MM-DD) dates are required' } });
+    if (q.data.to < q.data.from || (new Date(q.data.to).getTime() - new Date(q.data.from).getTime()) > 366 * 86_400_000) return reply.status(400).send({ success: false, error: { code: 'INVALID_DATE_RANGE', message: 'Date range must be positive and no longer than 366 days' } });
+    const context = await authorize(request, reply, options.auth, p.data.clinicId); if (!context) return;
+    const rows = await options.integrations.accountingLedger(p.data.clinicId, q.data.from, q.data.to);
+    return reply.header('content-type', 'text/csv; charset=utf-8').header('content-disposition', `attachment; filename="dentra-accounting-${q.data.from}-${q.data.to}.csv"`).send(ledgerCsv(rows));
+  });
   app.get('/v1/partner/appointments', { config: { rateLimit: { max: 120, timeWindow: '1 minute' } } }, async (request, reply) => {
     const secret = request.headers['x-dentra-api-key'];
     const apiKey = typeof secret === 'string' ? secret : '';

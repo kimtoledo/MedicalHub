@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes } from 'node:crypto';
 import { and, asc, desc, eq, gte, lt, lte } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
-import { integrationApiKeys, integrationWebhookDeliveries, integrationWebhooks, appointments, branches, patients, services } from '@dentra/db/schema';
+import { integrationApiKeys, integrationWebhookDeliveries, integrationWebhooks, appointments, branches, invoicePayments, invoiceTransactions, invoices, patients, services } from '@dentra/db/schema';
 import { writeAudit } from '@dentra/db/audit';
 import { AuditAction } from '@dentra/shared';
 
@@ -122,6 +122,21 @@ export function createIntegrationService(database: DB) {
       return row;
     },
     appointments: async (clinicId: string, from: Date, to: Date) => database.select({ id: appointments.id, branchId: appointments.branchId, branchName: branches.name, status: appointments.status, startsAt: appointments.startsAt, endsAt: appointments.endsAt, patientFirstName: patients.firstName, patientLastName: patients.lastName, patientNumber: patients.patientNumber, serviceName: services.name }).from(appointments).innerJoin(branches, eq(appointments.branchId, branches.id)).leftJoin(patients, and(eq(appointments.patientId, patients.id), eq(patients.clinicId, clinicId))).leftJoin(services, and(eq(appointments.serviceId, services.id), eq(services.clinicId, clinicId))).where(and(eq(appointments.clinicId, clinicId), gte(appointments.startsAt, from), lt(appointments.startsAt, to))).orderBy(asc(appointments.startsAt)),
+
+    /** Software-agnostic ledger rows (invoice issued / payment received / refund / adjustment) for a clinic's own accounting export — not a partner-API resource. */
+    accountingLedger: async (clinicId: string, from: string, to: string) => {
+      const [issued, received, transactions] = await Promise.all([
+        database.select({ date: invoices.issuedAt, reference: invoices.invoiceNumber, amountPhp: invoices.totalAmountPhp, patientFirstName: patients.firstName, patientLastName: patients.lastName }).from(invoices).innerJoin(patients, eq(invoices.patientId, patients.id)).where(and(eq(invoices.clinicId, clinicId), gte(invoices.issuedAt, new Date(`${from}T00:00:00Z`)), lte(invoices.issuedAt, new Date(`${to}T23:59:59Z`)))),
+        database.select({ date: invoicePayments.paymentDate, reference: invoices.invoiceNumber, amountPhp: invoicePayments.amountPhp, paymentMethod: invoicePayments.paymentMethod }).from(invoicePayments).innerJoin(invoices, eq(invoicePayments.invoiceId, invoices.id)).where(and(eq(invoicePayments.clinicId, clinicId), gte(invoicePayments.paymentDate, from), lte(invoicePayments.paymentDate, to))),
+        database.select({ date: invoiceTransactions.transactionDate, reference: invoices.invoiceNumber, type: invoiceTransactions.type, amountPhp: invoiceTransactions.amountPhp, paymentMethod: invoiceTransactions.paymentMethod, reason: invoiceTransactions.reason }).from(invoiceTransactions).innerJoin(invoices, eq(invoiceTransactions.invoiceId, invoices.id)).where(and(eq(invoiceTransactions.clinicId, clinicId), gte(invoiceTransactions.transactionDate, from), lte(invoiceTransactions.transactionDate, to))),
+      ]);
+      const rows = [
+        ...issued.map((row) => ({ date: (row.date ?? new Date()).toISOString().slice(0, 10), type: 'invoice_issued' as const, reference: row.reference, description: `Invoice issued to ${[row.patientFirstName, row.patientLastName].filter(Boolean).join(' ')}`, amountPhp: row.amountPhp, paymentMethod: null as string | null })),
+        ...received.map((row) => ({ date: row.date, type: 'payment_received' as const, reference: row.reference, description: 'Payment received', amountPhp: row.amountPhp, paymentMethod: row.paymentMethod as string | null })),
+        ...transactions.map((row) => ({ date: row.date, type: (row.type === 'refund' ? 'refund' : 'adjustment') as 'refund' | 'adjustment', reference: row.reference, description: row.reason, amountPhp: `-${row.amountPhp}`, paymentMethod: row.paymentMethod as string | null })),
+      ];
+      return rows.sort((a, b) => a.date.localeCompare(b.date));
+    },
 
     /**
      * Fire-and-forget: enqueue a delivery row per matching active webhook and

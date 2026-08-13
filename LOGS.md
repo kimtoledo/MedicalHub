@@ -33,6 +33,12 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### 🔄 Accounting export CSV (integrations API)
+- Added `GET /v1/clinic/:clinicId/integrations/accounting-export.csv` (session-authenticated, ≤366-day range): a software-agnostic ledger with one row per invoice-issued/payment-received/refund/adjustment event
+- Deliberately not tied to a specific accounting vendor (QuickBooks/Xero) since no such integration is configured — a plain CSV any PH bookkeeper can import, consistent with not faking integrations this codebase doesn't have credentials for
+- Added a from/to date picker and "Download CSV" control to the integrations settings page, replacing the former "coming soon" placeholder
+- Verified 357 passing API tests (3 new), 5 passing web tests, repository-wide TypeScript checks, production web/API builds, and clean diff validation
+
 ### 🔄 iCal calendar feed (integrations API)
 - Added a `calendar.feed`-scoped API key that mints a subscribe URL (`.../calendar/appointments.ics?key=...`) any calendar app can poll directly — no session, no custom headers, matching how Google Calendar's "add by URL" actually works
 - Reuses the existing API-key auth/scope machinery rather than inventing a new credential type; the feed covers a rolling 7-days-back/60-days-ahead window and is rate-limited separately (30/min) from the JSON partner endpoint

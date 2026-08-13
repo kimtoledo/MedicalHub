@@ -13,7 +13,7 @@ const WEBHOOK_ID = '55555555-5555-4555-8555-555555555555';
 
 function context(role: ClinicRole): AuthorizationContext { return { user: { id: '22222222-2222-4222-8222-222222222222', email: 'staff@example.test', name: 'Staff', platformRole: null }, strategies: ['clinicMember'], clinicMemberships: [{ clinicId: CLINIC_ID, branchId: null, role, dentistId: null }] }; }
 function auth(value: AuthorizationContext): AuthServices { return { handler: vi.fn(), getSession: vi.fn(async () => ({ session: { id: 'session', userId: value.user.id, expiresAt: new Date('2030-01-01') }, user: value.user })), resolveAuthorization: vi.fn(async () => value) }; }
-function integrations(overrides: Record<string, unknown> = {}): IntegrationService { return { listKeys: vi.fn(async () => []), createKey: vi.fn(), revokeKey: vi.fn(), authenticate: vi.fn(async () => null), listWebhooks: vi.fn(async () => []), createWebhook: vi.fn(), disableWebhook: vi.fn(), appointments: vi.fn(async () => []), dispatchEvent: vi.fn(), processDueDeliveries: vi.fn(async () => ({ processed: 0 })), listDeliveries: vi.fn(async () => []), ...overrides } as unknown as IntegrationService; }
+function integrations(overrides: Record<string, unknown> = {}): IntegrationService { return { listKeys: vi.fn(async () => []), createKey: vi.fn(), revokeKey: vi.fn(), authenticate: vi.fn(async () => null), listWebhooks: vi.fn(async () => []), createWebhook: vi.fn(), disableWebhook: vi.fn(), appointments: vi.fn(async () => []), dispatchEvent: vi.fn(), processDueDeliveries: vi.fn(async () => ({ processed: 0 })), listDeliveries: vi.fn(async () => []), accountingLedger: vi.fn(async () => []), ...overrides } as unknown as IntegrationService; }
 
 let app: FastifyInstance | undefined;
 afterEach(async () => { await app?.close(); app = undefined; });
@@ -148,5 +148,31 @@ describe('integrations settings UI API', () => {
     expect(response.statusCode).toBe(200);
     expect(response.body).toContain('LOCATION:Main\\, Branch\\; A');
     expect(response.body).toContain('SUMMARY:Root canal\\, upper — Ana Cruz');
+  });
+
+  it('downloads an accounting export CSV for an authorized clinic admin', async () => {
+    const service = integrations({ accountingLedger: vi.fn(async () => [{ date: '2026-08-01', type: 'invoice_issued' as const, reference: 'SBDINV000001', description: 'Invoice issued to Ana Cruz', amountPhp: '1500.00', paymentMethod: null }]) });
+    await setup('clinic_owner', service);
+    const response = await app!.inject({ method: 'GET', url: `/v1/clinic/${CLINIC_ID}/integrations/accounting-export.csv?from=2026-08-01&to=2026-08-13`, headers: { cookie: 'session=test' } });
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['content-type']).toContain('text/csv');
+    expect(response.body).toContain('SBDINV000001');
+    expect(service.accountingLedger).toHaveBeenCalledWith(CLINIC_ID, '2026-08-01', '2026-08-13');
+  });
+
+  it('denies the accounting export for a dentist role', async () => {
+    const service = integrations();
+    await setup('dentist', service);
+    const response = await app!.inject({ method: 'GET', url: `/v1/clinic/${CLINIC_ID}/integrations/accounting-export.csv?from=2026-08-01&to=2026-08-13`, headers: { cookie: 'session=test' } });
+    expect(response.statusCode).toBe(403);
+    expect(service.accountingLedger).not.toHaveBeenCalled();
+  });
+
+  it('rejects an accounting export range longer than 366 days', async () => {
+    const service = integrations();
+    await setup('clinic_owner', service);
+    const response = await app!.inject({ method: 'GET', url: `/v1/clinic/${CLINIC_ID}/integrations/accounting-export.csv?from=2024-01-01&to=2026-08-13`, headers: { cookie: 'session=test' } });
+    expect(response.statusCode).toBe(400);
+    expect(service.accountingLedger).not.toHaveBeenCalled();
   });
 });
