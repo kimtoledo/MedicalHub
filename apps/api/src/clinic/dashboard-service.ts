@@ -21,6 +21,7 @@ import {
 } from "@dentra/db/schema";
 import { AuditAction, type AppointmentStatus } from "@dentra/shared";
 import type { PatientActor } from "./patients-service.js";
+import type { IntegrationService } from "../integrations/service.js";
 
 const activePatientStatus = ["active"];
 const transitions: Record<string, AppointmentStatus[]> = {
@@ -147,6 +148,7 @@ function normalize(
 }
 export function createClinicDashboardService(
   database: DB,
+  integrations?: IntegrationService,
 ): ClinicDashboardService {
   const list = async (
     clinicId: string,
@@ -224,8 +226,8 @@ export function createClinicDashboardService(
       nextStatus,
       actor,
       dentistRestriction,
-    ) =>
-      database.transaction(async (transaction) => {
+    ) => {
+      const result = await database.transaction(async (transaction) => {
         const [current] = await transaction
           .select({
             id: appointments.id,
@@ -310,8 +312,15 @@ export function createClinicDashboardService(
             ipAddress: actor.ipAddress,
             userAgent: actor.userAgent,
         });
-        return updated;
-      }),
+        return { updated, fromStatus: current.status };
+      });
+      integrations?.dispatchEvent(clinicId, "appointment.updated", {
+        appointmentId,
+        fromStatus: result.fromStatus,
+        toStatus: result.updated.status,
+      });
+      return result.updated;
+    },
     recentPatients: async (clinicId, dentistId, branchId) => {
       const rows = await database
         .select({
