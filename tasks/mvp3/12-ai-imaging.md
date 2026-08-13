@@ -25,7 +25,8 @@ Phase 3 of the executive summary calls for AI-powered radiograph interpretation,
 - Added a provider-neutral `rules-baseline` adapter boundary that stores no image pixels, prompts, or clinical text; external model calls remain disabled until a reviewed provider is selected.
 - Added deterministic oral-health score snapshots from tenant-scoped odontogram, treatment, encounter, and appointment counts.
 - Added protected analysis list, dentist confirmation, and patient score endpoints with identifier-only audit metadata.
-- Remaining: evaluated radiograph provider, annotation overlays, diagnostics assistant, clinical validation, and package entitlement rollout.
+- Investigated the diagnostics assistant: mechanically it's a small extension of the existing MVP 2 AI clinical-assistance pattern (`ai/provider.ts`'s `createLLMProvider()` is a real, already-in-production LLM path used today for note/recall/treatment-sequence suggestions — unlike the imaging module's deliberately-disabled `rules-baseline` adapter). But a ranked differential-diagnosis output is a materially different risk class than note-drafting: this doc's own "Out of scope" excludes "autonomous diagnosis," and "clinical validation" is listed as a separate remaining item precisely because that risk hasn't been assessed. Not building this without an explicit clinical/regulatory decision on what disclaimer language, validation methodology, or scope limits a differential-diagnosis feature needs — that's not inferable from the existing note-suggestion code.
+- Remaining: evaluated radiograph provider, annotation overlays, diagnostics assistant (pending the clinical-risk decision above), clinical validation, and package entitlement rollout.
 
 ---
 
