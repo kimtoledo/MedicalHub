@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Building2, Stethoscope, Package, BadgeCheck } from "lucide-react";
+import { LayoutDashboard, Building2, Stethoscope, Package, BadgeCheck, MessagesSquare } from "lucide-react";
 
 const tabItems = [
   { label: "Dashboard", href: "/dentra-admin",        icon: LayoutDashboard },
@@ -10,6 +10,7 @@ const tabItems = [
   { label: "Dentists",  href: "/dentra-admin/dentists",icon: Stethoscope },
   { label: "Packages",  href: "/dentra-admin/packages",icon: Package },
   { label: "Verify",    href: "/dentra-admin/verifications",icon: BadgeCheck },
+  { label: "Reviews",   href: "/dentra-admin/reviews",      icon: MessagesSquare },
 ];
 
 export default function MobileTabBar() {

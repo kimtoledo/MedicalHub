@@ -33,6 +33,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Patient reviews and moderation UI
+- Added linked-patient eligibility and review history, one-review-per-completed-appointment submission, and patient-visible moderation outcomes
+- Added PII-safe approved review aggregates and pagination to public clinic and dentist pages, including authenticated rate-limited abuse reporting
+- Added a protected clinic response queue and Super Admin approve/reject/hide moderation workspace with written reasons and pending report context
+- Added deduplicated review-report persistence in migration `0034_nebulous_talkback.sql`; tenant response access and platform moderation remain server-authorized and audited
+- Verified 278 passing API tests, 5 passing web tests, repository-wide TypeScript checks, production web/API builds, and clean diff validation
+
 ### ✅ Verification submission and moderation UI
 - Added private clinic and dentist verification document submission with validated PDF/image uploads, document-type metadata, status/reason/expiry history, pending-submission conflict protection, and object-storage cleanup on failed persistence
 - Added a Super Admin verification queue with pending, approved, rejected, revoked, expiring, and all filters plus private document review and written approve/reject/revoke decisions

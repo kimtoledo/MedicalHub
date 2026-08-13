@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Archive, BadgeCheck, BarChart3, BellRing, CreditCard, DollarSign, Settings, Shield } from "lucide-react";
+import { Archive, BadgeCheck, BarChart3, BellRing, CreditCard, DollarSign, MessageSquare, Settings, Shield } from "lucide-react";
 import ClinicMicrositeSettings from "@/components/app/ClinicMicrositeSettings";
 import AppPageError from "@/components/app/AppPageError";
 import { getClinicSession } from "@/lib/clinic-session";
@@ -8,6 +8,12 @@ import { ClinicSettingsLoadError, getClinicSettings, type ClinicSettings } from 
 import { classifyClinicSettingsError } from "@/lib/clinic-settings-error";
 
 const operationalSettings = [
+  {
+    href: "/app/settings/reviews",
+    icon: MessageSquare,
+    label: "Patient Reviews",
+    description: "Read approved reviews and publish a clinic response.",
+  },
   {
     href: "/app/settings/verification",
     icon: BadgeCheck,
