@@ -33,6 +33,14 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Verification submission and moderation UI
+- Added private clinic and dentist verification document submission with validated PDF/image uploads, document-type metadata, status/reason/expiry history, pending-submission conflict protection, and object-storage cleanup on failed persistence
+- Added a Super Admin verification queue with pending, approved, rejected, revoked, expiring, and all filters plus private document review and written approve/reject/revoke decisions
+- Protected every document download with an active Super Admin session and `private, no-store`; public directory responses expose only verification status and never storage keys or document metadata
+- Removed direct no-reason dentist verification controls from the profile UI in favor of the audited moderation queue; approved clinics now receive a public directory trust badge
+- Added submission audits, safe review-state transitions, responsive loading/empty/error states, and authorization/filter/reason tests
+- Verified 272 passing API tests, 5 passing web tests, repository-wide TypeScript checks, production web/API builds, and clean diff validation
+
 ### ✅ Patient portal experience completion
 - Replaced the `/portal` API demonstration with a mobile-first patient product covering signup, sign-in/out, appointment and invoice detail summaries, treatment plans, request history, and profile/security controls
 - Added patient-facing clinic linking by clinic slug and patient number with explicit consent, account-contact verification, safe link revocation/re-linking, and no raw UUID entry

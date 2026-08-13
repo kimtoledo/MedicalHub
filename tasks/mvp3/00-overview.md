@@ -22,7 +22,7 @@
 | `12-ai-imaging.md` | AI radiograph analysis, oral health scoring, AI diagnostics assistant | 🔵 Active |
 | `13-kiosk-checkin.md` | Tablet self-check-in for high-volume clinic branches | ✅ Done |
 | `14-patient-portal-experience.md` | Complete signup, linking, requests, details, and account UX | ✅ Done |
-| `15-verification-moderation-ui.md` | Private submissions and Super Admin verification queue | 🔲 Queued |
+| `15-verification-moderation-ui.md` | Private submissions and Super Admin verification queue | ✅ Done |
 | `16-reviews-ui.md` | Patient review, public display, response, and moderation UI | 🔲 Queued |
 | `17-enterprise-organization-ui.md` | Organization selector, membership, and consolidated workspace | 🔲 Queued |
 | `18-advanced-analytics-ui.md` | Tenant-scoped trends, rates, charts, and exports | 🔲 Queued |

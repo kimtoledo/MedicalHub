@@ -16,7 +16,7 @@
 | Complete | Reports workspace has date/filter controls, detail tables, and CSV exports | [`mvp2/16-reports-workspace-completion.md`](mvp2/16-reports-workspace-completion.md) |
 | Complete | Guided, tenant-safe HMO claim creation replaces raw UUID entry | [`mvp2/17-hmo-claim-workflow-ux.md`](mvp2/17-hmo-claim-workflow-ux.md) |
 | Complete | Patient portal signup, consent linking, care summaries, requests, and account security UX | [`mvp3/14-patient-portal-experience.md`](mvp3/14-patient-portal-experience.md) |
-| P1 | Verification APIs lack clinic/dentist submission and Super Admin review pages | [`mvp3/15-verification-moderation-ui.md`](mvp3/15-verification-moderation-ui.md) |
+| Complete | Private clinic/dentist verification submission and Super Admin moderation workspace | [`mvp3/15-verification-moderation-ui.md`](mvp3/15-verification-moderation-ui.md) |
 | P1 | Review APIs lack patient submission, public review, clinic response, and moderation pages | [`mvp3/16-reviews-ui.md`](mvp3/16-reviews-ui.md) |
 | P2 | Organization APIs lack an enterprise management workspace | [`mvp3/17-enterprise-organization-ui.md`](mvp3/17-enterprise-organization-ui.md) |
 | P2 | Advanced analytics APIs are not exposed in the Clinic PWA | [`mvp3/18-advanced-analytics-ui.md`](mvp3/18-advanced-analytics-ui.md) |
@@ -46,7 +46,7 @@
 - Live: clinic, dentist, package, subscription, and audit management.
 - Live: `/dentra-admin` dashboard metrics and recent immutable audit activity.
 - Placeholder: `/dentra-admin/settings`.
-- Missing operational pages: verification/review moderation and platform support/export operations.
+- Missing operational pages: review moderation and platform support/export operations; verification moderation is complete.
 
 ## Existing active tasks retained
 

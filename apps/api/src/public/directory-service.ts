@@ -6,7 +6,7 @@ export type PublicListInput = { search: string; page: number; pageSize: number }
 export type PublicClinicListInput = PublicListInput & { location: string; service: string; latitude?: number; longitude?: number; maxDistanceKm?: number };
 export type PublicDentistListInput = PublicListInput & { specialty: string };
 export type PublicDirectoryService = {
-  listClinics: (input: PublicClinicListInput) => Promise<{ items: Array<{ id: string; name: string; slug: string; description: string | null; logoUrl: string | null; city: string | null; province: string | null; locations: string[]; services: string[]; distanceKm?: number | null }>; pagination: Pagination }>;
+  listClinics: (input: PublicClinicListInput) => Promise<{ items: Array<{ id: string; name: string; slug: string; description: string | null; logoUrl: string | null; city: string | null; province: string | null; verificationStatus: string; locations: string[]; services: string[]; distanceKm?: number | null }>; pagination: Pagination }>;
   listDentists: (input: PublicDentistListInput) => Promise<{ items: Array<{ id: string; firstName: string; lastName: string; slug: string; specialty: string | null; bio: string | null; photoUrl: string | null; affiliatedClinicCount: number }>; pagination: Pagination }>;
   summary: () => Promise<{ publishedClinicCount: number; publishedDentistCount: number }>;
   getClinicBySlug: (slug: string) => Promise<PublicClinicDetail | null>;
@@ -16,7 +16,7 @@ export type PublicClinicDetail = {
   id: string; name: string; slug: string; heroText: string | null; description: string | null;
   logoUrl: string | null; coverUrl: string | null; email: string | null; phone: string | null;
   website: string | null; address: string | null; city: string | null; province: string | null;
-  mapUrl: string | null; facebookUrl: string | null; instagramUrl: string | null;
+  mapUrl: string | null; facebookUrl: string | null; instagramUrl: string | null; verificationStatus: string;
   themePreset?: string; brandAccent?: string; showGallery?: boolean; showTeam?: boolean; showServices?: boolean; seoTitle?: string | null; seoDescription?: string | null; ogImageUrl?: string | null;
   gallery?: Array<{ id: string; imageUrl: string; altText: string; caption: string | null }>;
   branches: Array<{ id: string; name: string; phone: string | null; email: string | null; address: string | null; city: string | null; province: string | null; mapUrl: string | null; operatingHours: Record<string, string> }>;
@@ -42,7 +42,7 @@ export function createPublicDirectoryService(database: DB): PublicDirectoryServi
         input.service ? exists(database.select({ id: services.id }).from(services).where(and(eq(services.clinicId, clinics.id), eq(services.isActive, 'true'), eq(services.isBookable, true), ilike(services.name, service)))) : undefined,
       );
       const [totalRow] = await database.select({ total: count(clinics.id) }).from(clinics).where(where); const total = totalRow?.total ?? 0; const totalPages = Math.max(1, Math.ceil(total / input.pageSize)); const page = Math.min(input.page, totalPages);
-      const rows = await database.select({ id: clinics.id, name: clinics.name, slug: clinics.slug, description: clinics.description, logoUrl: clinics.logoUrl, city: clinics.city, province: clinics.province }).from(clinics).where(where).orderBy(desc(clinics.createdAt), clinics.name).limit(input.pageSize).offset((page - 1) * input.pageSize);
+      const rows = await database.select({ id: clinics.id, name: clinics.name, slug: clinics.slug, description: clinics.description, logoUrl: clinics.logoUrl, city: clinics.city, province: clinics.province, verificationStatus: clinics.verificationStatus }).from(clinics).where(where).orderBy(desc(clinics.createdAt), clinics.name).limit(input.pageSize).offset((page - 1) * input.pageSize);
       const ids = rows.map((row) => row.id);
       const [branchRows, serviceRows] = ids.length ? await Promise.all([
         database.select({ clinicId: branches.clinicId, city: branches.city, province: branches.province, latitude: branches.latitude, longitude: branches.longitude }).from(branches).where(and(inArray(branches.clinicId, ids), eq(branches.isActive, true), isNull(branches.deletedAt))),
@@ -71,7 +71,7 @@ export function createPublicDirectoryService(database: DB): PublicDirectoryServi
         description: clinics.description, logoUrl: clinics.logoUrl, coverUrl: clinics.coverUrl,
         email: clinics.email, phone: clinics.phone, website: clinics.website, address: clinics.address,
         city: clinics.city, province: clinics.province, mapUrl: clinics.mapUrl,
-        facebookUrl: clinics.facebookUrl, instagramUrl: clinics.instagramUrl, themePreset: clinics.themePreset, brandAccent: clinics.brandAccent, showGallery: clinics.showGallery, showTeam: clinics.showTeam, showServices: clinics.showServices, seoTitle: clinics.seoTitle, seoDescription: clinics.seoDescription, ogImageUrl: clinics.ogImageUrl,
+        facebookUrl: clinics.facebookUrl, instagramUrl: clinics.instagramUrl, verificationStatus: clinics.verificationStatus, themePreset: clinics.themePreset, brandAccent: clinics.brandAccent, showGallery: clinics.showGallery, showTeam: clinics.showTeam, showServices: clinics.showServices, seoTitle: clinics.seoTitle, seoDescription: clinics.seoDescription, ogImageUrl: clinics.ogImageUrl,
       }).from(clinics).where(and(eq(clinics.slug, slug), publicClinic)).limit(1);
       if (!clinic) return null;
       const [branchRows, serviceRows, dentistRows, galleryRows] = await Promise.all([

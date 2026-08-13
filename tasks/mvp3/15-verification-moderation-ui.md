@@ -1,6 +1,6 @@
 # Verification Submission and Moderation UI
 
-> **Status:** 🔲 Queued
+> **Status:** ✅ Done
 > **Priority:** P1
 
 ## What & Why

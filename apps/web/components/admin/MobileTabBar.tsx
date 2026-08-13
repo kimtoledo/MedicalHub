@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Building2, Stethoscope, Package, Settings } from "lucide-react";
+import { LayoutDashboard, Building2, Stethoscope, Package, BadgeCheck } from "lucide-react";
 
 const tabItems = [
   { label: "Dashboard", href: "/dentra-admin",        icon: LayoutDashboard },
   { label: "Clinics",   href: "/dentra-admin/clinics", icon: Building2 },
   { label: "Dentists",  href: "/dentra-admin/dentists",icon: Stethoscope },
   { label: "Packages",  href: "/dentra-admin/packages",icon: Package },
-  { label: "Settings",  href: "/dentra-admin/settings",icon: Settings },
+  { label: "Verify",    href: "/dentra-admin/verifications",icon: BadgeCheck },
 ];
 
 export default function MobileTabBar() {

@@ -14,6 +14,7 @@ import {
   ChevronRight,
   LogOut,
   Stethoscope,
+  BadgeCheck,
 } from "lucide-react";
 import { signOutAdmin } from "@/lib/admin-auth-client";
 import type { AdminIdentity } from "@/lib/admin-types";
@@ -23,6 +24,7 @@ export const navItems = [
   { label: "Dashboard",        href: "/dentra-admin",              icon: LayoutDashboard },
   { label: "Clinics",          href: "/dentra-admin/clinics",      icon: Building2 },
   { label: "Dentists",         href: "/dentra-admin/dentists",     icon: Stethoscope },
+  { label: "Verifications",    href: "/dentra-admin/verifications",icon: BadgeCheck },
   { label: "Packages & Plans", href: "/dentra-admin/packages",     icon: Package },
   { label: "Subscriptions",    href: "/dentra-admin/subscriptions",icon: CreditCard },
   { label: "Audit Log",        href: "/dentra-admin/audit",        icon: ScrollText },

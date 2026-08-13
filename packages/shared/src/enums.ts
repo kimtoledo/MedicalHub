@@ -287,6 +287,7 @@ export const AuditAction = {
   SUBSCRIPTION_REVIEWED: 'subscription.reviewed',
   USAGE_RECORDED: 'usage.recorded',
   PERMISSION_UPDATED: 'permission.updated',
+  VERIFICATION_SUBMITTED: 'verification.submitted',
   VERIFICATION_APPROVED: 'verification.approved',
   VERIFICATION_REJECTED: 'verification.rejected',
   VERIFICATION_REVOKED: 'verification.revoked',

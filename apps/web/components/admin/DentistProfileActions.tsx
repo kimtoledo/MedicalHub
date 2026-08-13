@@ -2,13 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertCircle, Eye, EyeOff, Loader2, ShieldCheck, ShieldOff } from 'lucide-react';
+import Link from 'next/link';
+import { AlertCircle, Eye, EyeOff, FileCheck2, Loader2 } from 'lucide-react';
 
 type Props = { dentistId: string; verificationStatus: 'unverified' | 'pending' | 'verified'; publicationStatus: string };
-type PendingAction = 'verify' | 'revoke' | 'publish' | 'unpublish';
+type PendingAction = 'publish' | 'unpublish';
 const config = {
-  verify: { label: 'Verify dentist', path: 'verification', body: { verificationStatus: 'verified' }, icon: ShieldCheck, tone: 'bg-emerald-600 hover:bg-emerald-700' },
-  revoke: { label: 'Revoke verification', path: 'verification', body: { verificationStatus: 'unverified' }, icon: ShieldOff, tone: 'bg-red-600 hover:bg-red-700' },
   publish: { label: 'Publish profile', path: 'publication', body: { publicationStatus: 'published' }, icon: Eye, tone: 'bg-violet-600 hover:bg-violet-700' },
   unpublish: { label: 'Unpublish profile', path: 'publication', body: { publicationStatus: 'unpublished' }, icon: EyeOff, tone: 'bg-amber-600 hover:bg-amber-700' },
 } as const;
@@ -18,9 +17,8 @@ export default function DentistProfileActions({ dentistId, verificationStatus, p
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const verificationAction: PendingAction = verificationStatus === 'verified' ? 'revoke' : 'verify';
   const publicationAction: PendingAction = publicationStatus === 'published' ? 'unpublish' : 'publish';
-  const actions: PendingAction[] = [verificationAction, publicationAction];
+  const actions: PendingAction[] = [publicationAction];
 
   async function confirm() {
     if (!pending) return;
@@ -37,6 +35,7 @@ export default function DentistProfileActions({ dentistId, verificationStatus, p
   return (
     <div className="mt-4 space-y-3 sm:mt-0">
       <div className="flex flex-wrap gap-2">
+        <Link href="/dentra-admin/verifications" className="inline-flex h-9 items-center gap-2 rounded-lg border border-violet-200 bg-white px-3 text-xs font-semibold text-violet-700 hover:bg-violet-50"><FileCheck2 size={15} /> Verification queue</Link>
         {actions.map((name) => {
           const action = config[name]; const Icon = action.icon;
           const disabled = name === 'publish' && verificationStatus !== 'verified';
