@@ -28,7 +28,7 @@
 | `18-advanced-analytics-ui.md` | Tenant-scoped trends, rates, charts, and exports | ✅ Done |
 | `19-online-payment-checkout-ui.md` | Clinic payment links and public checkout/status pages | ✅ Done |
 | `20-custom-domain-settings-ui.md` | DNS instructions, verification, and activation UI | ✅ Done |
-| `21-integrations-settings-ui.md` | API keys, webhooks, calendar, and accounting export UI | 🔲 Queued |
+| `21-integrations-settings-ui.md` | API keys, webhooks, calendar, and accounting export UI | ✅ Done |
 | `22-platform-operations-console.md` | Support-access and tenant export/offboarding queues | 🔲 Queued |
 | `23-ai-imaging-ui.md` | Advisory radiograph analysis and oral-health score UI | 🔲 Queued |
 

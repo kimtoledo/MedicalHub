@@ -45,6 +45,12 @@ export function createIntegrationService(database: DB) {
       await writeAudit(database, { actorId: actor.id, actorEmail: actor.email, clinicId, entityType: 'integration_webhook', entityId: row.id, action: AuditAction.INTEGRATION_WEBHOOK_CREATED, metadata: JSON.stringify({ eventTypes: input.eventTypes }), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
       return { ...row, secret };
     },
+    disableWebhook: async (clinicId: string, webhookId: string, actor: IntegrationActor) => {
+      const [row] = await database.update(integrationWebhooks).set({ status: 'disabled' }).where(and(eq(integrationWebhooks.id, webhookId), eq(integrationWebhooks.clinicId, clinicId), eq(integrationWebhooks.status, 'active'))).returning({ id: integrationWebhooks.id });
+      if (!row) throw new IntegrationError('WEBHOOK_NOT_FOUND', 'Active webhook not found', 404);
+      await writeAudit(database, { actorId: actor.id, actorEmail: actor.email, clinicId, entityType: 'integration_webhook', entityId: row.id, action: AuditAction.INTEGRATION_WEBHOOK_DISABLED, metadata: JSON.stringify({}), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
+      return row;
+    },
     appointments: async (clinicId: string, from: Date, to: Date) => database.select({ id: appointments.id, branchId: appointments.branchId, branchName: branches.name, status: appointments.status, startsAt: appointments.startsAt, endsAt: appointments.endsAt, patientFirstName: patients.firstName, patientLastName: patients.lastName, patientNumber: patients.patientNumber, serviceName: services.name }).from(appointments).innerJoin(branches, eq(appointments.branchId, branches.id)).leftJoin(patients, and(eq(appointments.patientId, patients.id), eq(patients.clinicId, clinicId))).leftJoin(services, and(eq(appointments.serviceId, services.id), eq(services.clinicId, clinicId))).where(and(eq(appointments.clinicId, clinicId), gte(appointments.startsAt, from), lt(appointments.startsAt, to))).orderBy(asc(appointments.startsAt)),
   };
 }

@@ -306,6 +306,7 @@ export const AuditAction = {
   INTEGRATION_API_KEY_CREATED: 'integration.api_key_created',
   INTEGRATION_API_KEY_REVOKED: 'integration.api_key_revoked',
   INTEGRATION_WEBHOOK_CREATED: 'integration.webhook_created',
+  INTEGRATION_WEBHOOK_DISABLED: 'integration.webhook_disabled',
   SUPPORT_ACCESS_REQUESTED: 'support_access.requested',
   SUPPORT_ACCESS_REVIEWED: 'support_access.reviewed',
   TENANT_EXPORT_REQUESTED: 'tenant_export.requested',

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Archive, BadgeCheck, BarChart3, BellRing, CreditCard, DollarSign, Globe, MessageSquare, Settings, Shield } from "lucide-react";
+import { Archive, BadgeCheck, BarChart3, BellRing, CreditCard, DollarSign, Globe, MessageSquare, Plug, Settings, Shield } from "lucide-react";
 import ClinicMicrositeSettings from "@/components/app/ClinicMicrositeSettings";
 import AppPageError from "@/components/app/AppPageError";
 import { getClinicSession } from "@/lib/clinic-session";
@@ -61,6 +61,12 @@ const operationalSettings = [
     icon: Globe,
     label: "Custom Domain",
     description: "Point your own domain at your Dentra.ph microsite.",
+  },
+  {
+    href: "/app/settings/integrations",
+    icon: Plug,
+    label: "Integrations & API",
+    description: "Manage scoped API keys and webhook subscriptions.",
   },
 ];
 

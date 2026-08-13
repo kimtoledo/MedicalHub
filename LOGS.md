@@ -33,6 +33,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Integrations and API settings UI
+- Added `/app/settings/integrations`: create scoped API keys with a one-time secret reveal, list keys with last-used time, and revoke them
+- Added webhook subscription management (endpoint, event types) with a one-time signing-secret reveal, delivery/failure metadata, and a new disable action backed by a new `POST .../webhooks/:webhookId/disable` endpoint
+- iCal/Google Calendar and accounting export are shown as explicit "coming soon" cards rather than non-functional controls, since neither backend format exists yet
+- Documented the partner API base path, auth header, and rate/date-range limits on the settings page itself
+- Verified 315 passing API tests (9 new), 5 passing web tests, repository-wide TypeScript checks, production web/API builds, and clean diff validation
+
 ### ✅ Custom domain settings UI
 - Added `/app/settings/domains`: add/normalize a hostname, view DNS TXT instructions with copy buttons, recheck verification, and activate — linked from the Clinic Settings hub
 - Extended the list endpoint to also return the verification token so DNS instructions remain visible after a reload instead of only at creation time
