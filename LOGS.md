@@ -33,6 +33,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ AI imaging and oral health score UI
+- Added an "AI Imaging" tab on the patient record page, gated to clinic_owner/clinic_admin/dentist roles with the `ai.imaging` entitlement, matching the backend's own gate
+- The tab runs analysis on uploaded radiographs, shows the current oral health score with a trend vs. the previous score plus recent-score history, and lists analysis history with queued/completed/failed states
+- Explicitly states that the current baseline computes the score from odontogram/treatment/visit counts only and does not interpret radiograph images — no annotation overlay was built, since that stays gated on provider evaluation per `mvp3/12-ai-imaging.md`
+- Completed analyses require an explicit "Mark reviewed" action restricted to the dentist role in the UI
+- Verified 333 passing API tests (9 new), 5 passing web tests, repository-wide TypeScript checks, production web/API builds, and clean diff validation
+
 ### ✅ Platform operations console
 - Added `/dentra-admin/operations`: Super Admin queues for support-access requests (justification, approve/deny, 30-minute window) and tenant export/offboarding requests (retention date, processing/ready/failed/cancelled), enriched with clinic name and requester/reviewer email
 - Added `/app/settings/data-requests`: the clinic-side counterpart to submit support/export requests and see their own status, backed by two new `GET` list endpoints scoped to the requesting clinic

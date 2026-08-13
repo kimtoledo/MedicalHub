@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { ClipboardList, FileText, ImageIcon, Shield } from "lucide-react";
+import { Activity, ClipboardList, FileText, ImageIcon, Shield } from "lucide-react";
 import FilesTab from "@/components/app/FilesTab";
+import AiImagingTab from "@/components/app/AiImagingTab";
 import { HmoTab } from "./PatientDetailClient";
 import PatientPrescriptionsTab from "./PatientPrescriptionsTab";
 import TreatmentPlansTab from "@/components/app/TreatmentPlansTab";
 
-type ExtensionTab = "treatmentPlans" | "prescriptions" | "files" | "hmo";
+type ExtensionTab = "treatmentPlans" | "prescriptions" | "files" | "aiImaging" | "hmo";
 
 export default function PatientRecordExtensions({
   clinicId,
@@ -15,6 +16,7 @@ export default function PatientRecordExtensions({
   branchId,
   canUsePrescriptions,
   canUseFiles,
+  canUseAiImaging,
   canUseHmo,
   canUseTreatmentPlans,
   canManageTreatmentPlans,
@@ -24,6 +26,7 @@ export default function PatientRecordExtensions({
   branchId: string;
   canUsePrescriptions: boolean;
   canUseFiles: boolean;
+  canUseAiImaging: boolean;
   canUseHmo: boolean;
   canUseTreatmentPlans: boolean;
   canManageTreatmentPlans: boolean;
@@ -34,7 +37,9 @@ export default function PatientRecordExtensions({
     ? "prescriptions"
     : canUseFiles
       ? "files"
-      : "hmo";
+      : canUseAiImaging
+        ? "aiImaging"
+        : "hmo";
   const [tab, setTab] = useState<ExtensionTab>(initialTab);
   const tabs = [
     ...(canUseTreatmentPlans
@@ -45,6 +50,9 @@ export default function PatientRecordExtensions({
       : []),
     ...(canUseFiles
       ? [{ id: "files" as const, label: "Clinical Files", icon: ImageIcon }]
+      : []),
+    ...(canUseAiImaging
+      ? [{ id: "aiImaging" as const, label: "AI Imaging", icon: Activity }]
       : []),
     ...(canUseHmo
       ? [{ id: "hmo" as const, label: "HMO Coverage", icon: Shield }]
@@ -85,6 +93,8 @@ export default function PatientRecordExtensions({
             branchId={branchId}
             allowUpload={Boolean(branchId)}
           />
+        ) : tab === "aiImaging" && canUseAiImaging ? (
+          <AiImagingTab clinicId={clinicId} patientId={patientId} canConfirm={canManageTreatmentPlans} />
         ) : canUseHmo ? (
           <HmoTab clinicId={clinicId} patientId={patientId} />
         ) : null}

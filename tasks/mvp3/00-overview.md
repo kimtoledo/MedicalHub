@@ -30,7 +30,7 @@
 | `20-custom-domain-settings-ui.md` | DNS instructions, verification, and activation UI | ✅ Done |
 | `21-integrations-settings-ui.md` | API keys, webhooks, calendar, and accounting export UI | ✅ Done |
 | `22-platform-operations-console.md` | Support-access and tenant export/offboarding queues | ✅ Done |
-| `23-ai-imaging-ui.md` | Advisory radiograph analysis and oral-health score UI | 🔲 Queued |
+| `23-ai-imaging-ui.md` | Advisory radiograph analysis and oral-health score UI | ✅ Done |
 
 ---
 

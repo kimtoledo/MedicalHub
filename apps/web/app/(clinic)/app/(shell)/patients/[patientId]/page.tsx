@@ -19,6 +19,7 @@ export default async function PatientPage({
 
   const sort = searchParams.appointmentSort === "asc" ? "asc" : "desc";
   const hasClinicalRole = ["clinic_owner", "clinic_admin", "dentist", "dental_assistant"].includes(identity.membershipRole);
+  const hasAiImagingRole = ["clinic_owner", "clinic_admin", "dentist"].includes(identity.membershipRole);
   const [context, data] = await Promise.all([
     getClinicShellContext(identity),
     getClinicPatient(
@@ -49,6 +50,7 @@ export default async function PatientPage({
         branchId={identity.branchId ?? ""}
         canUsePrescriptions={hasClinicalRole && Boolean(context.entitlements["clinical.prescriptions"])}
         canUseFiles={hasClinicalRole && Boolean(context.entitlements["clinical.radiographs"])}
+        canUseAiImaging={hasAiImagingRole && Boolean(context.entitlements["ai.imaging"])}
         canUseHmo={Boolean(context.entitlements["hmo.claims"])}
         canUseTreatmentPlans={hasClinicalRole && Boolean(context.entitlements["clinical.treatment_plans"])}
         canManageTreatmentPlans={identity.membershipRole === "dentist"}
