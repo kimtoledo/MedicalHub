@@ -33,6 +33,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Advanced analytics UI
+- Added a responsive `/app/analytics` workspace with Manila-time date presets, custom date bounds, assigned-branch filtering, metric definitions, and decision-useful appointment/revenue trends
+- Added accessible Dentra-colored charts with tabular alternatives, aggregate-only CSV export, empty/loading/error/retry states, and a bounded 366-day API range
+- Enforced `reports.advanced`, clinic roles, tenant scope, and membership branch scope on the server and UI; dentist responses omit all revenue trend data
+- Treatment acceptance is withheld for branch-only scopes because current treatment plans have clinic ownership but no branch ownership, preventing misleading or over-broad results
+- Verified 290 passing API tests, 5 passing web tests, repository-wide TypeScript checks, production web/API builds, and clean diff validation
+
 ### ✅ Enterprise organization workspace
 - Added a responsive dental-group selector and workspace with member-clinic/branch visibility plus consolidated appointment, patient, and invoiced-revenue summaries
 - Regional managers see and aggregate only their assigned organization branches; viewers receive read-only organization scope while owner/admin membership details remain protected

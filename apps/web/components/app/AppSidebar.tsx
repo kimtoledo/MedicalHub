@@ -24,6 +24,7 @@ import {
   Camera,
   Shield,
   Network,
+  BarChart3,
 } from "lucide-react";
 import { type ClinicBranchContext, type ClinicRole } from "@/lib/clinic-types";
 import { signOutClinic } from "@/lib/clinic-auth-client";
@@ -39,6 +40,7 @@ const clinicNavItems = [
   { label: "HMO Claims",      href: "/app/billing/hmo-claims", icon: Shield, feature: "hmo.claims" },
   { label: "Staff",           href: "/app/staff",              icon: UserCog, feature: "staff.manage" },
   { label: "Organization",    href: "/app/organization",       icon: Network },
+  { label: "Analytics",       href: "/app/analytics",          icon: BarChart3, feature: "reports.advanced", roles: ["clinic_owner", "clinic_admin", "dentist"] },
   { label: "Clinic Settings", href: "/app/settings",           icon: Settings },
   { label: "My Profile",      href: "/app/profile",            icon: UserCircle },
 ];
