@@ -34,7 +34,7 @@ Updated manually after each session or merged task.
 ## Completed
 
 ### 🔄 Real webhook delivery (integrations API)
-- `appointment.created` (public booking), `appointment.updated` (clinic-staff status changes and kiosk self-check-in), and `invoice.paid` (manual clinic payment and online-payment webhook success) now actually dispatch to every active, subscribed clinic webhook — previously nothing ever called a registered webhook endpoint
+- `appointment.created` (public booking), `appointment.updated` (clinic-staff status changes and kiosk self-check-in), `invoice.paid` (manual clinic payment and online-payment webhook success), and `invoice.refunded` (manual clinic refund) now actually dispatch to every active, subscribed clinic webhook — previously nothing ever called a registered webhook endpoint
 - Deliveries are HMAC-SHA256 signed (`x-dentra-webhook-signature`), sent with a 5s timeout, and retried with exponential backoff (capped at 60 min) for up to 5 attempts before being marked permanently failed
 - Fixed a signing-secret design gap found while building this: the secret was only ever one-way hashed, which is useless for an outbound *sender* needing to produce a signature. Added an encrypted-at-rest `secretCiphertext` column (AES-256-GCM); webhooks created before the migration fail delivery with an explicit "recreate this webhook" reason instead of crashing
 - No cron/job-queue exists in this codebase, so retries use in-process timers plus a boot-time sweep (`processDueDeliveries`) to recover anything left queued across a restart — documented as a real (not silent) limitation

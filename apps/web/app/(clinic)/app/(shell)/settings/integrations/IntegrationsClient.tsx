@@ -18,6 +18,7 @@ const EVENT_TYPES: { value: string; label: string }[] = [
   { value: "appointment.created", label: "Appointment created" },
   { value: "appointment.updated", label: "Appointment updated" },
   { value: "invoice.paid", label: "Invoice paid" },
+  { value: "invoice.refunded", label: "Invoice refunded" },
 ];
 
 type Delivery = {

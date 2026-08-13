@@ -644,7 +644,7 @@ export function createClinicBillingService(db: DB, integrations?: IntegrationSer
     },
 
     async recordRefund(clinicId, invoiceId, { amountPhp, paymentMethod, transactionDate, reason, recordedBy, callerBranchIds }) {
-      await db.transaction(async (tx) => {
+      const fullyRefunded = await db.transaction(async (tx) => {
         const [invoice] = await tx.select({ id: invoices.id, totalAmountPhp: invoices.totalAmountPhp, branchId: invoices.branchId, status: invoices.status }).from(invoices).where(and(eq(invoices.id, invoiceId), eq(invoices.clinicId, clinicId))).limit(1).for('update');
         if (!invoice) throw new BillingError('NOT_FOUND', 'Invoice not found');
         if (invoice.status === 'voided') throw new BillingError('INVALID_STATE', 'Voided invoices cannot be refunded');
@@ -657,15 +657,17 @@ export function createClinicBillingService(db: DB, integrations?: IntegrationSer
         if (amount > refundable + 0.01) throw new BillingError('INVALID_AMOUNT', `Refund exceeds refundable payments of ₱${Math.max(0, refundable).toFixed(2)}`);
         await tx.insert(invoiceTransactions).values({ invoiceId, clinicId, type: 'refund', amountPhp, paymentMethod: (paymentMethod ?? null) as 'cash' | 'gcash' | 'card' | 'bank_transfer' | 'other' | null, transactionDate, reason: reason.trim(), recordedBy });
         const totalRefunded = refunds.reduce((sum, row) => sum + Number(row.amountPhp), 0) + amount;
-        const fullyRefunded = totalRefunded >= payments.reduce((sum, row) => sum + Number(row.amountPhp), 0) - 0.01;
-        await tx.update(invoices).set({ status: fullyRefunded ? 'refunded' : 'partially_paid' }).where(eq(invoices.id, invoiceId));
+        const paidInFull = totalRefunded >= payments.reduce((sum, row) => sum + Number(row.amountPhp), 0) - 0.01;
+        await tx.update(invoices).set({ status: paidInFull ? 'refunded' : 'partially_paid' }).where(eq(invoices.id, invoiceId));
         // Reconcile against online payments so the payment-link status page reflects clinic-recorded
         // refunds; this only marks the platform's own record, it never accepts a client-reported status.
-        if (fullyRefunded) {
+        if (paidInFull) {
           await tx.update(onlinePayments).set({ status: 'refunded', updatedAt: new Date() }).where(and(eq(onlinePayments.invoiceId, invoiceId), eq(onlinePayments.clinicId, clinicId), eq(onlinePayments.status, 'succeeded')));
         }
         await writeAudit(tx, { clinicId, actorId: recordedBy, action: AuditAction.INVOICE_REFUNDED, entityType: 'invoice', entityId: invoiceId, metadata: JSON.stringify({ amountPhp, transactionDate }), });
+        return paidInFull;
       });
+      integrations?.dispatchEvent(clinicId, 'invoice.refunded', { invoiceId, amountPhp, fullyRefunded });
     },
 
     async recordAdjustment(clinicId, invoiceId, { amountPhp, transactionDate, reason, recordedBy, callerBranchIds }) {
