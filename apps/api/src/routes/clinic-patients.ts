@@ -91,6 +91,7 @@ export async function registerClinicPatientRoutes(
   options: {
     auth: AuthServices;
     entitlements: EntitlementService;
+    db?: import('@dentra/db').DB;
     patients: ClinicPatientsService;
   },
 ) {

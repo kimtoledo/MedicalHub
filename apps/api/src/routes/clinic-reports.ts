@@ -24,7 +24,7 @@ function csv(report: string, data: any) {
   return `${headers.map(escape).join(',')}\n${rows.map((row) => headers.map((header) => escape(row[header])).join(',')).join('\n')}\n`;
 }
 
-export async function registerClinicReportsRoutes(app: FastifyInstance, options: { auth: AuthServices; entitlements: EntitlementService; reports: ClinicReportsService }) {
+export async function registerClinicReportsRoutes(app: FastifyInstance, options: { auth: AuthServices; entitlements: EntitlementService; db?: import('@dentra/db').DB; reports: ClinicReportsService }) {
   app.get('/v1/clinic/:clinicId/reports/:report', async (request, reply) => {
     const parsedParams = params.safeParse(request.params); const parsedQuery = query.safeParse(request.query);
     if (!parsedParams.success || !parsedQuery.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid report request' } });

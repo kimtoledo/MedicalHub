@@ -78,6 +78,7 @@ function getCallerDentistId(authorization: AuthorizationContext, clinicId: strin
 export type ClinicPrescriptionRoutesOptions = {
   auth: AuthServices;
   entitlements: EntitlementService;
+  db?: import('@dentra/db').DB;
   prescriptionService: ClinicPrescriptionService;
 };
 

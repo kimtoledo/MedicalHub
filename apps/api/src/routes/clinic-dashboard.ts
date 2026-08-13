@@ -111,6 +111,7 @@ export async function registerClinicDashboardRoutes(
   options: {
     auth: AuthServices;
     entitlements: EntitlementService;
+    db?: import('@dentra/db').DB;
     dashboard: ClinicDashboardService;
   },
 ) {

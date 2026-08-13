@@ -43,6 +43,7 @@ function sendError(reply: FastifyReply, caught: unknown) {
 export async function registerClinicStaffRoutes(app: FastifyInstance, options: {
   auth: AuthServices;
   entitlements: EntitlementService;
+  db?: import('@dentra/db').DB;
   staff: ClinicStaffService;
 }) {
   app.get('/v1/clinic/:clinicId/staff', async (request, reply) => {

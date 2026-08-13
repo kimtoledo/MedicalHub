@@ -92,6 +92,7 @@ function getCallerBranchIds(authorization: AuthorizationContext, clinicId: strin
 export type ClinicBillingRoutesOptions = {
   auth: AuthServices;
   entitlements: EntitlementService;
+  db?: import('@dentra/db').DB;
   billingService: ClinicBillingService;
   serviceListService: ClinicServiceListService;
 };

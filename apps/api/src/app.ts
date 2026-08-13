@@ -272,7 +272,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       await registerAdminDashboardRoutes(app, { auth: options.auth, dashboard: options.adminDashboard });
     }
     if (options.entitlements) {
-      await registerEntitlementRoutes(app, { auth: options.auth, entitlements: options.entitlements });
+      await registerEntitlementRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db });
     }
     if (options.clinicSettings && options.adminClinicSettings) {
       await registerClinicSettingsRoutes(app, {
@@ -285,21 +285,22 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       await registerClinicWorkspaceRoutes(app, { auth: options.auth, workspace: options.clinicWorkspace });
     }
     if (options.clinicPatients && options.entitlements) {
-      await registerClinicPatientRoutes(app, { auth: options.auth, entitlements: options.entitlements, patients: options.clinicPatients });
+      await registerClinicPatientRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, patients: options.clinicPatients });
     }
     if (options.clinicEncounters && options.entitlements) {
-      await registerClinicEncounterRoutes(app, { auth: options.auth, entitlements: options.entitlements, encounters: options.clinicEncounters });
+      await registerClinicEncounterRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, encounters: options.clinicEncounters });
     }
     if (options.clinicOdontogram && options.entitlements) {
-      await registerClinicOdontogramRoutes(app, { auth: options.auth, entitlements: options.entitlements, odontogram: options.clinicOdontogram });
+      await registerClinicOdontogramRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, odontogram: options.clinicOdontogram });
     }
     if (options.clinicTreatments && options.entitlements) {
-      await registerClinicTreatmentRoutes(app, { auth: options.auth, entitlements: options.entitlements, treatments: options.clinicTreatments, recalls: options.clinicRecalls });
+      await registerClinicTreatmentRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, treatments: options.clinicTreatments, recalls: options.clinicRecalls });
     }
     if (options.clinicTreatmentPlans && options.entitlements) {
       await registerClinicTreatmentPlanRoutes(app, {
         auth: options.auth,
         entitlements: options.entitlements,
+        db: options.db,
         treatmentPlans: options.clinicTreatmentPlans,
       });
     }
@@ -307,23 +308,24 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       await registerClinicServiceCatalogRoutes(app, {
         auth: options.auth,
         entitlements: options.entitlements,
+        db: options.db,
         serviceCatalog: options.clinicServiceCatalog,
       });
     }
     if (options.clinicInventory && options.entitlements) {
-      await registerClinicInventoryRoutes(app, { auth: options.auth, entitlements: options.entitlements, inventory: options.clinicInventory });
+      await registerClinicInventoryRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, inventory: options.clinicInventory });
     }
     if (options.clinicRecalls && options.entitlements) {
-      await registerClinicRecallRoutes(app, { auth: options.auth, entitlements: options.entitlements, recalls: options.clinicRecalls });
+      await registerClinicRecallRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, recalls: options.clinicRecalls });
     }
     if (options.clinicReports && options.entitlements) {
-      await registerClinicReportsRoutes(app, { auth: options.auth, entitlements: options.entitlements, reports: options.clinicReports });
+      await registerClinicReportsRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, reports: options.clinicReports });
     }
     if (options.subscriptionOperations && options.entitlements && options.adminClinicSettings) {
       await registerSubscriptionOperationRoutes(app, { auth: options.auth, entitlements: options.entitlements, operations: options.subscriptionOperations, adminSettings: options.adminClinicSettings });
     }
     if (options.clinicStaff && options.entitlements) {
-      await registerClinicStaffRoutes(app, { auth: options.auth, entitlements: options.entitlements, staff: options.clinicStaff });
+      await registerClinicStaffRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, staff: options.clinicStaff });
     }
     if (options.patientPortal) {
       await registerPatientPortalRoutes(app, { portal: options.patientPortal });
@@ -338,10 +340,10 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       await registerOrganizationRoutes(app, { auth: options.auth, organizations: options.organizations });
     }
     if (options.clinicAnalytics && options.entitlements) {
-      await registerClinicAnalyticsRoutes(app, { auth: options.auth, entitlements: options.entitlements, analytics: options.clinicAnalytics });
+      await registerClinicAnalyticsRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, analytics: options.clinicAnalytics });
     }
     if (options.payments && options.entitlements) {
-      await registerOnlinePaymentRoutes(app, { auth: options.auth, entitlements: options.entitlements, payments: options.payments });
+      await registerOnlinePaymentRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, payments: options.payments });
     }
     if (options.customDomains) {
       await registerCustomDomainRoutes(app, { auth: options.auth, domains: options.customDomains });
@@ -356,15 +358,16 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       await registerPlatformOperationsRoutes(app, { auth: options.auth, operations: options.platformOperations });
     }
     if (options.aiImaging && options.entitlements) {
-      await registerAiImagingRoutes(app, { auth: options.auth, entitlements: options.entitlements, imaging: options.aiImaging });
+      await registerAiImagingRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, imaging: options.aiImaging });
     }
     if (options.clinicDashboard && options.entitlements) {
-      await registerClinicDashboardRoutes(app, { auth: options.auth, entitlements: options.entitlements, dashboard: options.clinicDashboard });
+      await registerClinicDashboardRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, dashboard: options.clinicDashboard });
     }
     if (options.clinicBilling && options.clinicServiceList && options.entitlements) {
       await registerClinicBillingRoutes(app, {
         auth: options.auth,
         entitlements: options.entitlements,
+        db: options.db,
         billingService: options.clinicBilling,
         serviceListService: options.clinicServiceList,
       });
@@ -373,6 +376,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       await registerClinicPrescriptionRoutes(app, {
         auth: options.auth,
         entitlements: options.entitlements,
+        db: options.db,
         prescriptionService: options.clinicPrescription,
       });
     }
@@ -380,6 +384,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       await registerClinicFilesRoutes(app, {
         auth: options.auth,
         entitlements: options.entitlements,
+        db: options.db,
         filesService: options.clinicFiles,
       });
     }
@@ -394,10 +399,11 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       await registerRemoteConsultRoutes(app, {
         auth: options.auth,
         rcService: options.remoteConsults,
+        db: options.db,
       });
     }
     if (options.hmo) {
-      await registerHmoRoutes(app, { auth: options.auth, hmo: options.hmo });
+      await registerHmoRoutes(app, { auth: options.auth, hmo: options.hmo, db: options.db });
     }
   }
 

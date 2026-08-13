@@ -56,6 +56,7 @@ function getCallerBranchIds(authorization: AuthorizationContext, clinicId: strin
 export type ClinicFilesRoutesOptions = {
   auth: AuthServices;
   entitlements: EntitlementService;
+  db?: import('@dentra/db').DB;
   filesService: ClinicFilesService;
 };
 

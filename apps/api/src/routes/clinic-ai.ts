@@ -18,9 +18,9 @@ import { encounters } from '@dentra/db/schema';
 import {
   getClinicAccess,
   hasClinicAccess,
-  isSuperAdmin,
 } from '../auth/authorization.js';
 import { resolveRequestAuthorization } from '../auth/request.js';
+import { hasActiveSupportGrant } from '../auth/support-access.js';
 import type { AuthorizationContext, AuthServices } from '../auth/types.js';
 import { AIServiceError, type AiAssistanceService } from '../clinic/ai-service.js';
 
@@ -59,14 +59,14 @@ const treatmentSequenceBodySchema = z.object({
 // Auth helpers
 // ---------------------------------------------------------------------------
 
-function checkDentistAuth(authorization: AuthorizationContext, clinicId: string): boolean {
-  if (isSuperAdmin(authorization)) return true;
-  return hasClinicAccess(authorization, clinicId, ['dentist', 'clinic_owner', 'clinic_admin']);
+async function checkDentistAuth(db: DB, authorization: AuthorizationContext, clinicId: string): Promise<boolean> {
+  if (hasClinicAccess(authorization, clinicId, ['dentist', 'clinic_owner', 'clinic_admin'])) return true;
+  return hasActiveSupportGrant(db, authorization, clinicId);
 }
 
 function getCallerBranchIds(authorization: AuthorizationContext, clinicId: string): string[] | null {
-  if (isSuperAdmin(authorization)) return null;
   const memberships = getClinicAccess(authorization, clinicId);
+  if (memberships.length === 0) return null;
   if (memberships.some((m) => m.branchId === null)) return null;
   const ids = memberships.map((m) => m.branchId).filter((id): id is string => id !== null);
   return ids.length > 0 ? ids : null;
@@ -160,7 +160,7 @@ export async function registerClinicAiRoutes(
 
     const authorization = await resolveRequestAuthorization(request, auth);
     if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!checkDentistAuth(authorization, params.data.clinicId)) {
+    if (!(await checkDentistAuth(db, authorization, params.data.clinicId))) {
       return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Dentist role required for AI features' } });
     }
 
@@ -221,7 +221,7 @@ export async function registerClinicAiRoutes(
 
     const authorization = await resolveRequestAuthorization(request, auth);
     if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!checkDentistAuth(authorization, params.data.clinicId)) {
+    if (!(await checkDentistAuth(db, authorization, params.data.clinicId))) {
       return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Dentist role required for AI features' } });
     }
 
@@ -263,7 +263,7 @@ export async function registerClinicAiRoutes(
 
     const authorization = await resolveRequestAuthorization(request, auth);
     if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!checkDentistAuth(authorization, params.data.clinicId)) {
+    if (!(await checkDentistAuth(db, authorization, params.data.clinicId))) {
       return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Dentist role required for AI features' } });
     }
 

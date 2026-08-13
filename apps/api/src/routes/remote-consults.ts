@@ -14,9 +14,11 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { hasClinicAccess, isSuperAdmin } from '../auth/authorization.js';
+import type { DB } from '@dentra/db';
+import { hasClinicAccess } from '../auth/authorization.js';
 import { resolveRequestAuthorization } from '../auth/request.js';
-import type { AuthServices } from '../auth/types.js';
+import { hasActiveSupportGrant } from '../auth/support-access.js';
+import type { AuthorizationContext, AuthServices } from '../auth/types.js';
 import {
   RemoteConsultError,
   verifyPhotoToken,
@@ -73,6 +75,7 @@ function rcErrorStatus(err: RemoteConsultError): number {
 export type RemoteConsultRoutesOptions = {
   auth: AuthServices;
   rcService: RemoteConsultsService;
+  db?: DB;
 };
 
 // ---------------------------------------------------------------------------
@@ -83,7 +86,11 @@ export async function registerRemoteConsultRoutes(
   app: FastifyInstance,
   options: RemoteConsultRoutesOptions,
 ): Promise<void> {
-  const { auth, rcService } = options;
+  const { auth, rcService, db } = options;
+  async function allowed(authorization: AuthorizationContext, clinicId: string, roles?: Parameters<typeof hasClinicAccess>[2]): Promise<boolean> {
+    if (hasClinicAccess(authorization, clinicId, roles)) return true;
+    return db ? hasActiveSupportGrant(db, authorization, clinicId) : false;
+  }
 
   // -----------------------------------------------------------------------
   // POST /v1/public/consult/:clinicId  — PUBLIC patient submission
@@ -194,7 +201,7 @@ export async function registerRemoteConsultRoutes(
 
     const authorization = await resolveRequestAuthorization(request, auth);
     if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!isSuperAdmin(authorization) && !hasClinicAccess(authorization, params.data.clinicId)) {
+    if (!(await allowed(authorization, params.data.clinicId))) {
       return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN' } });
     }
 
@@ -214,7 +221,7 @@ export async function registerRemoteConsultRoutes(
 
     const authorization = await resolveRequestAuthorization(request, auth);
     if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!isSuperAdmin(authorization) && !hasClinicAccess(authorization, params.data.clinicId)) {
+    if (!(await allowed(authorization, params.data.clinicId))) {
       return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN' } });
     }
 
@@ -235,7 +242,7 @@ export async function registerRemoteConsultRoutes(
 
       const authorization = await resolveRequestAuthorization(request, auth);
       if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-      if (!isSuperAdmin(authorization) && !hasClinicAccess(authorization, params.data.clinicId)) {
+      if (!(await allowed(authorization, params.data.clinicId))) {
         return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN' } });
       }
 
@@ -267,7 +274,7 @@ export async function registerRemoteConsultRoutes(
 
     const authorization = await resolveRequestAuthorization(request, auth);
     if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!isSuperAdmin(authorization) && !hasClinicAccess(authorization, params.data.clinicId, ['dentist', 'clinic_owner', 'clinic_admin'])) {
+    if (!(await allowed(authorization, params.data.clinicId, ['dentist', 'clinic_owner', 'clinic_admin']))) {
       return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Dentist role required to review assessments' } });
     }
 
@@ -301,7 +308,7 @@ export async function registerRemoteConsultRoutes(
 
     const authorization = await resolveRequestAuthorization(request, auth);
     if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!isSuperAdmin(authorization) && !hasClinicAccess(authorization, params.data.clinicId)) {
+    if (!(await allowed(authorization, params.data.clinicId))) {
       return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN' } });
     }
 

@@ -65,6 +65,7 @@ export async function registerClinicEncounterRoutes(
   options: {
     auth: AuthServices;
     entitlements: EntitlementService;
+    db?: import('@dentra/db').DB;
     encounters: ClinicEncountersService;
   },
 ) {

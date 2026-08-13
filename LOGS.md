@@ -70,6 +70,13 @@ Updated manually after each session or merged task.
 - Verified end-to-end against a real seeded clinic (toggle on/off), plus route tests: a normal clinic member's write is blocked with 423, their read still succeeds, and a Super Admin's write still succeeds during maintenance
 - Verified 398 passing API tests, repository-wide TypeScript checks, and production web/API builds
 
+### ✅ Scoped support-access enforcement (platform operations)
+- User decision: ALL clinic-scoped data routes require an active support-access grant, not just a subset — closing the gap flagged in the earlier feature-flag work
+- New `hasActiveSupportGrant(db, authorization, clinicId)` in `auth/support-access.ts` — true only for a Super Admin holding an `approved`, unexpired `supportAccessRequests` row for that exact clinic, requested by that exact caller
+- Replaced the unconditional `isSuperAdmin(...)` bypass with this grant check in every clinic-scoped data route family that had one (`hmo.ts`, `remote-consults.ts`, `entitlements.ts`, `clinic-ai.ts`), and extended `requireClinicFeature` — the shared chokepoint for ~17 other route files (patients, encounters, treatment plans/records, odontogram, inventory, staff, billing, files, etc.) that previously had **no** Super Admin path at all — with the same grant fallback, threading `db?: DB` through each affected route's options and `app.ts`'s wiring
+- Verified the grant-check logic directly against a real seeded clinic through all its states (no grant, pending, approved+unexpired, approved+expired — all resolved correctly), plus the full 398-test suite passes with no regressions to normal clinic-member access paths
+- Verified repository-wide TypeScript checks and production web/API builds
+
 ### ✅ Search and Discovery — fully done
 - Added the final "Remaining" item: a "Near me" geolocation button on `/clinics` that requests `navigator.geolocation` and round-trips through the existing `latitude`/`longitude`/`maxDistanceKm` query params the backend already validated and consumed — no backend change needed, just the missing browser-side control, plus a "Clear location" toggle and persistence across pagination/filters
 - Verified end-to-end against a running dev server (toggled button state, "within X km of you" copy) rather than just typechecking

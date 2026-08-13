@@ -70,6 +70,7 @@ export async function registerClinicTreatmentPlanRoutes(
   options: {
     auth: AuthServices;
     entitlements: EntitlementService;
+    db?: import('@dentra/db').DB;
     treatmentPlans: ClinicTreatmentPlansService;
   },
 ) {

@@ -8,8 +8,10 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { hasClinicAccess, isSuperAdmin } from '../auth/authorization.js';
+import type { DB } from '@dentra/db';
+import { hasClinicAccess } from '../auth/authorization.js';
 import { resolveRequestAuthorization } from '../auth/request.js';
+import { hasActiveSupportGrant } from '../auth/support-access.js';
 import type { AuthorizationContext, AuthServices } from '../auth/types.js';
 import { HmoServiceError, type HmoService } from '../clinic/hmo-service.js';
 
@@ -75,11 +77,6 @@ const claimOptionsQuerySchema = z.object({ search: z.string().trim().max(100).op
 // Auth helpers
 // ---------------------------------------------------------------------------
 
-function isAdminRole(authorization: AuthorizationContext, clinicId: string): boolean {
-  if (isSuperAdmin(authorization)) return true;
-  return hasClinicAccess(authorization, clinicId, ['clinic_admin', 'clinic_owner']);
-}
-
 function hmoErrStatus(err: HmoServiceError): number {
   return err.code === 'NOT_FOUND'           ? 404
     : err.code === 'INVOICE_NOT_FOUND'      ? 404
@@ -97,6 +94,7 @@ function hmoErrStatus(err: HmoServiceError): number {
 export type HmoRoutesOptions = {
   auth: AuthServices;
   hmo: HmoService;
+  db?: DB;
 };
 
 // ---------------------------------------------------------------------------
@@ -107,7 +105,14 @@ export async function registerHmoRoutes(
   app: FastifyInstance,
   options: HmoRoutesOptions,
 ): Promise<void> {
-  const { auth, hmo } = options;
+  const { auth, hmo, db } = options;
+  async function allowed(authorization: AuthorizationContext, clinicId: string, roles?: Parameters<typeof hasClinicAccess>[2]): Promise<boolean> {
+    if (hasClinicAccess(authorization, clinicId, roles)) return true;
+    return db ? hasActiveSupportGrant(db, authorization, clinicId) : false;
+  }
+  async function isAdminRole(authorization: AuthorizationContext, clinicId: string): Promise<boolean> {
+    return allowed(authorization, clinicId, ['clinic_admin', 'clinic_owner']);
+  }
 
   // ── Payer catalog ──────────────────────────────────────────────────────
 
@@ -118,7 +123,7 @@ export async function registerHmoRoutes(
 
     const authorization = await resolveRequestAuthorization(req, auth);
     if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!isSuperAdmin(authorization) && !hasClinicAccess(authorization, params.data.clinicId)) {
+    if (!(await allowed(authorization, params.data.clinicId))) {
       return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN' } });
     }
 
@@ -133,7 +138,7 @@ export async function registerHmoRoutes(
 
     const authorization = await resolveRequestAuthorization(req, auth);
     if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!isAdminRole(authorization, params.data.clinicId)) {
+    if (!(await isAdminRole(authorization, params.data.clinicId))) {
       return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic admin required' } });
     }
 
@@ -156,7 +161,7 @@ export async function registerHmoRoutes(
 
     const authorization = await resolveRequestAuthorization(req, auth);
     if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!isAdminRole(authorization, params.data.clinicId)) {
+    if (!(await isAdminRole(authorization, params.data.clinicId))) {
       return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic admin required' } });
     }
 
@@ -181,7 +186,7 @@ export async function registerHmoRoutes(
 
     const authorization = await resolveRequestAuthorization(req, auth);
     if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!isSuperAdmin(authorization) && !hasClinicAccess(authorization, params.data.clinicId)) {
+    if (!(await allowed(authorization, params.data.clinicId))) {
       return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN' } });
     }
 
@@ -196,7 +201,7 @@ export async function registerHmoRoutes(
 
     const authorization = await resolveRequestAuthorization(req, auth);
     if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!isSuperAdmin(authorization) && !hasClinicAccess(authorization, params.data.clinicId)) {
+    if (!(await allowed(authorization, params.data.clinicId))) {
       return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN' } });
     }
 
@@ -214,7 +219,7 @@ export async function registerHmoRoutes(
 
     const authorization = await resolveRequestAuthorization(req, auth);
     if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!isSuperAdmin(authorization) && !hasClinicAccess(authorization, params.data.clinicId)) {
+    if (!(await allowed(authorization, params.data.clinicId))) {
       return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN' } });
     }
 
@@ -234,7 +239,7 @@ export async function registerHmoRoutes(
     if (!params.success || !query.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Enter a patient search or selection' } });
     const authorization = await resolveRequestAuthorization(req, auth);
     if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!isSuperAdmin(authorization) && !hasClinicAccess(authorization, params.data.clinicId)) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN' } });
+    if (!(await allowed(authorization, params.data.clinicId))) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN' } });
     try { return reply.send({ success: true, data: await hmo.claimOptions(params.data.clinicId, query.data) }); }
     catch (err) { if (err instanceof HmoServiceError) return reply.status(hmoErrStatus(err)).send({ success: false, error: { code: err.code, message: err.message } }); throw err; }
   });
@@ -246,7 +251,7 @@ export async function registerHmoRoutes(
 
     const authorization = await resolveRequestAuthorization(req, auth);
     if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!isSuperAdmin(authorization) && !hasClinicAccess(authorization, params.data.clinicId)) {
+    if (!(await allowed(authorization, params.data.clinicId))) {
       return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN' } });
     }
 
@@ -264,7 +269,7 @@ export async function registerHmoRoutes(
 
     const authorization = await resolveRequestAuthorization(req, auth);
     if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!isSuperAdmin(authorization) && !hasClinicAccess(authorization, params.data.clinicId)) {
+    if (!(await allowed(authorization, params.data.clinicId))) {
       return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN' } });
     }
 
@@ -287,7 +292,7 @@ export async function registerHmoRoutes(
 
     const authorization = await resolveRequestAuthorization(req, auth);
     if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!isSuperAdmin(authorization) && !hasClinicAccess(authorization, params.data.clinicId)) {
+    if (!(await allowed(authorization, params.data.clinicId))) {
       return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN' } });
     }
 
@@ -303,7 +308,7 @@ export async function registerHmoRoutes(
 
     const authorization = await resolveRequestAuthorization(req, auth);
     if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!isSuperAdmin(authorization) && !hasClinicAccess(authorization, params.data.clinicId)) {
+    if (!(await allowed(authorization, params.data.clinicId))) {
       return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN' } });
     }
 
@@ -319,7 +324,7 @@ export async function registerHmoRoutes(
 
     const authorization = await resolveRequestAuthorization(req, auth);
     if (!authorization) return reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } });
-    if (!isSuperAdmin(authorization) && !isAdminRole(authorization, params.data.clinicId)) {
+    if (!(await isAdminRole(authorization, params.data.clinicId))) {
       return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic admin or owner required to update claim status' } });
     }
 

@@ -21,7 +21,7 @@ function csv(data: Awaited<ReturnType<ClinicAnalyticsService['summary']>>) {
   return `"series","day","value"\n${rows.map((row) => [row.series, row.day, row.value].map(escape).join(',')).join('\n')}\n`;
 }
 
-export async function registerClinicAnalyticsRoutes(app: FastifyInstance, options: { auth: AuthServices; entitlements: EntitlementService; analytics: ClinicAnalyticsService }) {
+export async function registerClinicAnalyticsRoutes(app: FastifyInstance, options: { auth: AuthServices; entitlements: EntitlementService; db?: import('@dentra/db').DB; analytics: ClinicAnalyticsService }) {
   app.get('/v1/clinic/:clinicId/analytics', async (request, reply) => {
     const parsedParams = params.safeParse(request.params); const parsedQuery = query.safeParse(request.query);
     if (!parsedParams.success || !parsedQuery.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: parsedQuery.success ? 'Invalid clinic' : parsedQuery.error.issues[0]?.message ?? 'Analytics date range is required' } });
