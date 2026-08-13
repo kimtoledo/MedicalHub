@@ -107,4 +107,46 @@ describe('integrations settings UI API', () => {
     expect(response.json().data.appointments).toHaveLength(1);
     expect(response.json().data.clinicId).toBe(CLINIC_ID);
   });
+
+  it('rejects a calendar feed request without a key', async () => {
+    const service = integrations();
+    await setup('clinic_owner', service);
+    const response = await app!.inject({ method: 'GET', url: '/v1/partner/calendar/appointments.ics' });
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('rejects a calendar feed key missing the calendar.feed scope', async () => {
+    const service = integrations({ authenticate: vi.fn(async () => ({ clinicId: CLINIC_ID, scopes: ['appointments.read'], keyId: KEY_ID })) });
+    await setup('clinic_owner', service);
+    const response = await app!.inject({ method: 'GET', url: '/v1/partner/calendar/appointments.ics?key=abcdefghij1234567890' });
+    expect(response.statusCode).toBe(403);
+  });
+
+  it('returns a valid ICS feed for an authorized calendar key', async () => {
+    const service = integrations({
+      authenticate: vi.fn(async () => ({ clinicId: CLINIC_ID, scopes: ['calendar.feed'], keyId: KEY_ID })),
+      appointments: vi.fn(async () => [{ id: 'a1', branchId: 'b1', branchName: 'Main Branch', status: 'confirmed', startsAt: new Date('2026-08-13T09:00:00Z'), endsAt: new Date('2026-08-13T09:30:00Z'), patientFirstName: 'Ana', patientLastName: 'Cruz', patientNumber: 'SBD-1', serviceName: 'Cleaning' }]),
+    });
+    await setup('clinic_owner', service);
+    const response = await app!.inject({ method: 'GET', url: '/v1/partner/calendar/appointments.ics?key=abcdefghij1234567890' });
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['content-type']).toContain('text/calendar');
+    expect(response.body).toContain('BEGIN:VCALENDAR');
+    expect(response.body).toContain('UID:a1@dentra.ph');
+    expect(response.body).toContain('SUMMARY:Cleaning — Ana Cruz');
+    expect(response.body).toContain('LOCATION:Main Branch');
+    expect(response.body).toContain('END:VCALENDAR');
+  });
+
+  it('escapes commas and semicolons in ICS text fields', async () => {
+    const service = integrations({
+      authenticate: vi.fn(async () => ({ clinicId: CLINIC_ID, scopes: ['calendar.feed'], keyId: KEY_ID })),
+      appointments: vi.fn(async () => [{ id: 'a2', branchId: 'b1', branchName: 'Main, Branch; A', status: 'confirmed', startsAt: new Date('2026-08-13T09:00:00Z'), endsAt: null, patientFirstName: 'Ana', patientLastName: 'Cruz', patientNumber: 'SBD-1', serviceName: 'Root canal, upper' }]),
+    });
+    await setup('clinic_owner', service);
+    const response = await app!.inject({ method: 'GET', url: '/v1/partner/calendar/appointments.ics?key=abcdefghij1234567890' });
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain('LOCATION:Main\\, Branch\\; A');
+    expect(response.body).toContain('SUMMARY:Root canal\\, upper — Ana Cruz');
+  });
 });

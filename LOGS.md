@@ -33,6 +33,12 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### 🔄 iCal calendar feed (integrations API)
+- Added a `calendar.feed`-scoped API key that mints a subscribe URL (`.../calendar/appointments.ics?key=...`) any calendar app can poll directly — no session, no custom headers, matching how Google Calendar's "add by URL" actually works
+- Reuses the existing API-key auth/scope machinery rather than inventing a new credential type; the feed covers a rolling 7-days-back/60-days-ahead window and is rate-limited separately (30/min) from the JSON partner endpoint
+- ICS text fields (location, summary) are properly escaped per RFC 5545; verified with a dedicated test using values containing commas and semicolons
+- Verified 354 passing API tests (4 new), 5 passing web tests, repository-wide TypeScript checks, production web/API builds, and clean diff validation
+
 ### 🔄 Real webhook delivery (integrations API)
 - `appointment.created` (public booking), `appointment.updated` (clinic-staff status changes and kiosk self-check-in), `invoice.paid` (manual clinic payment and online-payment webhook success), and `invoice.refunded` (manual clinic refund) now actually dispatch to every active, subscribed clinic webhook — previously nothing ever called a registered webhook endpoint
 - Deliveries are HMAC-SHA256 signed (`x-dentra-webhook-signature`), sent with a 5s timeout, and retried with exponential backoff (capped at 60 min) for up to 5 attempts before being marked permanently failed

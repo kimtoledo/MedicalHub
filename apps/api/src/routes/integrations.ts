@@ -10,7 +10,8 @@ import { postgresUuidSchema } from '../validation.js';
 const clinic = z.object({ clinicId: postgresUuidSchema });
 const keyId = clinic.extend({ keyId: postgresUuidSchema });
 const webhookId = clinic.extend({ webhookId: postgresUuidSchema });
-const keyBody = z.object({ name: z.string().trim().min(2).max(120), scopes: z.array(z.enum(['appointments.read', 'invoices.read', 'webhooks.manage'])).min(1).max(10) }).strict();
+const keyBody = z.object({ name: z.string().trim().min(2).max(120), scopes: z.array(z.enum(['appointments.read', 'invoices.read', 'webhooks.manage', 'calendar.feed'])).min(1).max(10) }).strict();
+const icsQuery = z.object({ key: z.string().min(10) }).strict();
 const webhookBody = z.object({ name: z.string().trim().min(2).max(120), endpointUrl: z.string().url().max(500), eventTypes: z.array(z.string().trim().min(3).max(100)).min(1).max(20) }).strict();
 const rangeQuery = z.object({ from: z.string().datetime({ offset: true }).optional(), to: z.string().datetime({ offset: true }).optional() }).strict();
 const adminRoles = ['clinic_owner', 'clinic_admin'] as const;
@@ -32,6 +33,29 @@ function window(query: z.infer<typeof rangeQuery>) {
   if (to <= from || to.getTime() - from.getTime() > 31 * 86_400_000) throw new IntegrationError('INVALID_DATE_RANGE', 'Date range must be positive and no longer than 31 days');
   return { from, to };
 }
+function icsEscape(value: string) { return value.replace(/\\/g, '\\\\').replace(/,/g, '\\,').replace(/;/g, '\\;').replace(/\n/g, '\\n'); }
+function icsTimestamp(date: Date) { return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); }
+const ICS_STATUS: Record<string, string> = { cancelled: 'CANCELLED', pending: 'TENTATIVE' };
+function icsCalendar(events: Awaited<ReturnType<IntegrationService['appointments']>>) {
+  const now = icsTimestamp(new Date());
+  const body = events.map((event) => {
+    const patientName = [event.patientFirstName, event.patientLastName].filter(Boolean).join(' ').trim();
+    const summary = icsEscape([event.serviceName ?? 'Dental appointment', patientName || null].filter(Boolean).join(' — '));
+    const location = icsEscape(event.branchName);
+    return [
+      'BEGIN:VEVENT',
+      `UID:${event.id}@dentra.ph`,
+      `DTSTAMP:${now}`,
+      `DTSTART:${icsTimestamp(event.startsAt)}`,
+      `DTEND:${icsTimestamp(event.endsAt ?? new Date(event.startsAt.getTime() + 30 * 60_000))}`,
+      `SUMMARY:${summary}`,
+      `LOCATION:${location}`,
+      `STATUS:${ICS_STATUS[event.status] ?? 'CONFIRMED'}`,
+      'END:VEVENT',
+    ].join('\r\n');
+  }).join('\r\n');
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Dentra.ph//Appointments//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', body, 'END:VCALENDAR'].filter(Boolean).join('\r\n');
+}
 
 export async function registerIntegrationRoutes(app: FastifyInstance, options: { auth: AuthServices; integrations: IntegrationService }) {
   app.get('/v1/clinic/:clinicId/integrations/api-keys', async (request, reply) => { const p = clinic.safeParse(request.params); if (!p.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid clinic identifier' } }); const context = await authorize(request, reply, options.auth, p.data.clinicId); if (!context) return; return reply.send({ success: true, data: await options.integrations.listKeys(p.data.clinicId) }); });
@@ -49,5 +73,16 @@ export async function registerIntegrationRoutes(app: FastifyInstance, options: {
     if (!auth.scopes.includes('appointments.read')) return reply.status(403).send({ success: false, error: { code: 'SCOPE_REQUIRED', message: 'appointments.read scope is required' } });
     const query = rangeQuery.safeParse(request.query); if (!query.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid date range' } });
     try { const range = window(query.data); return reply.send({ success: true, data: { clinicId: auth.clinicId, from: range.from.toISOString(), to: range.to.toISOString(), appointments: await options.integrations.appointments(auth.clinicId, range.from, range.to) } }); } catch (caught) { return error(reply, caught); }
+  });
+  app.get('/v1/partner/calendar/appointments.ics', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async (request, reply) => {
+    const query = icsQuery.safeParse(request.query);
+    if (!query.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'A valid feed key is required' } });
+    const auth = await options.integrations.authenticate(query.data.key);
+    if (!auth) return reply.status(401).send({ success: false, error: { code: 'INVALID_API_KEY', message: 'A valid calendar feed key is required' } });
+    if (!auth.scopes.includes('calendar.feed')) return reply.status(403).send({ success: false, error: { code: 'SCOPE_REQUIRED', message: 'calendar.feed scope is required' } });
+    const from = new Date(Date.now() - 7 * 86_400_000);
+    const to = new Date(Date.now() + 60 * 86_400_000);
+    const events = await options.integrations.appointments(auth.clinicId, from, to);
+    return reply.header('content-type', 'text/calendar; charset=utf-8').header('content-disposition', 'inline; filename="dentra-appointments.ics"').send(icsCalendar(events));
   });
 }

@@ -6,7 +6,7 @@ import { writeAudit } from '@dentra/db/audit';
 import { AuditAction } from '@dentra/shared';
 
 export type IntegrationActor = { id: string; email: string; ipAddress?: string; userAgent?: string };
-export type IntegrationScope = 'appointments.read' | 'invoices.read' | 'webhooks.manage';
+export type IntegrationScope = 'appointments.read' | 'invoices.read' | 'webhooks.manage' | 'calendar.feed';
 export class IntegrationError extends Error {
   constructor(public code: string, message: string, public statusCode = 400) { super(message); }
 }

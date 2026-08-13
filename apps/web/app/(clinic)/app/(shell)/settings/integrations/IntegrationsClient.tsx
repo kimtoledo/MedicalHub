@@ -293,6 +293,69 @@ function WebhooksSection({ webhooks: initial, clinicId }: { webhooks: Webhook[];
   );
 }
 
+function CalendarFeedSection({ apiKeys: initial, clinicId }: { apiKeys: ApiKey[]; clinicId: string }) {
+  const [keys, setKeys] = useState(initial.filter((key) => key.scopes.includes("calendar.feed")));
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [subscribeUrl, setSubscribeUrl] = useState<string | null>(null);
+
+  async function reload() {
+    const response = await fetch(`/api/clinic/${clinicId}/integrations/api-keys`, { credentials: "include" });
+    const payload = await response.json();
+    if (response.ok) setKeys((payload.data as ApiKey[]).filter((key) => key.scopes.includes("calendar.feed")));
+  }
+
+  async function create() {
+    setCreating(true); setError(null);
+    const response = await fetch(`/api/clinic/${clinicId}/integrations/api-keys`, {
+      method: "POST", credentials: "include", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "Calendar feed", scopes: ["calendar.feed"] }),
+    });
+    const payload = await response.json();
+    setCreating(false);
+    if (!response.ok) { setError(payload.error?.message ?? "Unable to create a calendar feed link."); return; }
+    setSubscribeUrl(`${window.location.origin}/api/public/calendar/appointments.ics?key=${payload.data.secret}`);
+    await reload();
+  }
+
+  async function revoke(keyId: string) {
+    setError(null);
+    const response = await fetch(`/api/clinic/${clinicId}/integrations/api-keys/${keyId}/revoke`, { method: "POST", credentials: "include" });
+    if (!response.ok) { const payload = await response.json().catch(() => null); setError(payload?.error?.message ?? "Unable to revoke this feed link."); return; }
+    await reload();
+  }
+
+  return (
+    <section className="rounded-2xl border border-violet-100 bg-white p-5">
+      <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-violet-900"><CalendarClock size={15} /> Calendar feed</h2>
+      <p className="mb-3 text-xs text-slate-500">Subscribe to this clinic&apos;s appointments (7 days back, 60 days ahead) from Google Calendar or any app that supports an .ics URL. The link is a bearer credential — anyone with it can view appointment times and patient first names, so revoke it if it leaks.</p>
+      <button onClick={() => void create()} disabled={creating} className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
+        {creating ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} {creating ? "Creating…" : "Create feed link"}
+      </button>
+      {error && <p role="alert" className="mb-3 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+      {subscribeUrl && <SecretReveal label="Calendar subscribe URL" value={subscribeUrl} />}
+      {keys.length === 0 ? (
+        <p className="text-xs text-violet-400">No calendar feed links yet.</p>
+      ) : (
+        <ul className="space-y-2">
+          {keys.map((key) => (
+            <li key={key.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-violet-50 px-3 py-2">
+              <p className="text-xs text-violet-400">Created {formatManila(key.createdAt)} · Last used {formatManila(key.lastUsedAt)}</p>
+              {key.status === "active" ? (
+                <button onClick={() => void revoke(key.id)} className="flex items-center gap-1 rounded-lg border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50">
+                  <Ban size={12} /> Revoke
+                </button>
+              ) : (
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">Revoked</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 export default function IntegrationsClient({ apiKeys, webhooks, clinicId }: { apiKeys: ApiKey[]; webhooks: Webhook[]; clinicId: string }) {
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6 lg:p-8">
@@ -313,17 +376,11 @@ export default function IntegrationsClient({ apiKeys, webhooks, clinicId }: { ap
 
       <ApiKeysSection apiKeys={apiKeys} clinicId={clinicId} />
       <WebhooksSection webhooks={webhooks} clinicId={clinicId} />
+      <CalendarFeedSection apiKeys={apiKeys} clinicId={clinicId} />
 
       <section className="rounded-2xl border border-dashed border-violet-200 bg-white p-5">
         <h2 className="mb-3 text-sm font-bold text-violet-900">Coming soon</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="flex items-start gap-3 rounded-xl bg-slate-50 p-3 opacity-70">
-            <CalendarClock size={18} className="mt-0.5 flex-shrink-0 text-slate-400" />
-            <div>
-              <p className="text-sm font-semibold text-slate-500">iCal / Google Calendar export</p>
-              <p className="text-xs text-slate-400">Not yet available — export formats are still being built.</p>
-            </div>
-          </div>
           <div className="flex items-start gap-3 rounded-xl bg-slate-50 p-3 opacity-70">
             <FileSpreadsheet size={18} className="mt-0.5 flex-shrink-0 text-slate-400" />
             <div>
