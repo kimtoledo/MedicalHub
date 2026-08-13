@@ -33,6 +33,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### 🔄 Schema.org structured data (search discovery)
+- Clinic microsites now emit `Dentist` JSON-LD (address, geo when available, opening hours parsed from the same format the booking engine reads, `aggregateRating` only when a review actually exists); dentist profiles emit `Person` JSON-LD with `worksFor` links to affiliated clinics; both directory listing pages emit an `ItemList` of the current page
+- All JSON-LD is escaped before `dangerouslySetInnerHTML` since the content is clinic/dentist-authored and an unescaped `</script>` would break out of the script context
+- Verified by actually running both apps and inspecting the rendered `<script type="application/ld+json">` output on all four page types, not just a typecheck
+- Verified 374 passing API tests, 5 passing web tests, repository-wide TypeScript checks, and production web/API builds
+- Remaining in `mvp3/02-search-discovery.md`: browser "near me" geolocation UI
+
 ### 🔄 Open-slot computation and ranking weights (search discovery)
 - Clinic and dentist directory results now carry a real `hasOpenSlotSoon` flag, computed in bulk (batched queries, no N+1) by checking each branch's parsed operating hours against its assigned dentists' actual appointments over the next 7 days — reusing the exact slot-generation/overlap logic the booking engine itself uses, so the badge isn't a guess
 - Clinic search ranking now applies verification tier at the SQL level (correct across pages) with profile-completeness/open-slot as an in-page refinement, mirroring the existing page-scoped distance-sort convention
