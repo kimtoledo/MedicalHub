@@ -24,6 +24,7 @@ Large dental groups with many branches need organization-level reporting, centra
 
 - Added organization, member-clinic, organization membership, role, and branch-scope data boundaries.
 - Added organization creation, clinic attachment, membership listing, and consolidated appointment/patient/revenue summary APIs with organization membership checks.
+- Added the organization workspace, organization role management, target-clinic ownership checks, regional branch-scoped visibility and metrics, and one-organization-per-clinic enforcement.
 - Remaining: organization-level entitlements, central service catalog, branch-scoped staff assignment UI, and consented patient transfers.
 
 ---

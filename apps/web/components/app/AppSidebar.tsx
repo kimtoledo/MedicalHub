@@ -23,6 +23,7 @@ import {
   FileText,
   Camera,
   Shield,
+  Network,
 } from "lucide-react";
 import { type ClinicBranchContext, type ClinicRole } from "@/lib/clinic-types";
 import { signOutClinic } from "@/lib/clinic-auth-client";
@@ -37,6 +38,7 @@ const clinicNavItems = [
   { label: "Billing",         href: "/app/billing",            icon: Receipt, feature: "billing.invoices", roles: ["clinic_owner", "clinic_admin", "receptionist", "dental_assistant"] },
   { label: "HMO Claims",      href: "/app/billing/hmo-claims", icon: Shield, feature: "hmo.claims" },
   { label: "Staff",           href: "/app/staff",              icon: UserCog, feature: "staff.manage" },
+  { label: "Organization",    href: "/app/organization",       icon: Network },
   { label: "Clinic Settings", href: "/app/settings",           icon: Settings },
   { label: "My Profile",      href: "/app/profile",            icon: UserCircle },
 ];

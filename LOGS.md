@@ -33,6 +33,14 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Enterprise organization workspace
+- Added a responsive dental-group selector and workspace with member-clinic/branch visibility plus consolidated appointment, patient, and invoiced-revenue summaries
+- Regional managers see and aggregate only their assigned organization branches; viewers receive read-only organization scope while owner/admin membership details remain protected
+- Added email-based organization role management with validated branch assignments, owner-only owner changes, and last-owner protection
+- Clinic attachment now requires administration rights on both the organization and target clinic, writes identifier-only audit events, and enforces one organization per clinic through migration `0035_fat_lenny_balinger.sql`
+- Kept central catalogs, cascading entitlements, cross-clinic staff assignment, and consented patient transfers as explicit Task 05 handoffs
+- Verified 285 passing API tests, 5 passing web tests, repository-wide TypeScript checks, production web/API builds, and clean diff validation
+
 ### ✅ Patient reviews and moderation UI
 - Added linked-patient eligibility and review history, one-review-per-completed-appointment submission, and patient-visible moderation outcomes
 - Added PII-safe approved review aggregates and pagination to public clinic and dentist pages, including authenticated rate-limited abuse reporting

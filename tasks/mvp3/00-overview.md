@@ -24,7 +24,7 @@
 | `14-patient-portal-experience.md` | Complete signup, linking, requests, details, and account UX | ✅ Done |
 | `15-verification-moderation-ui.md` | Private submissions and Super Admin verification queue | ✅ Done |
 | `16-reviews-ui.md` | Patient review, public display, response, and moderation UI | ✅ Done |
-| `17-enterprise-organization-ui.md` | Organization selector, membership, and consolidated workspace | 🔲 Queued |
+| `17-enterprise-organization-ui.md` | Organization selector, membership, and consolidated workspace | ✅ Done |
 | `18-advanced-analytics-ui.md` | Tenant-scoped trends, rates, charts, and exports | 🔲 Queued |
 | `19-online-payment-checkout-ui.md` | Clinic payment links and public checkout/status pages | 🔲 Queued |
 | `20-custom-domain-settings-ui.md` | DNS instructions, verification, and activation UI | 🔲 Queued |

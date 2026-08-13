@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, CalendarDays, Users, UserCircle, CalendarCheck, ClipboardList, Grid3X3 } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Users, UserCircle, CalendarCheck, ClipboardList, Grid3X3, Network } from "lucide-react";
 import { type ClinicRole } from "@/lib/clinic-types";
 
 const clinicTabs = [
   { label: "Dashboard",     href: "/app",              icon: LayoutDashboard, exact: true },
   { label: "Appointments",  href: "/app/appointments", icon: CalendarDays, feature: "appointments.manage" },
   { label: "Patients",      href: "/app/patients",     icon: Users, feature: "patients.manage" },
+  { label: "Group",         href: "/app/organization", icon: Network },
   { label: "Profile",       href: "/app/profile",      icon: UserCircle     },
 ];
 
