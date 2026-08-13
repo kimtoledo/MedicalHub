@@ -322,6 +322,7 @@ export const AuditAction = {
   FEATURE_FLAG_ROLLOUT_UPDATED: 'feature_flag.rollout_updated',
   FEATURE_FLAG_CLINIC_ADDED: 'feature_flag.clinic_added',
   FEATURE_FLAG_CLINIC_REMOVED: 'feature_flag.clinic_removed',
+  CLINIC_MAINTENANCE_MODE_UPDATED: 'clinic.maintenance_mode_updated',
 
   RECALL_RULE_CREATED: 'recall_rule.created',
   RECALL_RULE_UPDATED: 'recall_rule.updated',

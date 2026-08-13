@@ -63,6 +63,13 @@ Updated manually after each session or merged task.
 - Verified all three states end-to-end against a real seeded clinic: no grant (unavailable), org grant fills the gap (`source: 'organization'`), and a clinic's own override still wins over a conflicting org grant
 - Verified 394 passing API tests, repository-wide TypeScript checks, and production web/API builds
 
+### ✅ Per-tenant maintenance mode (platform operations)
+- User decision: block writes only (reads keep working), Super Admin/support access never affected — new `clinics.maintenanceMode` boolean, deliberately orthogonal to `clinics.status` so it never touches the existing status-transition lifecycle
+- Enforced at the single existing chokepoint (`requireClinicFeature` in `clinic/access.ts`, already resolving clinic state on every call) rather than touching ~29 individual route files: rejects `POST`/`PUT`/`PATCH`/`DELETE` with `423 CLINIC_MAINTENANCE_MODE` unless the caller is Super Admin; `GET` always passes through. Covers every route family already gated through `requireClinicFeature` (patients, encounters, treatment plans/records, odontogram, inventory, staff, service catalog, reports, billing); route families using raw `hasClinicAccess` directly (hmo, remote-consults, entitlements, clinic-ai) are not yet covered
+- Super Admin toggles it from the operations console (`PATCH /v1/admin/operations/clinics/:clinicId/maintenance-mode`); clinic staff see a banner in the app shell while their clinic is in maintenance
+- Verified end-to-end against a real seeded clinic (toggle on/off), plus route tests: a normal clinic member's write is blocked with 423, their read still succeeds, and a Super Admin's write still succeeds during maintenance
+- Verified 398 passing API tests, repository-wide TypeScript checks, and production web/API builds
+
 ### ✅ Search and Discovery — fully done
 - Added the final "Remaining" item: a "Near me" geolocation button on `/clinics` that requests `navigator.geolocation` and round-trips through the existing `latitude`/`longitude`/`maxDistanceKm` query params the backend already validated and consumed — no backend change needed, just the missing browser-side control, plus a "Clear location" toggle and persistence across pagination/filters
 - Verified end-to-end against a running dev server (toggled button state, "within X km of you" copy) rather than just typechecking

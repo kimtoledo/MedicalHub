@@ -44,7 +44,7 @@ const auth = (context: AuthorizationContext): AuthServices => ({
 });
 const entitlements: EntitlementService = {
   resolve: vi.fn(async (id) => ({
-    clinic: { id, name: "Clinic", status: "active" },
+    clinic: { id, name: "Clinic", status: "active", maintenanceMode: false },
     subscription: null,
     entitlements: [
       FeatureKey.APPOINTMENTS_CALENDAR,

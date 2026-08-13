@@ -151,7 +151,13 @@ export function createPlatformOperationsService(database: DB) {
       const [buffer] = result.value;
       return { buffer, filename: `dentra-export-${row.id}.json` };
     },
-    activeClinics: async () => database.select({ id: clinics.id, name: clinics.name, status: clinics.status, createdAt: clinics.createdAt }).from(clinics).orderBy(asc(clinics.name)),
+    activeClinics: async () => database.select({ id: clinics.id, name: clinics.name, status: clinics.status, maintenanceMode: clinics.maintenanceMode, createdAt: clinics.createdAt }).from(clinics).orderBy(asc(clinics.name)),
+    setMaintenanceMode: async (clinicId: string, enabled: boolean, actor: OperationsActor) => {
+      const [row] = await database.update(clinics).set({ maintenanceMode: enabled }).where(eq(clinics.id, clinicId)).returning({ id: clinics.id, name: clinics.name, maintenanceMode: clinics.maintenanceMode });
+      if (!row) throw new OperationsError('CLINIC_NOT_FOUND', 'Clinic not found', 404);
+      await writeAudit(database, { actorId: actor.id, actorEmail: actor.email, clinicId, entityType: 'clinic', entityId: clinicId, action: AuditAction.CLINIC_MAINTENANCE_MODE_UPDATED, metadata: JSON.stringify({ enabled }), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
+      return row;
+    },
     listFeatureFlags: async () => {
       const flags = await database.select().from(featureFlags).orderBy(desc(featureFlags.createdAt));
       const targets = await database.select({ flagId: featureFlagClinics.flagId, clinicId: featureFlagClinics.clinicId, clinicName: clinics.name }).from(featureFlagClinics).innerJoin(clinics, eq(featureFlagClinics.clinicId, clinics.id));

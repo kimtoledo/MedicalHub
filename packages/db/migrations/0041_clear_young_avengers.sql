@@ -1,0 +1,1 @@
+ALTER TABLE "clinics" ADD COLUMN "maintenance_mode" boolean DEFAULT false NOT NULL;

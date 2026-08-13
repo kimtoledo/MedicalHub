@@ -4,7 +4,7 @@ import { clinicFeatureOverrides, clinics, clinicSubscriptions, organizationClini
 import { FeatureKey } from '@dentra/shared';
 
 export type ClinicEntitlements = {
-  clinic: { id: string; name: string; status: string };
+  clinic: { id: string; name: string; status: string; maintenanceMode: boolean };
   subscription: { id: string; status: string; package: { id: string; name: string; slug: string } } | null;
   entitlements: Array<{ featureKey: FeatureKey; isEnabled: boolean; source: 'package' | 'override' | 'organization' | 'unavailable'; expiresAt: Date | null }>;
 };
@@ -12,7 +12,7 @@ export type EntitlementService = { resolve: (clinicId: string) => Promise<Clinic
 
 export function createEntitlementService(database: DB): EntitlementService {
   return { resolve: async (clinicId) => {
-    const [clinic] = await database.select({ id: clinics.id, name: clinics.name, status: clinics.status }).from(clinics).where(and(eq(clinics.id, clinicId), isNull(clinics.deletedAt))).limit(1);
+    const [clinic] = await database.select({ id: clinics.id, name: clinics.name, status: clinics.status, maintenanceMode: clinics.maintenanceMode }).from(clinics).where(and(eq(clinics.id, clinicId), isNull(clinics.deletedAt))).limit(1);
     if (!clinic) return null;
     const now = new Date();
     const [subscriptions, overrides, orgLink] = await Promise.all([

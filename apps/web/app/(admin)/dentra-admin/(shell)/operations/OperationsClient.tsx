@@ -33,7 +33,7 @@ type TenantExportRequest = {
   createdAt: string;
 };
 
-type ClinicSummary = { id: string; name: string; status: string; createdAt: string };
+type ClinicSummary = { id: string; name: string; status: string; maintenanceMode: boolean; createdAt: string };
 
 type FeatureFlag = {
   id: string;
@@ -350,24 +350,55 @@ function FeatureFlagsSection() {
 function PlatformInventorySection() {
   const [clinics, setClinics] = useState<ClinicSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      const response = await fetch('/api/admin/operations/clinics', { cache: 'no-store' });
-      const payload = await response.json();
-      setLoading(false);
-      if (response.ok) setClinics(payload.data);
-    })();
+  const load = useCallback(async () => {
+    const response = await fetch('/api/admin/operations/clinics', { cache: 'no-store' });
+    const payload = await response.json();
+    setLoading(false);
+    if (response.ok) setClinics(payload.data);
   }, []);
 
+  useEffect(() => { void load(); }, [load]);
+
+  async function toggleMaintenance(clinicId: string, enabled: boolean) {
+    setBusyId(clinicId); setError(null);
+    const response = await fetch(`/api/admin/operations/clinics/${clinicId}/maintenance-mode`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled }) });
+    setBusyId(null);
+    if (!response.ok) { const payload = await response.json().catch(() => null); setError(payload?.error?.message ?? 'Unable to update maintenance mode.'); return; }
+    await load();
+  }
+
   const active = clinics.filter((clinic) => clinic.status === 'active').length;
+  const inMaintenance = clinics.filter((clinic) => clinic.maintenanceMode);
 
   return (
     <section className="rounded-2xl border border-violet-100 bg-white p-5">
-      <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-violet-900"><Building2 size={15} /> Platform inventory</h2>
+      <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-violet-900"><Building2 size={15} /> Platform inventory & maintenance mode</h2>
       <p className="mb-3 text-xs text-slate-500">
-        {loading ? 'Loading…' : `${active} active clinic${active === 1 ? '' : 's'} of ${clinics.length} total — this is the only live signal below.`}
+        {loading ? 'Loading…' : `${active} active clinic${active === 1 ? '' : 's'} of ${clinics.length} total. Maintenance mode blocks writes for staff/patients only — reads still work, and Super Admin/support access is never affected.`}
       </p>
+      {inMaintenance.length > 0 && (
+        <div className="mb-3 space-y-1.5">
+          {inMaintenance.map((clinic) => (
+            <div key={clinic.id} className="flex items-center justify-between gap-2 rounded-xl bg-amber-50 px-3 py-2">
+              <p className="text-xs font-semibold text-amber-800">{clinic.name} is in maintenance mode</p>
+              <button onClick={() => void toggleMaintenance(clinic.id, false)} disabled={busyId === clinic.id} className="rounded-lg border border-amber-300 px-2 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-60">Turn off</button>
+            </div>
+          ))}
+        </div>
+      )}
+      <details className="mb-3"><summary className="cursor-pointer text-xs font-semibold text-violet-700">Toggle maintenance mode for a clinic</summary>
+        <div className="mt-2 max-h-48 space-y-1.5 overflow-y-auto">
+          {clinics.filter((clinic) => !clinic.maintenanceMode).map((clinic) => (
+            <div key={clinic.id} className="flex items-center justify-between gap-2 rounded-xl border border-slate-100 px-3 py-1.5">
+              <p className="text-xs text-slate-600">{clinic.name}</p>
+              <button onClick={() => void toggleMaintenance(clinic.id, true)} disabled={busyId === clinic.id} className="rounded-lg border border-violet-200 px-2 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-50 disabled:opacity-60">Turn on</button>
+            </div>
+          ))}
+        </div>
+      </details>
       <div className="grid gap-3 sm:grid-cols-3">
         {[
           { label: 'API error rate', note: 'Not yet wired to a live signal' },
@@ -380,6 +411,7 @@ function PlatformInventorySection() {
           </div>
         ))}
       </div>
+      {error && <p role="alert" className="mt-3 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
     </section>
   );
 }

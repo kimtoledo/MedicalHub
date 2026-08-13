@@ -25,7 +25,7 @@ function auth(value: AuthorizationContext | null): AuthServices {
   };
 }
 function entitlements(): EntitlementService {
-  return { resolve: vi.fn(async (clinicId) => ({ clinic: { id: clinicId, name: 'Clinic', status: 'active' }, subscription: null, entitlements: Object.values(FeatureKey).map((featureKey) => ({ featureKey, isEnabled: true, source: 'override' as const, expiresAt: null })) })) };
+  return { resolve: vi.fn(async (clinicId) => ({ clinic: { id: clinicId, name: 'Clinic', status: 'active', maintenanceMode: false }, subscription: null, entitlements: Object.values(FeatureKey).map((featureKey) => ({ featureKey, isEnabled: true, source: 'override' as const, expiresAt: null })) })) };
 }
 function staff(overrides: Partial<ClinicStaffService> = {}): ClinicStaffService {
   return {

@@ -36,6 +36,13 @@ export const clinics = pgTable(
      */
     prefix: varchar('prefix', { length: 8 }).notNull().default(''),
     status: clinicStatusEnum('status').notNull().default('trial'),
+    /**
+     * Orthogonal to `status` — a temporary, Super-Admin-toggled lock during
+     * a maintenance window. Blocks writes only; reads still work, and
+     * Super Admin/support access is never affected. See requireClinicFeature
+     * in clinic/access.ts for the single enforcement chokepoint.
+     */
+    maintenanceMode: boolean('maintenance_mode').notNull().default(false),
     publicationStatus: publicationStatusEnum('publication_status').notNull().default('draft'),
     verificationStatus: clinicVerificationStatusEnum('verification_status').notNull().default('unverified'),
 

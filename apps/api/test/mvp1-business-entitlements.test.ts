@@ -65,7 +65,7 @@ function createAuth(context: AuthorizationContext): AuthServices {
 function createEntitlements(disabled: FeatureKey[] = []): EntitlementService {
   return {
     resolve: vi.fn(async (clinicId) => ({
-      clinic: { id: clinicId, name: 'Test Clinic', status: 'active' },
+      clinic: { id: clinicId, name: 'Test Clinic', status: 'active', maintenanceMode: false },
       subscription: null,
       entitlements: Object.values(FeatureKey).map((featureKey) => ({
         featureKey,

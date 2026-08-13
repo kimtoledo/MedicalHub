@@ -16,7 +16,7 @@ const ANALYSIS_ID = '66666666-6666-4666-8666-666666666666';
 
 function context(role: ClinicRole): AuthorizationContext { return { user: { id: '22222222-2222-4222-8222-222222222222', email: 'dentist@example.test', name: 'Dentist', platformRole: null }, strategies: ['clinicMember'], clinicMemberships: [{ clinicId: CLINIC_ID, branchId: null, role, dentistId: role === 'dentist' ? '77777777-7777-4777-8777-777777777777' : null }] }; }
 function auth(value: AuthorizationContext): AuthServices { return { handler: vi.fn(), getSession: vi.fn(async () => ({ session: { id: 'session', userId: value.user.id, expiresAt: new Date('2030-01-01') }, user: value.user })), resolveAuthorization: vi.fn(async () => value) }; }
-function entitlements(enabled = true): EntitlementService { return { resolve: vi.fn(async () => ({ clinic: { id: CLINIC_ID, name: 'Clinic', status: 'active' }, subscription: null, entitlements: [{ featureKey: FeatureKey.AI_IMAGING, isEnabled: enabled, source: 'override' as const, expiresAt: null }] })) }; }
+function entitlements(enabled = true): EntitlementService { return { resolve: vi.fn(async () => ({ clinic: { id: CLINIC_ID, name: 'Clinic', status: 'active', maintenanceMode: false }, subscription: null, entitlements: [{ featureKey: FeatureKey.AI_IMAGING, isEnabled: enabled, source: 'override' as const, expiresAt: null }] })) }; }
 function imaging(overrides: Record<string, unknown> = {}): AiImagingService { return { analyzeRadiograph: vi.fn(), list: vi.fn(async () => []), confirm: vi.fn(), oralHealthScore: vi.fn(async () => ({ score: null, createdAt: null })), ...overrides } as unknown as AiImagingService; }
 
 let app: FastifyInstance | undefined;

@@ -20,7 +20,7 @@ function auth(context: AuthorizationContext | null): AuthServices {
   return { handler: vi.fn(async () => new Response('{}')), getSession: vi.fn(async () => context ? { session: { id: '44444444-4444-4444-8444-444444444444', userId: context.user.id, expiresAt: new Date('2030-01-01') }, user: context.user } : null), resolveAuthorization: vi.fn(async () => context) };
 }
 function entitlements(): EntitlementService {
-  return { resolve: vi.fn(async (clinicId) => ({ clinic: { id: clinicId, name: 'Test Clinic', status: 'active' }, subscription: null, entitlements: Object.values(FeatureKey).map((featureKey) => ({ featureKey, isEnabled: true, source: 'override' as const, expiresAt: null })) })) };
+  return { resolve: vi.fn(async (clinicId) => ({ clinic: { id: clinicId, name: 'Test Clinic', status: 'active', maintenanceMode: false }, subscription: null, entitlements: Object.values(FeatureKey).map((featureKey) => ({ featureKey, isEnabled: true, source: 'override' as const, expiresAt: null })) })) };
 }
 function catalog(overrides: Partial<ClinicServiceCatalogService> = {}): ClinicServiceCatalogService {
   return {

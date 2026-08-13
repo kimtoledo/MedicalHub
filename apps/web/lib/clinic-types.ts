@@ -16,7 +16,7 @@ export type ClinicIdentity = {
 
 export type ClinicBranchContext = { id: string; name: string; isMain: boolean; city: string | null; province: string | null };
 export type ClinicShellContext = {
-  clinic: { id: string; name: string };
+  clinic: { id: string; name: string; maintenanceMode: boolean };
   branches: ClinicBranchContext[];
   initialBranchId: string | null;
   entitlements: Record<string, boolean>;

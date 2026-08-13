@@ -15,7 +15,7 @@ const LINK_ID = '55555555-5555-4555-8555-555555555555';
 
 function context(role: ClinicRole): AuthorizationContext { return { user: { id: '22222222-2222-4222-8222-222222222222', email: 'staff@example.test', name: 'Staff', platformRole: null }, strategies: ['clinicMember'], clinicMemberships: [{ clinicId: CLINIC_ID, branchId: null, role, dentistId: null }] }; }
 function auth(value: AuthorizationContext): AuthServices { return { handler: vi.fn(), getSession: vi.fn(async () => ({ session: { id: 'session', userId: value.user.id, expiresAt: new Date('2030-01-01') }, user: value.user })), resolveAuthorization: vi.fn(async () => value) }; }
-function entitlements(enabled = true): EntitlementService { return { resolve: vi.fn(async () => ({ clinic: { id: CLINIC_ID, name: 'Clinic', status: 'active' }, subscription: null, entitlements: [{ featureKey: FeatureKey.BILLING_PAYMENTS, isEnabled: enabled, source: 'override' as const, expiresAt: null }] })) }; }
+function entitlements(enabled = true): EntitlementService { return { resolve: vi.fn(async () => ({ clinic: { id: CLINIC_ID, name: 'Clinic', status: 'active', maintenanceMode: false }, subscription: null, entitlements: [{ featureKey: FeatureKey.BILLING_PAYMENTS, isEnabled: enabled, source: 'override' as const, expiresAt: null }] })) }; }
 function payments(overrides: Partial<PaymentService> = {}): PaymentService { return { createLink: vi.fn(), getLink: vi.fn(), listLinks: vi.fn(async () => []), cancelLink: vi.fn(), verifySignature: vi.fn(), webhook: vi.fn(), ...overrides } as unknown as PaymentService; }
 
 let app: FastifyInstance | undefined;

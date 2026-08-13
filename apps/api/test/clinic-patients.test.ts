@@ -10,7 +10,7 @@ const config: ApiConfig = { nodeEnv: 'test', host: '127.0.0.1', port: 3001, logL
 const clinicId = '00000000-0000-0000-0000-000000000101'; const otherClinicId = '00000000-0000-0000-0000-000000000201'; const patientId = '00000000-0000-0000-0000-000000000301';
 const member: AuthorizationContext = { user: { id: 'user', email: 'staff@test', name: 'Staff User', platformRole: null }, strategies: ['clinicMember'], clinicMemberships: [{ clinicId, branchId: null, role: 'clinic_admin', dentistId: null }] };
 const auth = (context: AuthorizationContext | null): AuthServices => ({ handler: vi.fn(async () => new Response()), getSession: vi.fn(async () => context ? { session: { id: 'session', userId: context.user.id, expiresAt: new Date('2030-01-01') }, user: context.user } : null), resolveAuthorization: vi.fn(async () => context) });
-const entitlements = (enabled = true): EntitlementService => ({ resolve: vi.fn(async (id) => ({ clinic: { id, name: 'Clinic', status: 'active' }, subscription: null, entitlements: [FeatureKey.PATIENTS_MANAGE, FeatureKey.CLINICAL_RECORDS].map((featureKey) => ({ featureKey, isEnabled: enabled, source: 'package' as const, expiresAt: null })) })) });
+const entitlements = (enabled = true, maintenanceMode = false): EntitlementService => ({ resolve: vi.fn(async (id) => ({ clinic: { id, name: 'Clinic', status: 'active', maintenanceMode }, subscription: null, entitlements: [FeatureKey.PATIENTS_MANAGE, FeatureKey.CLINICAL_RECORDS].map((featureKey) => ({ featureKey, isEnabled: enabled, source: 'package' as const, expiresAt: null })) })) });
 function patientsService(): ClinicPatientsService { return { list: vi.fn(async () => ({ items: [], pagination: { page: 1, pageSize: 20, total: 0, totalPages: 1 } })), create: vi.fn(async () => ({ id: patientId, patientNumber: 'SBD000041' })), detail: vi.fn(async () => ({ patient: { id: patientId }, appointments: [], medicalHistory: { current: null, versions: [] }, dentalHistory: { current: null, versions: [] } })), addMedicalHistory: vi.fn(async () => ({ id: patientId, createdAt: new Date() })), addDentalHistory: vi.fn(async () => ({ id: patientId, createdAt: new Date() })) }; }
 let app: FastifyInstance | undefined; afterEach(async () => { await app?.close(); app = undefined; });
 async function setup(context: AuthorizationContext | null, service: ClinicPatientsService, entitlement = entitlements()) { app = await buildApp({ config, checkDatabase: async () => undefined, logger: false, auth: auth(context), entitlements: entitlement, clinicPatients: service }); }
@@ -40,5 +40,24 @@ describe('clinic patient routes', () => {
     expect(second.json().data.items[0].clinicId).toBe(otherClinicId);
     expect(service.list).toHaveBeenNthCalledWith(1, clinicId, expect.objectContaining({ clinicId }));
     expect(service.list).toHaveBeenNthCalledWith(2, otherClinicId, expect.objectContaining({ clinicId: otherClinicId }));
+  });
+  it('blocks writes but not reads while a clinic is in maintenance mode', async () => {
+    const service = patientsService();
+    await setup(member, service, entitlements(true, true));
+    const read = await app!.inject({ method: 'GET', url: `/v1/clinic/patients?clinicId=${clinicId}` });
+    expect(read.statusCode).toBe(200);
+    expect(service.list).toHaveBeenCalled();
+    const write = await app!.inject({ method: 'POST', url: `/v1/clinic/patients?clinicId=${clinicId}`, payload: { firstName: 'Ana', lastName: 'Santos', phone: '09170000000' } });
+    expect(write.statusCode).toBe(423);
+    expect(write.json().error.code).toBe('CLINIC_MAINTENANCE_MODE');
+    expect(service.create).not.toHaveBeenCalled();
+  });
+  it('lets a Super Admin write even while a clinic is in maintenance mode', async () => {
+    const service = patientsService();
+    const superAdminMember: AuthorizationContext = { ...member, user: { ...member.user, platformRole: 'super_admin' } };
+    await setup(superAdminMember, service, entitlements(true, true));
+    const write = await app!.inject({ method: 'POST', url: `/v1/clinic/patients?clinicId=${clinicId}`, payload: { firstName: 'Ana', lastName: 'Santos', phone: '09170000000' } });
+    expect(write.statusCode).toBe(201);
+    expect(service.create).toHaveBeenCalled();
   });
 });

@@ -18,7 +18,7 @@ const dentistContext: AuthorizationContext = { user: { id: 'user', email: 'denti
 const receptionistContext: AuthorizationContext = { user: { id: 'user-2', email: 'reception@test', name: 'Receptionist', platformRole: null }, strategies: ['clinicMember'], clinicMemberships: [{ clinicId, branchId: null, role: 'receptionist', dentistId: null }] };
 
 function auth(context: AuthorizationContext | null): AuthServices { return { handler: vi.fn(async () => new Response()), getSession: vi.fn(async () => context ? { session: { id: 's', userId: context.user.id, expiresAt: new Date('2030-01-01') }, user: context.user } : null), resolveAuthorization: vi.fn(async () => context) }; }
-const entitlements: EntitlementService = { resolve: vi.fn(async () => ({ clinic: { id: clinicId, name: 'Clinic', status: 'active' }, subscription: null, entitlements: [{ featureKey: FeatureKey.TREATMENT_PLANS, isEnabled: true, source: 'package' as const, expiresAt: null }] })) };
+const entitlements: EntitlementService = { resolve: vi.fn(async () => ({ clinic: { id: clinicId, name: 'Clinic', status: 'active', maintenanceMode: false }, subscription: null, entitlements: [{ featureKey: FeatureKey.TREATMENT_PLANS, isEnabled: true, source: 'package' as const, expiresAt: null }] })) };
 function service(): ClinicTreatmentPlansService { return { listForPatient: vi.fn(async () => []), get: vi.fn(async () => null), create: vi.fn(async () => ({ id: planId })), updatePlan: vi.fn(async () => ({ id: planId, status: 'approved' as const })), updateItemStatus: vi.fn(async () => ({ id: 'item', status: 'accepted' as const })) }; }
 let app: FastifyInstance | undefined;
 afterEach(async () => { await app?.close(); app = undefined; });

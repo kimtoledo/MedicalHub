@@ -68,8 +68,8 @@ export async function getClinicShellContext(identity: ClinicIdentity): Promise<C
   ]);
   if (!contextResponse.ok || !entitlementResponse.ok) throw new Error('Clinic workspace context is unavailable');
   const contextPayload = await contextResponse.json() as { success: true; data: { clinic: { id: string; name: string }; branches: ClinicShellContext['branches'] } };
-  const entitlementPayload = await entitlementResponse.json() as { success: true; data: { subscription: { package: { name: string } } | null; entitlements: Array<{ featureKey: string; isEnabled: boolean }> } };
+  const entitlementPayload = await entitlementResponse.json() as { success: true; data: { clinic: { maintenanceMode: boolean }; subscription: { package: { name: string } } | null; entitlements: Array<{ featureKey: string; isEnabled: boolean }> } };
   const entitlements = Object.fromEntries(entitlementPayload.data.entitlements.map((item) => [item.featureKey, item.isEnabled]));
   const initialBranchId = contextPayload.data.branches.some((branch) => branch.id === identity.branchId) ? identity.branchId : contextPayload.data.branches[0]?.id ?? null;
-  return { ...contextPayload.data, initialBranchId, entitlements, packageName: entitlementPayload.data.subscription?.package.name ?? null };
+  return { ...contextPayload.data, clinic: { ...contextPayload.data.clinic, maintenanceMode: entitlementPayload.data.clinic.maintenanceMode }, initialBranchId, entitlements, packageName: entitlementPayload.data.subscription?.package.name ?? null };
 }
