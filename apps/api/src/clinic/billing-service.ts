@@ -3,6 +3,7 @@ import type { DB } from '@dentra/db';
 import { writeAudit } from '@dentra/db/audit';
 import { AuditAction } from '@dentra/shared';
 import { getEffectiveServicePrice } from './service-catalog-service.js';
+import type { IntegrationService } from '../integrations/service.js';
 import {
   branches,
   clinics,
@@ -213,7 +214,7 @@ export interface ClinicBillingService {
   listUnbilledEncounters(clinicId: string, callerBranchIds?: string[] | null): Promise<UnbilledEncounterItem[]>;
 }
 
-export function createClinicBillingService(db: DB): ClinicBillingService {
+export function createClinicBillingService(db: DB, integrations?: IntegrationService): ClinicBillingService {
   return {
     // ------------------------------------------------------------------
     // listInvoices
@@ -596,7 +597,7 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
         throw new BillingError('INVALID_AMOUNT', 'Payment amount must be greater than ₱0.00');
       }
 
-      await db.transaction(async (tx) => {
+      const becamePaid = await db.transaction(async (tx) => {
         // Lock the invoice row to serialise concurrent payment attempts.
         const [lockedInv] = await tx.execute<{ id: string; status: string; branch_id: string }>(
           sql`SELECT id, status, branch_id FROM invoices WHERE id = ${invoiceId} AND clinic_id = ${clinicId} FOR UPDATE`,
@@ -626,7 +627,8 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
         });
 
         const nextBalance = balance - paymentAmount;
-        await tx.update(invoices).set({ status: nextBalance <= 0.01 ? 'paid' : 'partially_paid', paidAt: nextBalance <= 0.01 ? new Date() : null }).where(eq(invoices.id, invoiceId));
+        const paidInFull = nextBalance <= 0.01;
+        await tx.update(invoices).set({ status: paidInFull ? 'paid' : 'partially_paid', paidAt: paidInFull ? new Date() : null }).where(eq(invoices.id, invoiceId));
 
         await writeAudit(tx, {
           clinicId,
@@ -636,7 +638,9 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
           entityId: invoiceId,
           metadata: JSON.stringify({ amountPhp, paymentMethod, paymentDate }),
         });
+        return paidInFull;
       });
+      if (becamePaid) integrations?.dispatchEvent(clinicId, 'invoice.paid', { invoiceId, amountPhp, paymentMethod });
     },
 
     async recordRefund(clinicId, invoiceId, { amountPhp, paymentMethod, transactionDate, reason, recordedBy, callerBranchIds }) {

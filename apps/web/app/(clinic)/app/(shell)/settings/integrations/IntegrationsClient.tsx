@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
   KeyRound, Webhook as WebhookIcon, Plus, Copy, Check, Ban,
-  AlertCircle, ChevronLeft, Loader2, CalendarClock, FileSpreadsheet,
+  AlertCircle, ChevronLeft, Loader2, CalendarClock, FileSpreadsheet, History,
 } from "lucide-react";
 import Link from "next/link";
 import type { ApiKey, Webhook } from "./page";
@@ -19,6 +19,23 @@ const EVENT_TYPES: { value: string; label: string }[] = [
   { value: "appointment.updated", label: "Appointment updated" },
   { value: "invoice.paid", label: "Invoice paid" },
 ];
+
+type Delivery = {
+  id: string;
+  eventType: string;
+  status: "queued" | "delivered" | "failed";
+  attempts: number;
+  responseStatus: number | null;
+  lastError: string | null;
+  deliveredAt: string | null;
+  createdAt: string;
+};
+
+const DELIVERY_STATUS_STYLES: Record<Delivery["status"], string> = {
+  queued: "bg-amber-100 text-amber-700",
+  delivered: "bg-emerald-100 text-emerald-700",
+  failed: "bg-red-100 text-red-700",
+};
 
 function formatManila(iso: string | null) {
   if (!iso) return "—";
@@ -142,11 +159,24 @@ function WebhooksSection({ webhooks: initial, clinicId }: { webhooks: Webhook[];
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newSecret, setNewSecret] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [loadingDeliveries, setLoadingDeliveries] = useState(false);
 
   async function reload() {
     const response = await fetch(`/api/clinic/${clinicId}/integrations/webhooks`, { credentials: "include" });
     const payload = await response.json();
     if (response.ok) setWebhooks(payload.data);
+  }
+
+  async function toggleDeliveries(webhookId: string) {
+    if (expandedId === webhookId) { setExpandedId(null); return; }
+    setExpandedId(webhookId);
+    setLoadingDeliveries(true);
+    const response = await fetch(`/api/clinic/${clinicId}/integrations/webhooks/${webhookId}/deliveries`, { credentials: "include" });
+    const payload = await response.json();
+    setLoadingDeliveries(false);
+    if (response.ok) setDeliveries(payload.data);
   }
 
   async function create(event: React.FormEvent) {
@@ -174,7 +204,8 @@ function WebhooksSection({ webhooks: initial, clinicId }: { webhooks: Webhook[];
 
   return (
     <section className="rounded-2xl border border-violet-100 bg-white p-5">
-      <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-violet-900"><WebhookIcon size={15} /> Webhooks</h2>
+      <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-violet-900"><WebhookIcon size={15} /> Webhooks</h2>
+      <p className="mb-3 text-xs text-slate-500">Deliveries are signed (<code className="font-mono">x-dentra-webhook-signature</code>), retried with backoff for up to 5 attempts, and their history is visible below each webhook.</p>
 
       <form onSubmit={(event) => { void create(event); }} className="mb-4 space-y-3 rounded-xl bg-violet-50 p-3">
         <input
@@ -214,19 +245,44 @@ function WebhooksSection({ webhooks: initial, clinicId }: { webhooks: Webhook[];
       ) : (
         <ul className="space-y-2">
           {webhooks.map((webhook) => (
-            <li key={webhook.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-violet-50 px-3 py-2">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-violet-900">{webhook.name}</p>
-                <p className="truncate text-xs text-violet-400">{webhook.endpointUrl}</p>
-                <p className="text-xs text-violet-400">{webhook.eventTypes.join(", ")} · Last delivery {formatManila(webhook.lastDeliveryAt)}</p>
-                {webhook.failureReason && <p className="text-xs text-red-600">{webhook.failureReason}</p>}
+            <li key={webhook.id} className="rounded-xl border border-violet-50 px-3 py-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-violet-900">{webhook.name}</p>
+                  <p className="truncate text-xs text-violet-400">{webhook.endpointUrl}</p>
+                  <p className="text-xs text-violet-400">{webhook.eventTypes.join(", ")} · Last delivery {formatManila(webhook.lastDeliveryAt)}</p>
+                  {webhook.failureReason && <p className="text-xs text-red-600">{webhook.failureReason}</p>}
+                </div>
+                <div className="flex flex-shrink-0 items-center gap-2">
+                  <button onClick={() => void toggleDeliveries(webhook.id)} className="flex items-center gap-1 rounded-lg border border-violet-200 px-2 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-50">
+                    <History size={12} /> Deliveries
+                  </button>
+                  {webhook.status === "active" ? (
+                    <button onClick={() => void disable(webhook.id)} className="flex items-center gap-1 rounded-lg border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50">
+                      <Ban size={12} /> Disable
+                    </button>
+                  ) : (
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">Disabled</span>
+                  )}
+                </div>
               </div>
-              {webhook.status === "active" ? (
-                <button onClick={() => void disable(webhook.id)} className="flex flex-shrink-0 items-center gap-1 rounded-lg border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50">
-                  <Ban size={12} /> Disable
-                </button>
-              ) : (
-                <span className="flex-shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">Disabled</span>
+              {expandedId === webhook.id && (
+                <div className="mt-2 rounded-lg bg-violet-50 p-2">
+                  {loadingDeliveries ? (
+                    <p className="text-xs text-violet-400">Loading…</p>
+                  ) : deliveries.length === 0 ? (
+                    <p className="text-xs text-violet-400">No deliveries yet.</p>
+                  ) : (
+                    <ul className="space-y-1">
+                      {deliveries.map((delivery) => (
+                        <li key={delivery.id} className="flex items-center justify-between gap-2 text-xs">
+                          <span className="text-violet-700">{delivery.eventType} · {formatManila(delivery.createdAt)} · {delivery.attempts} attempt{delivery.attempts === 1 ? "" : "s"}</span>
+                          <span className={`rounded-full px-2 py-0.5 font-semibold capitalize ${DELIVERY_STATUS_STYLES[delivery.status]}`}>{delivery.status}{delivery.responseStatus ? ` (${delivery.responseStatus})` : ""}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               )}
             </li>
           ))}

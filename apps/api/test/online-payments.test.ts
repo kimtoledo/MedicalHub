@@ -99,7 +99,7 @@ describe('payment webhook idempotency', () => {
   });
 
   it('treats a replayed event id as a no-op duplicate', async () => {
-    const service = payments({ webhook: vi.fn(async () => ({ duplicate: true })) });
+    const service = payments({ webhook: vi.fn(async () => ({ duplicate: true, status: null })) });
     await setup('clinic_owner', service);
     const response = await app!.inject({ method: 'POST', url: '/v1/public/payment-webhooks/gcash', headers: { 'x-dentra-payment-signature': 'sig' }, payload: { eventId: 'evt_123', eventType: 'payment', paymentId: 'pay_123', linkToken: 'a-valid-looking-token-value-1234567890', amountPhp: '500.00', success: true } });
     expect(response.statusCode).toBe(200);

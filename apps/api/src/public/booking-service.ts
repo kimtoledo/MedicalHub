@@ -13,6 +13,7 @@ import {
 import { AuditAction } from '@dentra/shared';
 import type { NotificationService } from '../notifications/service.js';
 import { bookingConfirmationNotification } from '../notifications/service.js';
+import type { IntegrationService } from '../integrations/service.js';
 
 const MANILA_OFFSET = '+08:00';
 const activeStatuses = ['pending', 'confirmed', 'checked_in', 'in_progress'] as const;
@@ -107,7 +108,7 @@ export function overlaps(slot: AvailableSlot, busy: Array<{ startsAt: Date; ends
   return busy.some((item) => item.startsAt.getTime() < end && (item.endsAt?.getTime() ?? Number.POSITIVE_INFINITY) > start);
 }
 
-export function createPublicBookingService(database: DB, notifications?: NotificationService): PublicBookingService {
+export function createPublicBookingService(database: DB, notifications?: NotificationService, integrations?: IntegrationService): PublicBookingService {
   const loadContext = async (input: AvailabilityInput) => {
     const [context] = await database.select({ clinicId: clinics.id, clinicName: clinics.name, branchId: branches.id, branchName: branches.name, operatingHours: branches.operatingHours, serviceId: services.id, serviceName: services.name, durationMinutes: services.durationMinutes })
       .from(clinics).innerJoin(branches, eq(branches.clinicId, clinics.id)).innerJoin(services, eq(services.clinicId, clinics.id))
@@ -130,7 +131,8 @@ export function createPublicBookingService(database: DB, notifications?: Notific
       const available = slots.filter((slot) => assignments.some((assignment) => !overlaps(slot, busy.filter((item) => item.dentistId === assignment.dentistId))));
       return { date: input.date, durationMinutes: minutes, slots: available };
     },
-    book: async (input, request) => database.transaction(async (transaction) => {
+    book: async (input, request) => {
+      const result = await database.transaction(async (transaction) => {
       const [context] = await transaction.select({ clinicId: clinics.id, clinicName: clinics.name, branchId: branches.id, branchName: branches.name, operatingHours: branches.operatingHours, serviceId: services.id, serviceName: services.name, durationMinutes: services.durationMinutes })
         .from(clinics).innerJoin(branches, eq(branches.clinicId, clinics.id)).innerJoin(services, eq(services.clinicId, clinics.id))
         .where(and(eq(clinics.slug, input.clinicSlug), eq(clinics.publicationStatus, 'published'), inArray(clinics.status, ['trial', 'active']), isNull(clinics.deletedAt), eq(branches.id, input.branchId), eq(branches.isActive, true), isNull(branches.deletedAt), eq(services.id, input.serviceId), eq(services.isActive, 'true'), eq(services.isBookable, true))).limit(1);
@@ -155,7 +157,11 @@ export function createPublicBookingService(database: DB, notifications?: Notific
         await notifications.enqueue(transaction as unknown as DB, bookingConfirmationNotification({ clinicId: context.clinicId, patientEmail: input.patientEmail, appointmentId: created.id, clinicName: context.clinicName, branchName: context.branchName, startsAt: requested.startsAt, dedupeKey: `booking-confirmation:${created.id}` }));
       }
       const stamp = input.date.replaceAll('-', '');
-      return { appointmentId: created.id, confirmationNumber: `DNT-${stamp}-${created.id.slice(0, 8).toUpperCase()}`, clinicName: context.clinicName, branchName: context.branchName, serviceName: context.serviceName, dentistName: `Dr. ${selected.firstName} ${selected.lastName}`, startsAt: requested.startsAt, endsAt: requested.endsAt, status: 'pending' as const };
-    }),
+      return { appointmentId: created.id, clinicId: context.clinicId, confirmationNumber: `DNT-${stamp}-${created.id.slice(0, 8).toUpperCase()}`, clinicName: context.clinicName, branchName: context.branchName, serviceName: context.serviceName, dentistName: `Dr. ${selected.firstName} ${selected.lastName}`, startsAt: requested.startsAt, endsAt: requested.endsAt, status: 'pending' as const };
+      });
+      integrations?.dispatchEvent(result.clinicId, 'appointment.created', { appointmentId: result.appointmentId, startsAt: result.startsAt });
+      const { clinicId: _clinicId, ...publicResult } = result;
+      return publicResult;
+    },
   };
 }

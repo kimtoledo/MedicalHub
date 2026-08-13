@@ -13,7 +13,7 @@ const WEBHOOK_ID = '55555555-5555-4555-8555-555555555555';
 
 function context(role: ClinicRole): AuthorizationContext { return { user: { id: '22222222-2222-4222-8222-222222222222', email: 'staff@example.test', name: 'Staff', platformRole: null }, strategies: ['clinicMember'], clinicMemberships: [{ clinicId: CLINIC_ID, branchId: null, role, dentistId: null }] }; }
 function auth(value: AuthorizationContext): AuthServices { return { handler: vi.fn(), getSession: vi.fn(async () => ({ session: { id: 'session', userId: value.user.id, expiresAt: new Date('2030-01-01') }, user: value.user })), resolveAuthorization: vi.fn(async () => value) }; }
-function integrations(overrides: Record<string, unknown> = {}): IntegrationService { return { listKeys: vi.fn(async () => []), createKey: vi.fn(), revokeKey: vi.fn(), authenticate: vi.fn(async () => null), listWebhooks: vi.fn(async () => []), createWebhook: vi.fn(), disableWebhook: vi.fn(), appointments: vi.fn(async () => []), ...overrides } as unknown as IntegrationService; }
+function integrations(overrides: Record<string, unknown> = {}): IntegrationService { return { listKeys: vi.fn(async () => []), createKey: vi.fn(), revokeKey: vi.fn(), authenticate: vi.fn(async () => null), listWebhooks: vi.fn(async () => []), createWebhook: vi.fn(), disableWebhook: vi.fn(), appointments: vi.fn(async () => []), dispatchEvent: vi.fn(), processDueDeliveries: vi.fn(async () => ({ processed: 0 })), listDeliveries: vi.fn(async () => []), ...overrides } as unknown as IntegrationService; }
 
 let app: FastifyInstance | undefined;
 afterEach(async () => { await app?.close(); app = undefined; });
@@ -66,6 +66,23 @@ describe('integrations settings UI API', () => {
     const response = await app!.inject({ method: 'POST', url: `/v1/clinic/${CLINIC_ID}/integrations/webhooks/${WEBHOOK_ID}/disable`, headers: { cookie: 'session=test' } });
     expect(response.statusCode).toBe(200);
     expect(service.disableWebhook).toHaveBeenCalled();
+  });
+
+  it('lists recent delivery attempts for a webhook', async () => {
+    const service = integrations({ listDeliveries: vi.fn(async () => [{ id: 'd1', eventType: 'invoice.paid', status: 'delivered' as const, attempts: 1, responseStatus: 200, lastError: null, deliveredAt: new Date('2026-08-13'), createdAt: new Date('2026-08-13') }]) });
+    await setup('clinic_owner', service);
+    const response = await app!.inject({ method: 'GET', url: `/v1/clinic/${CLINIC_ID}/integrations/webhooks/${WEBHOOK_ID}/deliveries`, headers: { cookie: 'session=test' } });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().data).toHaveLength(1);
+    expect(service.listDeliveries).toHaveBeenCalledWith(CLINIC_ID, WEBHOOK_ID);
+  });
+
+  it('denies delivery history access for a dentist role', async () => {
+    const service = integrations();
+    await setup('dentist', service);
+    const response = await app!.inject({ method: 'GET', url: `/v1/clinic/${CLINIC_ID}/integrations/webhooks/${WEBHOOK_ID}/deliveries`, headers: { cookie: 'session=test' } });
+    expect(response.statusCode).toBe(403);
+    expect(service.listDeliveries).not.toHaveBeenCalled();
   });
 
   it('rejects a partner request without an API key', async () => {

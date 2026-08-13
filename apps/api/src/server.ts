@@ -72,7 +72,8 @@ const adminClinicCreation = createAdminClinicCreationService(database.db);
 const adminClinicBranchCreation = createAdminClinicBranchCreationService(database.db);
 const adminClinicDetails = createAdminClinicDetailService(database.db);
 const adminClinicStatus = createAdminClinicStatusService(database.db);
-const clinicBilling = createClinicBillingService(database.db);
+const integrations = createIntegrationService(database.db);
+const clinicBilling = createClinicBillingService(database.db, integrations);
 const clinicServiceList = createClinicServiceListService(database.db);
 const clinicPrescription = createClinicPrescriptionService(database.db);
 const clinicFiles = createClinicFilesService(database.db);
@@ -102,15 +103,14 @@ const verification = createVerificationService(database.db);
 const reviews = createReviewService(database.db);
 const organizations = createOrganizationService(database.db);
 const clinicAnalytics = createClinicAnalyticsService(database.db);
-const payments = createPaymentService(database.db);
+const payments = createPaymentService(database.db, undefined, integrations);
 const customDomains = createCustomDomainService(database.db);
-const integrations = createIntegrationService(database.db);
 const platformOperations = createPlatformOperationsService(database.db);
 const aiImaging = createAiImagingService(database.db);
 const kiosk = createKioskService(database.db, entitlements);
 const profiles = createAccountProfileService(database.db);
 const dentistProfiles = createDentistProfileService(database.db);
-const publicBooking = createPublicBookingService(database.db, notifications);
+const publicBooking = createPublicBookingService(database.db, notifications, integrations);
 const clinicSettings = createClinicSettingsService(database.db);
 const clinicWorkspace = createClinicWorkspaceService(database.db);
 const clinicPatients = createClinicPatientsService(database.db);
@@ -209,6 +209,9 @@ process.once('SIGTERM', () => void shutdown('SIGTERM'));
 
 try {
   await app.listen({ host: config.host, port: config.port });
+  // Recover any webhook deliveries left queued past their retry time by an
+  // earlier process restart — in-process retry timers don't survive a restart.
+  integrations.processDueDeliveries().catch((error: unknown) => app.log.error({ err: error }, 'Webhook delivery sweep failed'));
 } catch (error) {
   app.log.error({ err: error }, 'API failed to start');
   await app.close();

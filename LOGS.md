@@ -33,6 +33,15 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### 🔄 Real webhook delivery (integrations API)
+- `appointment.created` (public booking) and `invoice.paid` (manual clinic payment and online-payment webhook success) now actually dispatch to every active, subscribed clinic webhook — previously nothing ever called a registered webhook endpoint
+- Deliveries are HMAC-SHA256 signed (`x-dentra-webhook-signature`), sent with a 5s timeout, and retried with exponential backoff (capped at 60 min) for up to 5 attempts before being marked permanently failed
+- Fixed a signing-secret design gap found while building this: the secret was only ever one-way hashed, which is useless for an outbound *sender* needing to produce a signature. Added an encrypted-at-rest `secretCiphertext` column (AES-256-GCM); webhooks created before the migration fail delivery with an explicit "recreate this webhook" reason instead of crashing
+- No cron/job-queue exists in this codebase, so retries use in-process timers plus a boot-time sweep (`processDueDeliveries`) to recover anything left queued across a restart — documented as a real (not silent) limitation
+- Delivery history (event, attempts, response status, last error) is queryable per webhook and shown in the settings UI behind a "Deliveries" toggle
+- Verified 350 passing API tests (11 new: crypto round-trip/tamper-detection, backoff, delivery-history route/auth), 5 passing web tests, repository-wide TypeScript checks, production web/API builds, applied DB migration, and clean diff validation
+- Remaining in `mvp3/09-integrations-api.md`: `appointment.updated`/refund events, provider connectors, calendar/accounting export formats, read-write partner resources
+
 ### 🔄 Real tenant export generation (platform operations)
 - Replaced the manual "mark export ready" honesty placeholder with a real `generateExport`: gathers ~24 clinic-scoped tables (patients, appointments, encounters, treatment plans/records, invoices, prescriptions, odontogram, file metadata, reviews, HMO, inventory) into a structured JSON document with an explicit manifest of what's included/excluded, and uploads it to the same object storage bucket clinical files already use
 - Added a signed-token download flow reusing the exact HMAC scheme from clinical file downloads — a Super Admin or the requesting clinic's own admin can mint a short-lived download link; the byte-serving route is token-gated and session-free, mirroring `clinic-files.ts`
