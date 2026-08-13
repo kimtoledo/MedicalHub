@@ -23,7 +23,9 @@ Patients looking for a dentist or clinic need a searchable, location-aware direc
 
 - Added optional branch latitude/longitude and validated geospatial distance filters (`latitude`, `longitude`, `maxDistanceKm`) to the public clinic directory.
 - Results expose distance metadata and remain bounded by the published-clinic/public-dentist visibility boundary.
-- Remaining: browser “near me” UI, open-slot computation, ranking weights, and Schema.org markup on directory/profile pages.
+- **Open-slot computation and ranking weights (this update):** clinic and dentist directory results now carry `hasOpenSlotSoon`, computed in bulk (batched branch/assignment/appointment queries, no N+1) by checking the next 7 days of each branch's parsed operating hours against its assigned dentists' existing appointments — reusing the exact slot-generation/overlap logic the real booking engine uses (`parseHours`/`generatedSlots`/`overlaps`, exported from `booking-service.ts` for this), so the badge reflects genuine availability rather than a guess. A result with none is labeled “No open slots this week” per the task's own requirement.
+- Clinic ranking now applies verification tier (`verified` > `pending` > `unverified`) at the SQL level — correct across pages, not just within one — with profile-completeness and open-slot status as an in-page refinement, mirroring the pre-existing (and equally page-scoped) distance-sort behavior; when a location is given, distance stays primary and rank becomes the tie-break.
+- Remaining: browser “near me” geolocation UI and Schema.org markup on directory/profile pages.
 
 ---
 

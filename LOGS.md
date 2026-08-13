@@ -33,6 +33,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### 🔄 Open-slot computation and ranking weights (search discovery)
+- Clinic and dentist directory results now carry a real `hasOpenSlotSoon` flag, computed in bulk (batched queries, no N+1) by checking each branch's parsed operating hours against its assigned dentists' actual appointments over the next 7 days — reusing the exact slot-generation/overlap logic the booking engine itself uses, so the badge isn't a guess
+- Clinic search ranking now applies verification tier at the SQL level (correct across pages) with profile-completeness/open-slot as an in-page refinement, mirroring the existing page-scoped distance-sort convention
+- Verified against the real dev DB directly (smoke-tested, not just typechecked) before committing, since this introduced meaningfully new SQL (CASE-based ordering, new joins)
+- Verified 374 passing API tests, 5 passing web tests, repository-wide TypeScript checks, and production web/API builds
+- Remaining in `mvp3/02-search-discovery.md`: browser "near me" geolocation UI and Schema.org markup
+
 ### ✅ Integrations and Partner API — fully done
 - Added the final "Remaining" item: `appointments.write` scope and `POST /v1/partner/appointments`, which resolves the key's clinic to its public slug and delegates to the same booking engine the public website's own widget uses (same slot-conflict/operating-hours checks, no duplicated logic), rate-limited separately (30/min) from the read endpoint
 - Every bullet in `mvp3/09-integrations-api.md`'s original "Done looks like" is now delivered: provider connectors, calendar export, accounting export, webhooks (create/update/paid/refunded), read-write partner API, key management, rate limiting/logging

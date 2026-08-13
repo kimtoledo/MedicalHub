@@ -55,7 +55,7 @@ export class PublicBookingError extends Error {
   constructor(public readonly code: string, message: string, public readonly statusCode = 400) { super(message); }
 }
 
-function parseHours(value: string | null, date: string): [number, number] | null {
+export function parseHours(value: string | null, date: string): [number, number] | null {
   const day = dayNames[new Date(`${date}T12:00:00${MANILA_OFFSET}`).getUTCDay()];
   let label: string | undefined;
   if (value) {
@@ -93,7 +93,7 @@ function duration(value: string): number {
   return Number.isFinite(parsed) && parsed >= 15 && parsed <= 240 ? parsed : 30;
 }
 
-function generatedSlots(hours: [number, number] | null, date: string, durationMinutes: number): AvailableSlot[] {
+export function generatedSlots(hours: [number, number] | null, date: string, durationMinutes: number): AvailableSlot[] {
   if (!hours) return [];
   const result: AvailableSlot[] = [];
   for (let cursor = hours[0]; cursor + durationMinutes <= hours[1]; cursor += 30) {
