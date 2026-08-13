@@ -1,6 +1,6 @@
 # Platform Operations Maturity
 
-> **Status:** 🔵 Active — support and export request baseline delivered
+> **Status:** 🔵 Active — support/export baseline and real export generation delivered
 
 ---
 
@@ -26,7 +26,12 @@ As Dentra.ph scales, the platform team needs proper tooling to support clinics, 
 - Added written-justification support-access requests with Super Admin approve/deny decisions, 30-minute approval expiry, and immutable audit events.
 - Added tenant export/offboarding request metadata with clinic-admin submission and Super Admin processing state controls; no export artifact or deletion runs silently.
 - Added a protected platform operations clinic inventory endpoint to support future health/retention dashboards.
-- Remaining: scoped support session enforcement, actual JSON/CSV export workers, retention/anonymization jobs, restore drills, alerting, feature rollouts, and maintenance mode.
+- **Real export generation (this update):** `generateExport` now gathers ~24 clinic-scoped tables (patients, appointments, encounters, treatment plans/records, invoices and their line items/payments/transactions, prescriptions, odontogram events, clinical file metadata, reviews, HMO payers/memberships/claims, and inventory), assembles a structured JSON document with an explicit manifest of what's included, and uploads it to the same object-storage bucket clinical files already use (`exports/{clinicId}/{requestId}.json`).
+- Uploaded file *binaries*, staff/user accounts, and audit logs are explicitly excluded from the export document (listed in the document's own `excludedFromExport` field) rather than silently omitted — file binaries remain retrievable individually via the existing per-file signed URLs.
+- Added a signed-token download flow reusing the exact HMAC token scheme from clinical file downloads: a Super Admin or the requesting clinic's own admin can mint a short-lived download URL (`GET .../exports/:requestId/download-url`), and the actual bytes are served from a token-gated, session-free `GET .../exports/:requestId/download` route — mirroring `clinic-files.ts` exactly.
+- `markExport` no longer accepts `ready` as a manually-set status — only `generateExport` can reach `ready`, since it's the one that actually produced an artifact; manual `processing`/`failed`/`cancelled` transitions remain for cases requiring human override.
+- Minting a download link and generating an export are both audited (`TENANT_EXPORT_GENERATED`, `TENANT_EXPORT_DOWNLOAD_LINK_ISSUED`) given the sensitivity of a full clinic-data extraction capability.
+- Remaining: scoped support session enforcement, retention/anonymization jobs, actual deletion/offboarding execution, restore drills, alerting, feature rollouts, and maintenance mode.
 
 ---
 

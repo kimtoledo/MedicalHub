@@ -19,6 +19,7 @@ export type TenantExportRequest = {
   completedAt: string | null;
   retentionUntil: string | null;
   failureReason: string | null;
+  artifactReference: string | null;
   createdAt: string;
 };
 

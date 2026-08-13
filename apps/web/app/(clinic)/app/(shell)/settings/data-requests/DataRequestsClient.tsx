@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import {
-  LifeBuoy, DatabaseBackup, Loader2, AlertCircle, ChevronLeft,
+  LifeBuoy, DatabaseBackup, Loader2, AlertCircle, ChevronLeft, Download,
 } from "lucide-react";
 import Link from "next/link";
 import type { SupportAccessRequest, TenantExportRequest } from "./page";
@@ -34,6 +34,7 @@ export default function DataRequestsClient({ supportAccess: initialSupport, expo
   const [reason, setReason] = useState("");
   const [submittingSupport, setSubmittingSupport] = useState(false);
   const [submittingExport, setSubmittingExport] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function reload() {
@@ -67,6 +68,15 @@ export default function DataRequestsClient({ supportAccess: initialSupport, expo
     setSubmittingExport(false);
     if (!response.ok) { setError(payload.error?.message ?? "Unable to submit this request."); return; }
     await reload();
+  }
+
+  async function download(requestId: string) {
+    setDownloadingId(requestId); setError(null);
+    const response = await fetch(`/api/clinic/${clinicId}/operations/exports/${requestId}/download-url`, { credentials: "include" });
+    const payload = await response.json();
+    setDownloadingId(null);
+    if (!response.ok) { setError(payload.error?.message ?? "Unable to get a download link."); return; }
+    window.location.href = payload.data.downloadUrl;
   }
 
   return (
@@ -123,7 +133,7 @@ export default function DataRequestsClient({ supportAccess: initialSupport, expo
 
       <section className="rounded-2xl border border-violet-100 bg-white p-5">
         <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-violet-900"><DatabaseBackup size={15} /> Export your clinic&apos;s data</h2>
-        <p className="mb-3 text-xs text-slate-500">Request a structured export of your clinic&apos;s records. This is a manual process handled by our platform team — no file is generated automatically yet.</p>
+        <p className="mb-3 text-xs text-slate-500">Request a structured JSON export of your clinic&apos;s records. Our platform team reviews and generates each export; uploaded file binaries (radiographs/photos) and staff accounts are not included.</p>
         <button onClick={() => void submitExport()} disabled={submittingExport} className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
           {submittingExport ? <Loader2 size={14} className="animate-spin" /> : null} {submittingExport ? "Submitting…" : "Request export"}
         </button>
@@ -138,7 +148,14 @@ export default function DataRequestsClient({ supportAccess: initialSupport, expo
                   {request.retentionUntil && <p className="text-xs text-slate-400">Retention until {formatManila(request.retentionUntil)}</p>}
                   {request.failureReason && <p className="text-xs text-red-600">{request.failureReason}</p>}
                 </div>
-                <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${EXPORT_STATUS_STYLES[request.status]}`}>{request.status}</span>
+                <div className="flex flex-shrink-0 items-center gap-2">
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${EXPORT_STATUS_STYLES[request.status]}`}>{request.status}</span>
+                  {request.status === "ready" && request.artifactReference && (
+                    <button onClick={() => void download(request.id)} disabled={downloadingId === request.id} className="flex items-center gap-1 rounded-lg bg-violet-600 px-2 py-1 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
+                      {downloadingId === request.id ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />} Download
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>

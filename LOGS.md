@@ -33,6 +33,15 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### 🔄 Real tenant export generation (platform operations)
+- Replaced the manual "mark export ready" honesty placeholder with a real `generateExport`: gathers ~24 clinic-scoped tables (patients, appointments, encounters, treatment plans/records, invoices, prescriptions, odontogram, file metadata, reviews, HMO, inventory) into a structured JSON document with an explicit manifest of what's included/excluded, and uploads it to the same object storage bucket clinical files already use
+- Added a signed-token download flow reusing the exact HMAC scheme from clinical file downloads — a Super Admin or the requesting clinic's own admin can mint a short-lived download link; the byte-serving route is token-gated and session-free, mirroring `clinic-files.ts`
+- `markExport` can no longer manually set `ready` — only real generation can reach that state — while `processing`/`failed`/`cancelled` remain manual overrides
+- Both the admin console and the clinic's own Support & Data Requests page now show a real "Generate export" / "Download" flow instead of a status-only tracker
+- File binaries, staff accounts, and audit logs remain explicitly out of scope (documented in the export's own manifest, and in the UI copy) — this is a structured-data export, not a full tenant backup
+- Verified 341 passing API tests (8 new), 5 passing web tests, repository-wide TypeScript checks, production web/API builds, and clean diff validation
+- Remaining in `mvp3/11-platform-operations.md`: scoped support-session enforcement, retention/anonymization jobs, actual offboarding deletion, restore drills, alerting, feature rollouts, maintenance mode
+
 ### ✅ AI imaging and oral health score UI
 - Added an "AI Imaging" tab on the patient record page, gated to clinic_owner/clinic_admin/dentist roles with the `ai.imaging` entitlement, matching the backend's own gate
 - The tab runs analysis on uploaded radiographs, shows the current oral health score with a trend vs. the previous score plus recent-score history, and lists analysis history with queued/completed/failed states

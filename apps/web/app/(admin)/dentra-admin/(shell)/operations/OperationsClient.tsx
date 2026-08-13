@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   ShieldAlert, DatabaseBackup, Building2, AlertCircle, Loader2,
-  Check, X, Clock3,
+  Check, X, Clock3, Play, Download,
 } from 'lucide-react';
 
 type SupportAccessRequest = {
@@ -29,6 +29,7 @@ type TenantExportRequest = {
   completedAt: string | null;
   retentionUntil: string | null;
   failureReason: string | null;
+  artifactReference: string | null;
   createdAt: string;
 };
 
@@ -142,7 +143,7 @@ function TenantExportSection() {
 
   useEffect(() => { void load(); }, [load]);
 
-  async function mark(id: string, status: 'processing' | 'ready' | 'failed' | 'cancelled') {
+  async function mark(id: string, status: 'processing' | 'failed' | 'cancelled') {
     setBusyId(id);
     const response = await fetch(`/api/admin/operations/exports/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
     setBusyId(null);
@@ -150,10 +151,29 @@ function TenantExportSection() {
     await load();
   }
 
+  async function generate(id: string) {
+    setBusyId(id);
+    setError(null);
+    const response = await fetch(`/api/admin/operations/exports/${id}/generate`, { method: 'POST' });
+    setBusyId(null);
+    if (!response.ok) { const payload = await response.json().catch(() => null); setError(payload?.error?.message ?? 'Unable to generate this export.'); return; }
+    await load();
+  }
+
+  async function download(id: string) {
+    setBusyId(id);
+    setError(null);
+    const response = await fetch(`/api/admin/operations/exports/${id}/download-url`);
+    const payload = await response.json();
+    setBusyId(null);
+    if (!response.ok) { setError(payload.error?.message ?? 'Unable to get a download link.'); return; }
+    window.location.href = payload.data.downloadUrl;
+  }
+
   return (
     <section className="rounded-2xl border border-violet-100 bg-white p-5">
       <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-violet-900"><DatabaseBackup size={15} /> Tenant export / offboarding requests</h2>
-      <p className="mb-3 text-xs text-slate-500">No automated export or deletion worker exists yet — these statuses track manual fulfillment. Marking a request &quot;ready&quot; does not generate or send a file on its own.</p>
+      <p className="mb-3 text-xs text-slate-500">Generating an export produces a real, structured JSON snapshot of the clinic&apos;s records. Uploaded file binaries, staff accounts, and audit logs are not included — see the export document&apos;s own manifest for the exact scope. No deletion/offboarding automation exists yet.</p>
       {loading ? (
         <p className="text-xs text-slate-400">Loading…</p>
       ) : requests.length === 0 ? (
@@ -176,10 +196,17 @@ function TenantExportSection() {
                       {request.status === 'requested' && (
                         <button onClick={() => void mark(request.id, 'processing')} disabled={busyId === request.id} className="rounded-lg border border-violet-200 px-2 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-50 disabled:opacity-60">Start processing</button>
                       )}
-                      <button onClick={() => void mark(request.id, 'ready')} disabled={busyId === request.id} className="rounded-lg bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60">Mark ready</button>
+                      <button onClick={() => void generate(request.id)} disabled={busyId === request.id} className="flex items-center gap-1 rounded-lg bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60">
+                        {busyId === request.id ? <Loader2 size={11} className="animate-spin" /> : <Play size={11} />} Generate export
+                      </button>
                       <button onClick={() => void mark(request.id, 'failed')} disabled={busyId === request.id} className="rounded-lg border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60">Mark failed</button>
                       <button onClick={() => void mark(request.id, 'cancelled')} disabled={busyId === request.id} className="rounded-lg border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-50 disabled:opacity-60">Cancel</button>
                     </>
+                  )}
+                  {request.status === 'ready' && request.artifactReference && (
+                    <button onClick={() => void download(request.id)} disabled={busyId === request.id} className="flex items-center gap-1 rounded-lg bg-violet-600 px-2 py-1 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
+                      {busyId === request.id ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />} Download
+                    </button>
                   )}
                 </div>
               </div>

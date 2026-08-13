@@ -310,6 +310,8 @@ export const AuditAction = {
   SUPPORT_ACCESS_REQUESTED: 'support_access.requested',
   SUPPORT_ACCESS_REVIEWED: 'support_access.reviewed',
   TENANT_EXPORT_REQUESTED: 'tenant_export.requested',
+  TENANT_EXPORT_GENERATED: 'tenant_export.generated',
+  TENANT_EXPORT_DOWNLOAD_LINK_ISSUED: 'tenant_export.download_link_issued',
 
   RECALL_RULE_CREATED: 'recall_rule.created',
   RECALL_RULE_UPDATED: 'recall_rule.updated',
