@@ -16,6 +16,7 @@ import {
   Stethoscope,
   BadgeCheck,
   MessagesSquare,
+  ShieldAlert,
 } from "lucide-react";
 import { signOutAdmin } from "@/lib/admin-auth-client";
 import type { AdminIdentity } from "@/lib/admin-types";
@@ -29,6 +30,7 @@ export const navItems = [
   { label: "Reviews",          href: "/dentra-admin/reviews",      icon: MessagesSquare },
   { label: "Packages & Plans", href: "/dentra-admin/packages",     icon: Package },
   { label: "Subscriptions",    href: "/dentra-admin/subscriptions",icon: CreditCard },
+  { label: "Operations",       href: "/dentra-admin/operations",   icon: ShieldAlert },
   { label: "Audit Log",        href: "/dentra-admin/audit",        icon: ScrollText },
   { label: "Settings",         href: "/dentra-admin/settings",     icon: Settings },
 ];

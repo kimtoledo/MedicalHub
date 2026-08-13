@@ -1,6 +1,7 @@
+import { alias } from 'drizzle-orm/pg-core';
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
-import { clinics, supportAccessRequests, tenantExportRequests } from '@dentra/db/schema';
+import { clinics, supportAccessRequests, tenantExportRequests, users } from '@dentra/db/schema';
 import { writeAudit } from '@dentra/db/audit';
 import { AuditAction } from '@dentra/shared';
 
@@ -16,7 +17,7 @@ export function createPlatformOperationsService(database: DB) {
       await writeAudit(database, { actorId: actor.id, actorEmail: actor.email, clinicId, entityType: 'support_access_request', entityId: row.id, action: AuditAction.SUPPORT_ACCESS_REQUESTED, metadata: JSON.stringify({}), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
       return row;
     },
-    listSupportAccess: async (clinicId?: string) => database.select().from(supportAccessRequests).where(clinicId ? eq(supportAccessRequests.clinicId, clinicId) : undefined).orderBy(desc(supportAccessRequests.createdAt)),
+    listSupportAccess: async (clinicId?: string) => { const reviewer = alias(users, 'reviewer'); return database.select({ id: supportAccessRequests.id, clinicId: supportAccessRequests.clinicId, clinicName: clinics.name, requestedBy: supportAccessRequests.requestedBy, requestedByEmail: users.email, reason: supportAccessRequests.reason, status: supportAccessRequests.status, reviewedBy: supportAccessRequests.reviewedBy, reviewedByEmail: reviewer.email, reviewedAt: supportAccessRequests.reviewedAt, expiresAt: supportAccessRequests.expiresAt, usedAt: supportAccessRequests.usedAt, createdAt: supportAccessRequests.createdAt }).from(supportAccessRequests).innerJoin(clinics, eq(supportAccessRequests.clinicId, clinics.id)).innerJoin(users, eq(supportAccessRequests.requestedBy, users.id)).leftJoin(reviewer, eq(supportAccessRequests.reviewedBy, reviewer.id)).where(clinicId ? eq(supportAccessRequests.clinicId, clinicId) : undefined).orderBy(desc(supportAccessRequests.createdAt)); },
     reviewSupportAccess: async (requestId: string, status: 'approved' | 'denied', actor: OperationsActor) => database.transaction(async (tx) => {
       const [current] = await tx.select().from(supportAccessRequests).where(and(eq(supportAccessRequests.id, requestId), eq(supportAccessRequests.status, 'pending'))).limit(1).for('update');
       if (!current) throw new OperationsError('REQUEST_NOT_FOUND', 'Pending support request not found', 404);
@@ -31,7 +32,7 @@ export function createPlatformOperationsService(database: DB) {
       await writeAudit(database, { actorId: actor.id, actorEmail: actor.email, clinicId, entityType: 'tenant_export_request', entityId: row.id, action: AuditAction.TENANT_EXPORT_REQUESTED, metadata: JSON.stringify({}), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
       return row;
     },
-    listExports: async (clinicId?: string) => database.select().from(tenantExportRequests).where(clinicId ? eq(tenantExportRequests.clinicId, clinicId) : undefined).orderBy(desc(tenantExportRequests.createdAt)),
+    listExports: async (clinicId?: string) => database.select({ id: tenantExportRequests.id, clinicId: tenantExportRequests.clinicId, clinicName: clinics.name, requestedBy: tenantExportRequests.requestedBy, requestedByEmail: users.email, status: tenantExportRequests.status, requestedAt: tenantExportRequests.requestedAt, completedAt: tenantExportRequests.completedAt, retentionUntil: tenantExportRequests.retentionUntil, failureReason: tenantExportRequests.failureReason, artifactReference: tenantExportRequests.artifactReference, createdAt: tenantExportRequests.createdAt }).from(tenantExportRequests).innerJoin(clinics, eq(tenantExportRequests.clinicId, clinics.id)).innerJoin(users, eq(tenantExportRequests.requestedBy, users.id)).where(clinicId ? eq(tenantExportRequests.clinicId, clinicId) : undefined).orderBy(desc(tenantExportRequests.createdAt)),
     markExport: async (requestId: string, status: 'processing' | 'ready' | 'failed' | 'cancelled', actor: OperationsActor, failureReason?: string) => database.transaction(async (tx) => {
       const [current] = await tx.select().from(tenantExportRequests).where(and(eq(tenantExportRequests.id, requestId), inArray(tenantExportRequests.status, ['requested', 'processing']))).limit(1).for('update');
       if (!current) throw new OperationsError('EXPORT_NOT_FOUND', 'Open export request not found', 404);

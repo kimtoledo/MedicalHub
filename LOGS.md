@@ -33,6 +33,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Platform operations console
+- Added `/dentra-admin/operations`: Super Admin queues for support-access requests (justification, approve/deny, 30-minute window) and tenant export/offboarding requests (retention date, processing/ready/failed/cancelled), enriched with clinic name and requester/reviewer email
+- Added `/app/settings/data-requests`: the clinic-side counterpart to submit support/export requests and see their own status, backed by two new `GET` list endpoints scoped to the requesting clinic
+- Both UIs are explicit about what is not yet real: marking an export "ready" doesn't generate a file, the approval window isn't enforced at the data layer yet, and platform inventory shows only the one live signal (active clinic count) rather than fabricating error-rate/storage metrics
+- No retention/deletion action was added since no backend route exists to call yet
+- Verified 324 passing API tests (9 new), 5 passing web tests, repository-wide TypeScript checks, production web/API builds, and clean diff validation
+
 ### ✅ Integrations and API settings UI
 - Added `/app/settings/integrations`: create scoped API keys with a one-time secret reveal, list keys with last-used time, and revoke them
 - Added webhook subscription management (endpoint, event types) with a one-time signing-secret reveal, delivery/failure metadata, and a new disable action backed by a new `POST .../webhooks/:webhookId/disable` endpoint

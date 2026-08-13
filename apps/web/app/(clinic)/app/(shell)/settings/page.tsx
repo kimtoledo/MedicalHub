@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Archive, BadgeCheck, BarChart3, BellRing, CreditCard, DollarSign, Globe, MessageSquare, Plug, Settings, Shield } from "lucide-react";
+import { Archive, BadgeCheck, BarChart3, BellRing, CreditCard, DollarSign, Globe, LifeBuoy, MessageSquare, Plug, Settings, Shield } from "lucide-react";
 import ClinicMicrositeSettings from "@/components/app/ClinicMicrositeSettings";
 import AppPageError from "@/components/app/AppPageError";
 import { getClinicSession } from "@/lib/clinic-session";
@@ -67,6 +67,12 @@ const operationalSettings = [
     icon: Plug,
     label: "Integrations & API",
     description: "Manage scoped API keys and webhook subscriptions.",
+  },
+  {
+    href: "/app/settings/data-requests",
+    icon: LifeBuoy,
+    label: "Support & Data Requests",
+    description: "Ask support for help or request a full data export.",
   },
 ];
 
