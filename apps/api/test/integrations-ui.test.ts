@@ -4,20 +4,24 @@ import { buildApp } from '../src/app.js';
 import type { AuthServices, AuthorizationContext, ClinicRole } from '../src/auth/types.js';
 import type { IntegrationService } from '../src/integrations/service.js';
 import { IntegrationError } from '../src/integrations/service.js';
+import type { PublicBookingService } from '../src/public/booking-service.js';
+import { PublicBookingError } from '../src/public/booking-service.js';
 import type { ApiConfig } from '../src/config.js';
 
 const config: ApiConfig = { nodeEnv: 'test', host: '127.0.0.1', port: 3001, logLevel: 'silent', corsOrigins: ['http://localhost:5001'], authSecret: 'test-secret-that-is-at-least-32-characters', authBaseUrl: 'http://localhost:3001' };
 const CLINIC_ID = '33333333-3333-4333-8333-333333333333';
 const KEY_ID = '44444444-4444-4444-8444-444444444444';
 const WEBHOOK_ID = '55555555-5555-4555-8555-555555555555';
+const BOOKING_INPUT = { branchId: '66666666-6666-4666-8666-666666666666', serviceId: '77777777-7777-4777-8777-777777777777', date: '2026-08-20', startsAt: '2026-08-20T09:00:00+08:00', patientFirstName: 'Ana', patientLastName: 'Cruz', patientPhone: '+639171234567', chiefComplaint: 'Toothache' };
 
 function context(role: ClinicRole): AuthorizationContext { return { user: { id: '22222222-2222-4222-8222-222222222222', email: 'staff@example.test', name: 'Staff', platformRole: null }, strategies: ['clinicMember'], clinicMemberships: [{ clinicId: CLINIC_ID, branchId: null, role, dentistId: null }] }; }
 function auth(value: AuthorizationContext): AuthServices { return { handler: vi.fn(), getSession: vi.fn(async () => ({ session: { id: 'session', userId: value.user.id, expiresAt: new Date('2030-01-01') }, user: value.user })), resolveAuthorization: vi.fn(async () => value) }; }
-function integrations(overrides: Record<string, unknown> = {}): IntegrationService { return { listKeys: vi.fn(async () => []), createKey: vi.fn(), revokeKey: vi.fn(), authenticate: vi.fn(async () => null), listWebhooks: vi.fn(async () => []), createWebhook: vi.fn(), disableWebhook: vi.fn(), appointments: vi.fn(async () => []), dispatchEvent: vi.fn(), processDueDeliveries: vi.fn(async () => ({ processed: 0 })), listDeliveries: vi.fn(async () => []), accountingLedger: vi.fn(async () => []), ...overrides } as unknown as IntegrationService; }
+function integrations(overrides: Record<string, unknown> = {}): IntegrationService { return { listKeys: vi.fn(async () => []), createKey: vi.fn(), revokeKey: vi.fn(), authenticate: vi.fn(async () => null), listWebhooks: vi.fn(async () => []), createWebhook: vi.fn(), disableWebhook: vi.fn(), appointments: vi.fn(async () => []), dispatchEvent: vi.fn(), processDueDeliveries: vi.fn(async () => ({ processed: 0 })), listDeliveries: vi.fn(async () => []), accountingLedger: vi.fn(async () => []), clinicSlug: vi.fn(async () => 'smile-dental'), ...overrides } as unknown as IntegrationService; }
+function publicBooking(overrides: Record<string, unknown> = {}): PublicBookingService { return { availability: vi.fn(), book: vi.fn(), ...overrides } as unknown as PublicBookingService; }
 
 let app: FastifyInstance | undefined;
 afterEach(async () => { await app?.close(); app = undefined; });
-async function setup(role: ClinicRole, service: IntegrationService) { app = await buildApp({ config, checkDatabase: vi.fn(async () => undefined), auth: auth(context(role)), integrations: service }); }
+async function setup(role: ClinicRole, service: IntegrationService, booking?: PublicBookingService) { app = await buildApp({ config, checkDatabase: vi.fn(async () => undefined), auth: auth(context(role)), integrations: service, publicBooking: booking }); }
 
 describe('integrations settings UI API', () => {
   it('creates an API key and returns the one-time secret', async () => {
@@ -174,5 +178,43 @@ describe('integrations settings UI API', () => {
     const response = await app!.inject({ method: 'GET', url: `/v1/clinic/${CLINIC_ID}/integrations/accounting-export.csv?from=2024-01-01&to=2026-08-13`, headers: { cookie: 'session=test' } });
     expect(response.statusCode).toBe(400);
     expect(service.accountingLedger).not.toHaveBeenCalled();
+  });
+
+  it('creates an appointment for a partner key with the write scope', async () => {
+    const service = integrations({ authenticate: vi.fn(async () => ({ clinicId: CLINIC_ID, scopes: ['appointments.write'], keyId: KEY_ID })) });
+    const booking = publicBooking({ book: vi.fn(async () => ({ appointmentId: 'a1', confirmationNumber: 'DNT-20260820-A1', clinicName: 'Smile Dental', branchName: 'Main', serviceName: 'Cleaning', dentistName: 'Dr. Reyes', startsAt: BOOKING_INPUT.startsAt, endsAt: '2026-08-20T09:30:00+08:00', status: 'pending' as const })) });
+    await setup('clinic_owner', service, booking);
+    const response = await app!.inject({ method: 'POST', url: '/v1/partner/appointments', headers: { 'x-dentra-api-key': 'dtk_test' }, payload: BOOKING_INPUT });
+    expect(response.statusCode).toBe(201);
+    expect(response.json().data.appointmentId).toBe('a1');
+    expect(service.clinicSlug).toHaveBeenCalledWith(CLINIC_ID);
+    expect(booking.book).toHaveBeenCalledWith(expect.objectContaining({ ...BOOKING_INPUT, clinicSlug: 'smile-dental' }), expect.anything());
+  });
+
+  it('denies appointment creation for a key missing the write scope', async () => {
+    const service = integrations({ authenticate: vi.fn(async () => ({ clinicId: CLINIC_ID, scopes: ['appointments.read'], keyId: KEY_ID })) });
+    const booking = publicBooking();
+    await setup('clinic_owner', service, booking);
+    const response = await app!.inject({ method: 'POST', url: '/v1/partner/appointments', headers: { 'x-dentra-api-key': 'dtk_test' }, payload: BOOKING_INPUT });
+    expect(response.statusCode).toBe(403);
+    expect(booking.book).not.toHaveBeenCalled();
+  });
+
+  it('surfaces a slot conflict from the booking engine', async () => {
+    const service = integrations({ authenticate: vi.fn(async () => ({ clinicId: CLINIC_ID, scopes: ['appointments.write'], keyId: KEY_ID })) });
+    const booking = publicBooking({ book: vi.fn(async () => { throw new PublicBookingError('SLOT_CONFLICT', 'That time was just booked. Please choose another available slot.', 409); }) });
+    await setup('clinic_owner', service, booking);
+    const response = await app!.inject({ method: 'POST', url: '/v1/partner/appointments', headers: { 'x-dentra-api-key': 'dtk_test' }, payload: BOOKING_INPUT });
+    expect(response.statusCode).toBe(409);
+    expect(response.json().error.code).toBe('SLOT_CONFLICT');
+  });
+
+  it('rejects a malformed appointment write request', async () => {
+    const service = integrations({ authenticate: vi.fn(async () => ({ clinicId: CLINIC_ID, scopes: ['appointments.write'], keyId: KEY_ID })) });
+    const booking = publicBooking();
+    await setup('clinic_owner', service, booking);
+    const response = await app!.inject({ method: 'POST', url: '/v1/partner/appointments', headers: { 'x-dentra-api-key': 'dtk_test' }, payload: { ...BOOKING_INPUT, patientPhone: '' } });
+    expect(response.statusCode).toBe(400);
+    expect(booking.book).not.toHaveBeenCalled();
   });
 });

@@ -11,6 +11,7 @@ import type { ApiKey, Webhook, NotificationProviderStatus } from "./page";
 
 const SCOPES: { value: string; label: string }[] = [
   { value: "appointments.read", label: "Appointments — read" },
+  { value: "appointments.write", label: "Appointments — write" },
   { value: "invoices.read", label: "Invoices — read" },
   { value: "webhooks.manage", label: "Webhooks — manage" },
 ];
@@ -517,8 +518,9 @@ export default function IntegrationsClient({ apiKeys, webhooks, notificationProv
       </div>
 
       <div className="rounded-xl bg-violet-50 px-4 py-3 text-xs text-violet-600">
-        Partner API base: <code className="font-mono">GET /v1/partner/appointments</code> — send your key in the{" "}
-        <code className="font-mono">x-dentra-api-key</code> header. Requests are rate-limited to 120/minute and date ranges are capped at 31 days.
+        Partner API base: <code className="font-mono">GET /v1/partner/appointments</code> (requires <code className="font-mono">appointments.read</code>) and{" "}
+        <code className="font-mono">POST /v1/partner/appointments</code> (requires <code className="font-mono">appointments.write</code>) — send your key in the{" "}
+        <code className="font-mono">x-dentra-api-key</code> header. Reads are rate-limited to 120/minute with date ranges capped at 31 days; writes are limited to 30/minute.
       </div>
 
       <NotificationProvidersSection providers={notificationProviders} clinicId={clinicId} />

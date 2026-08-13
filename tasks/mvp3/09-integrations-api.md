@@ -1,6 +1,6 @@
 # Integrations and Partner API
 
-> **Status:** 🔵 Active — partner API baseline and real webhook delivery delivered
+> **Status:** ✅ Done
 
 ---
 
@@ -32,7 +32,9 @@ Clinics and third-party developers need to connect Dentra.ph to external tools: 
 - **iCal/Google Calendar export (this update):** a clinic can generate a `calendar.feed`-scoped key that mints a subscribe URL (`.../calendar/appointments.ics?key=...`) any calendar app can poll — no session, no custom headers, matching how Google Calendar's "add by URL" actually works. The feed covers a rolling 7-days-back/60-days-ahead window and is rate-limited separately from the JSON partner endpoint (30/min). It reuses the existing API-key auth/scope machinery rather than a new credential type.
 - **Accounting export (this update):** a clinic admin can download a software-agnostic CSV ledger (`GET .../integrations/accounting-export.csv?from&to`, session-authenticated, ≤366-day range) with one row per invoice-issued/payment-received/refund/adjustment event — deliberately not tied to a specific vendor (QuickBooks/Xero) since no such integration is configured; any PH bookkeeper can import a plain CSV.
 - **Provider credential connectors (this update):** a clinic admin can connect their own SendGrid (email) or Twilio (SMS) account (`PUT/GET/DELETE /v1/clinic/:clinicId/notification-providers`); credentials are encrypted at rest (never re-displayed) using a shared secret-box module (`apps/api/src/crypto/secret-box.ts`, purpose-keyed so it can't cross-decrypt the unrelated webhook-signing secret). This also fixed a real gap: the notification outbox's `processDue`/send path previously defaulted to a no-op stub that marked every notification "sent" without anything actually going out (harmless only because nothing ever invoked it). It's now wired for real — booking confirmations and recall reminders attempt delivery immediately after their triggering transaction commits (mirroring the webhook delivery pattern: fire-and-forget, retried with the same backoff, plus a boot-time sweep), and a notification for a clinic with no connected provider fails explicitly rather than being silently marked delivered.
-- Remaining: read-write partner resources.
+- **Read-write partner resources (this update):** added `appointments.write` scope and `POST /v1/partner/appointments`, which resolves the authenticated key's clinic to its public slug and delegates to the exact same booking engine (`createPublicBookingService.book`) the public website's own booking widget uses — same slot-conflict checks, same operating-hours validation, no duplicated business logic. Rate-limited separately (30/min) from the read endpoint.
+
+All items originally listed under "Done looks like" are now delivered.
 
 ---
 

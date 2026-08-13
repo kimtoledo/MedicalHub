@@ -33,6 +33,11 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Integrations and Partner API — fully done
+- Added the final "Remaining" item: `appointments.write` scope and `POST /v1/partner/appointments`, which resolves the key's clinic to its public slug and delegates to the same booking engine the public website's own widget uses (same slot-conflict/operating-hours checks, no duplicated logic), rate-limited separately (30/min) from the read endpoint
+- Every bullet in `mvp3/09-integrations-api.md`'s original "Done looks like" is now delivered: provider connectors, calendar export, accounting export, webhooks (create/update/paid/refunded), read-write partner API, key management, rate limiting/logging
+- Verified 374 passing API tests (4 new), 5 passing web tests, repository-wide TypeScript checks, production web/API builds, and clean diff validation
+
 ### 🔄 Notification provider connectors + real delivery (integrations API)
 - Clinics can now connect their own SendGrid (email) or Twilio (SMS) account from the integrations settings page; credentials are encrypted at rest via a new shared, purpose-keyed secret-box module and never re-displayed after saving
 - Found and fixed a real latent bug while wiring this: the notification outbox's send path previously defaulted to a no-op stub that marked every queued notification "sent" without anything actually going out — harmless only because nothing had ever invoked the drain path. It's wired for real now: booking confirmations and recall reminders attempt delivery immediately after their triggering transaction commits, retried with backoff (mirroring the webhook delivery pattern) plus a boot-time sweep, and a notification for a clinic with no connected provider now fails explicitly instead of being silently marked delivered

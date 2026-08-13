@@ -1,13 +1,13 @@
 import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { and, asc, desc, eq, gte, lt, lte } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
-import { integrationApiKeys, integrationWebhookDeliveries, integrationWebhooks, appointments, branches, invoicePayments, invoiceTransactions, invoices, patients, services } from '@dentra/db/schema';
+import { integrationApiKeys, integrationWebhookDeliveries, integrationWebhooks, appointments, branches, clinics, invoicePayments, invoiceTransactions, invoices, patients, services } from '@dentra/db/schema';
 import { writeAudit } from '@dentra/db/audit';
 import { AuditAction } from '@dentra/shared';
 import { decryptSecret as decryptSecretBox, encryptSecret as encryptSecretBox } from '../crypto/secret-box.js';
 
 export type IntegrationActor = { id: string; email: string; ipAddress?: string; userAgent?: string };
-export type IntegrationScope = 'appointments.read' | 'invoices.read' | 'webhooks.manage' | 'calendar.feed';
+export type IntegrationScope = 'appointments.read' | 'appointments.write' | 'invoices.read' | 'webhooks.manage' | 'calendar.feed';
 export class IntegrationError extends Error {
   constructor(public code: string, message: string, public statusCode = 400) { super(message); }
 }
@@ -108,6 +108,8 @@ export function createIntegrationService(database: DB) {
     appointments: async (clinicId: string, from: Date, to: Date) => database.select({ id: appointments.id, branchId: appointments.branchId, branchName: branches.name, status: appointments.status, startsAt: appointments.startsAt, endsAt: appointments.endsAt, patientFirstName: patients.firstName, patientLastName: patients.lastName, patientNumber: patients.patientNumber, serviceName: services.name }).from(appointments).innerJoin(branches, eq(appointments.branchId, branches.id)).leftJoin(patients, and(eq(appointments.patientId, patients.id), eq(patients.clinicId, clinicId))).leftJoin(services, and(eq(appointments.serviceId, services.id), eq(services.clinicId, clinicId))).where(and(eq(appointments.clinicId, clinicId), gte(appointments.startsAt, from), lt(appointments.startsAt, to))).orderBy(asc(appointments.startsAt)),
 
     /** Software-agnostic ledger rows (invoice issued / payment received / refund / adjustment) for a clinic's own accounting export — not a partner-API resource. */
+    /** Resolves an authenticated partner key's clinicId to the public slug the booking engine keys off. */
+    clinicSlug: async (clinicId: string) => { const [row] = await database.select({ slug: clinics.slug }).from(clinics).where(eq(clinics.id, clinicId)).limit(1); return row?.slug ?? null; },
     accountingLedger: async (clinicId: string, from: string, to: string) => {
       const [issued, received, transactions] = await Promise.all([
         database.select({ date: invoices.issuedAt, reference: invoices.invoiceNumber, amountPhp: invoices.totalAmountPhp, patientFirstName: patients.firstName, patientLastName: patients.lastName }).from(invoices).innerJoin(patients, eq(invoices.patientId, patients.id)).where(and(eq(invoices.clinicId, clinicId), gte(invoices.issuedAt, new Date(`${from}T00:00:00Z`)), lte(invoices.issuedAt, new Date(`${to}T23:59:59Z`)))),

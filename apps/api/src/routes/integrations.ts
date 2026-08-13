@@ -5,12 +5,26 @@ import { resolveRequestAuthorization } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
 import type { IntegrationScope, IntegrationService } from '../integrations/service.js';
 import { IntegrationError } from '../integrations/service.js';
+import type { PublicBookingService } from '../public/booking-service.js';
+import { PublicBookingError } from '../public/booking-service.js';
 import { postgresUuidSchema } from '../validation.js';
 
 const clinic = z.object({ clinicId: postgresUuidSchema });
 const keyId = clinic.extend({ keyId: postgresUuidSchema });
 const webhookId = clinic.extend({ webhookId: postgresUuidSchema });
-const keyBody = z.object({ name: z.string().trim().min(2).max(120), scopes: z.array(z.enum(['appointments.read', 'invoices.read', 'webhooks.manage', 'calendar.feed'])).min(1).max(10) }).strict();
+const keyBody = z.object({ name: z.string().trim().min(2).max(120), scopes: z.array(z.enum(['appointments.read', 'appointments.write', 'invoices.read', 'webhooks.manage', 'calendar.feed'])).min(1).max(10) }).strict();
+const bookingBody = z.object({
+  branchId: postgresUuidSchema,
+  serviceId: postgresUuidSchema,
+  dentistId: postgresUuidSchema.optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  startsAt: z.string().datetime({ offset: true }),
+  patientFirstName: z.string().trim().min(1).max(100),
+  patientLastName: z.string().trim().min(1).max(100),
+  patientPhone: z.string().trim().min(7).max(20),
+  patientEmail: z.string().trim().email().optional(),
+  chiefComplaint: z.string().trim().min(1).max(500),
+}).strict();
 const icsQuery = z.object({ key: z.string().min(10) }).strict();
 const webhookBody = z.object({ name: z.string().trim().min(2).max(120), endpointUrl: z.string().url().max(500), eventTypes: z.array(z.string().trim().min(3).max(100)).min(1).max(20) }).strict();
 const rangeQuery = z.object({ from: z.string().datetime({ offset: true }).optional(), to: z.string().datetime({ offset: true }).optional() }).strict();
@@ -20,6 +34,7 @@ const adminRoles = ['clinic_owner', 'clinic_admin'] as const;
 
 function error(reply: FastifyReply, caught: unknown) {
   if (caught instanceof IntegrationError) return reply.status(caught.statusCode).send({ success: false, error: { code: caught.code, message: caught.message } });
+  if (caught instanceof PublicBookingError) return reply.status(caught.statusCode).send({ success: false, error: { code: caught.code, message: caught.message } });
   throw caught;
 }
 async function authorize(request: FastifyRequest, reply: FastifyReply, auth: AuthServices, clinicId: string) {
@@ -64,7 +79,7 @@ function ledgerCsv(rows: Awaited<ReturnType<IntegrationService['accountingLedger
   return `${headers.map(csvEscape).join(',')}\n${rows.map((row) => headers.map((header) => csvEscape((row as Record<string, unknown>)[header])).join(',')).join('\n')}\n`;
 }
 
-export async function registerIntegrationRoutes(app: FastifyInstance, options: { auth: AuthServices; integrations: IntegrationService }) {
+export async function registerIntegrationRoutes(app: FastifyInstance, options: { auth: AuthServices; integrations: IntegrationService; publicBooking?: PublicBookingService }) {
   app.get('/v1/clinic/:clinicId/integrations/api-keys', async (request, reply) => { const p = clinic.safeParse(request.params); if (!p.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid clinic identifier' } }); const context = await authorize(request, reply, options.auth, p.data.clinicId); if (!context) return; return reply.send({ success: true, data: await options.integrations.listKeys(p.data.clinicId) }); });
   app.post('/v1/clinic/:clinicId/integrations/api-keys', async (request, reply) => { const p = clinic.safeParse(request.params); const b = keyBody.safeParse(request.body); if (!p.success || !b.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid API key request' } }); const context = await authorize(request, reply, options.auth, p.data.clinicId); if (!context) return; try { return reply.status(201).send({ success: true, data: await options.integrations.createKey(p.data.clinicId, b.data.name, b.data.scopes as IntegrationScope[], actor(request, context)) }); } catch (caught) { return error(reply, caught); } });
   app.post('/v1/clinic/:clinicId/integrations/api-keys/:keyId/revoke', async (request, reply) => { const p = keyId.safeParse(request.params); if (!p.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid API key identifier' } }); const context = await authorize(request, reply, options.auth, p.data.clinicId); if (!context) return; try { return reply.send({ success: true, data: await options.integrations.revokeKey(p.data.clinicId, p.data.keyId, actor(request, context)) }); } catch (caught) { return error(reply, caught); } });
@@ -89,6 +104,22 @@ export async function registerIntegrationRoutes(app: FastifyInstance, options: {
     if (!auth.scopes.includes('appointments.read')) return reply.status(403).send({ success: false, error: { code: 'SCOPE_REQUIRED', message: 'appointments.read scope is required' } });
     const query = rangeQuery.safeParse(request.query); if (!query.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid date range' } });
     try { const range = window(query.data); return reply.send({ success: true, data: { clinicId: auth.clinicId, from: range.from.toISOString(), to: range.to.toISOString(), appointments: await options.integrations.appointments(auth.clinicId, range.from, range.to) } }); } catch (caught) { return error(reply, caught); }
+  });
+  app.post('/v1/partner/appointments', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async (request, reply) => {
+    const secret = request.headers['x-dentra-api-key'];
+    const apiKey = typeof secret === 'string' ? secret : '';
+    const auth = apiKey ? await options.integrations.authenticate(apiKey) : null;
+    if (!auth) return reply.status(401).send({ success: false, error: { code: 'INVALID_API_KEY', message: 'A valid integration API key is required' } });
+    if (!auth.scopes.includes('appointments.write')) return reply.status(403).send({ success: false, error: { code: 'SCOPE_REQUIRED', message: 'appointments.write scope is required' } });
+    if (!options.publicBooking) return reply.status(503).send({ success: false, error: { code: 'BOOKING_UNAVAILABLE', message: 'Appointment creation is not available' } });
+    const body = bookingBody.safeParse(request.body);
+    if (!body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid appointment request' } });
+    try {
+      const clinicSlug = await options.integrations.clinicSlug(auth.clinicId);
+      if (!clinicSlug) return reply.status(404).send({ success: false, error: { code: 'CLINIC_NOT_FOUND', message: 'Clinic not found' } });
+      const created = await options.publicBooking.book({ ...body.data, clinicSlug }, { ipAddress: request.ip, userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : undefined });
+      return reply.status(201).send({ success: true, data: created });
+    } catch (caught) { return error(reply, caught); }
   });
   app.get('/v1/partner/calendar/appointments.ics', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async (request, reply) => {
     const query = icsQuery.safeParse(request.query);

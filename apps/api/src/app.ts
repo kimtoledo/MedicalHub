@@ -347,7 +347,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       await registerCustomDomainRoutes(app, { auth: options.auth, domains: options.customDomains });
     }
     if (options.integrations) {
-      await registerIntegrationRoutes(app, { auth: options.auth, integrations: options.integrations });
+      await registerIntegrationRoutes(app, { auth: options.auth, integrations: options.integrations, publicBooking: options.publicBooking });
     }
     if (options.notificationProviders) {
       await registerNotificationProviderRoutes(app, { auth: options.auth, providers: options.notificationProviders });
