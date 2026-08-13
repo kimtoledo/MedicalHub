@@ -33,6 +33,12 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### 🔄 Notification provider connectors + real delivery (integrations API)
+- Clinics can now connect their own SendGrid (email) or Twilio (SMS) account from the integrations settings page; credentials are encrypted at rest via a new shared, purpose-keyed secret-box module and never re-displayed after saving
+- Found and fixed a real latent bug while wiring this: the notification outbox's send path previously defaulted to a no-op stub that marked every queued notification "sent" without anything actually going out — harmless only because nothing had ever invoked the drain path. It's wired for real now: booking confirmations and recall reminders attempt delivery immediately after their triggering transaction commits, retried with backoff (mirroring the webhook delivery pattern) plus a boot-time sweep, and a notification for a clinic with no connected provider now fails explicitly instead of being silently marked delivered
+- Verified 370 passing API tests (13 new: secret-box domain separation, SendGrid/Twilio HTTP request shape, provider settings API/auth), 5 passing web tests, repository-wide TypeScript checks, production web/API builds, applied DB migration, and clean diff validation
+- This closes out the "Remaining" list in `mvp3/09-integrations-api.md` except read-write partner resources
+
 ### 🔄 Accounting export CSV (integrations API)
 - Added `GET /v1/clinic/:clinicId/integrations/accounting-export.csv` (session-authenticated, ≤366-day range): a software-agnostic ledger with one row per invoice-issued/payment-received/refund/adjustment event
 - Deliberately not tied to a specific accounting vendor (QuickBooks/Xero) since no such integration is configured — a plain CSV any PH bookkeeper can import, consistent with not faking integrations this codebase doesn't have credentials for

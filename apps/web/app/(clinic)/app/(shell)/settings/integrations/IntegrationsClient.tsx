@@ -4,9 +4,10 @@ import { useState } from "react";
 import {
   KeyRound, Webhook as WebhookIcon, Plus, Copy, Check, Ban,
   AlertCircle, ChevronLeft, Loader2, CalendarClock, FileSpreadsheet, History,
+  Mail, MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
-import type { ApiKey, Webhook } from "./page";
+import type { ApiKey, Webhook, NotificationProviderStatus } from "./page";
 
 const SCOPES: { value: string; label: string }[] = [
   { value: "appointments.read", label: "Appointments — read" },
@@ -392,7 +393,117 @@ function AccountingExportSection({ clinicId }: { clinicId: string }) {
   );
 }
 
-export default function IntegrationsClient({ apiKeys, webhooks, clinicId }: { apiKeys: ApiKey[]; webhooks: Webhook[]; clinicId: string }) {
+function ConnectProviderForm({ channel, clinicId, onConnected }: { channel: "email" | "sms"; clinicId: string; onConnected: () => void }) {
+  const providerName = channel === "email" ? "sendgrid" : "twilio";
+  const [fromAddress, setFromAddress] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [accountSid, setAccountSid] = useState("");
+  const [authToken, setAuthToken] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function connect(event: React.FormEvent) {
+    event.preventDefault();
+    setSaving(true); setError(null);
+    const credential = channel === "email" ? { apiKey } : { accountSid, authToken };
+    const response = await fetch(`/api/clinic/${clinicId}/notification-providers`, {
+      method: "PUT", credentials: "include", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ channel, providerName, fromAddress, credential }),
+    });
+    const payload = await response.json();
+    setSaving(false);
+    if (!response.ok) { setError(payload.error?.message ?? "Unable to connect this provider."); return; }
+    setApiKey(""); setAccountSid(""); setAuthToken(""); setFromAddress("");
+    onConnected();
+  }
+
+  return (
+    <form onSubmit={(event) => { void connect(event); }} className="space-y-2 rounded-xl bg-violet-50 p-3">
+      <input
+        value={fromAddress}
+        onChange={(event) => setFromAddress(event.target.value)}
+        placeholder={channel === "email" ? "from@yourclinic.ph" : "+639171234567"}
+        className="w-full rounded-lg border border-violet-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+      />
+      {channel === "email" ? (
+        <input type="password" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="SendGrid API key" className="w-full rounded-lg border border-violet-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" />
+      ) : (
+        <>
+          <input value={accountSid} onChange={(event) => setAccountSid(event.target.value)} placeholder="Twilio Account SID" className="w-full rounded-lg border border-violet-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" />
+          <input type="password" value={authToken} onChange={(event) => setAuthToken(event.target.value)} placeholder="Twilio Auth Token" className="w-full rounded-lg border border-violet-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" />
+        </>
+      )}
+      <button disabled={saving} className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
+        {saving ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} {saving ? "Connecting…" : `Connect ${providerName === "sendgrid" ? "SendGrid" : "Twilio"}`}
+      </button>
+      {error && <p role="alert" className="flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+    </form>
+  );
+}
+
+function NotificationProvidersSection({ providers: initial, clinicId }: { providers: NotificationProviderStatus[]; clinicId: string }) {
+  const [providers, setProviders] = useState(initial);
+  const [connectingChannel, setConnectingChannel] = useState<"email" | "sms" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function reload() {
+    const response = await fetch(`/api/clinic/${clinicId}/notification-providers`, { credentials: "include" });
+    const payload = await response.json();
+    if (response.ok) setProviders(payload.data);
+  }
+
+  async function remove(channel: "email" | "sms") {
+    setError(null);
+    const response = await fetch(`/api/clinic/${clinicId}/notification-providers/${channel}`, { method: "DELETE", credentials: "include" });
+    if (!response.ok) { const payload = await response.json().catch(() => null); setError(payload?.error?.message ?? "Unable to disconnect this provider."); return; }
+    await reload();
+  }
+
+  const byChannel: Record<"email" | "sms", NotificationProviderStatus | undefined> = {
+    email: providers.find((p) => p.channel === "email"),
+    sms: providers.find((p) => p.channel === "sms"),
+  };
+
+  return (
+    <section className="rounded-2xl border border-violet-100 bg-white p-5">
+      <h2 className="mb-1 text-sm font-bold text-violet-900">Notification providers</h2>
+      <p className="mb-3 text-xs text-slate-500">Connect your own SendGrid (email) or Twilio (SMS) account so booking confirmations and recall reminders actually send. Credentials are encrypted at rest and never displayed again after saving.</p>
+      {error && <p role="alert" className="mb-3 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+      <div className="grid gap-3 sm:grid-cols-2">
+        {(["email", "sms"] as const).map((channel) => {
+          const provider = byChannel[channel];
+          const Icon = channel === "email" ? Mail : MessageSquare;
+          return (
+            <div key={channel} className="rounded-xl border border-violet-50 p-3">
+              <div className="mb-2 flex items-center gap-2">
+                <Icon size={14} className="text-violet-500" />
+                <span className="text-sm font-semibold text-violet-900 capitalize">{channel}</span>
+              </div>
+              {provider ? (
+                <div className="space-y-1">
+                  <p className="text-xs text-slate-600">{provider.providerName === "sendgrid" ? "SendGrid" : "Twilio"} · {provider.fromAddress}</p>
+                  <p className="text-xs text-slate-400">Last used {formatManila(provider.lastUsedAt)}</p>
+                  {provider.lastError && <p className="text-xs text-red-600">{provider.lastError}</p>}
+                  <button onClick={() => void remove(channel)} className="mt-1 flex items-center gap-1 rounded-lg border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50">
+                    <Ban size={11} /> Disconnect
+                  </button>
+                </div>
+              ) : connectingChannel === channel ? (
+                <ConnectProviderForm channel={channel} clinicId={clinicId} onConnected={() => { setConnectingChannel(null); void reload(); }} />
+              ) : (
+                <button onClick={() => setConnectingChannel(channel)} className="flex items-center gap-1 rounded-lg border border-violet-200 px-2 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-50">
+                  <Plus size={11} /> Connect
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+export default function IntegrationsClient({ apiKeys, webhooks, notificationProviders, clinicId }: { apiKeys: ApiKey[]; webhooks: Webhook[]; notificationProviders: NotificationProviderStatus[]; clinicId: string }) {
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6 lg:p-8">
       <div className="flex items-center gap-3">
@@ -410,6 +521,7 @@ export default function IntegrationsClient({ apiKeys, webhooks, clinicId }: { ap
         <code className="font-mono">x-dentra-api-key</code> header. Requests are rate-limited to 120/minute and date ranges are capped at 31 days.
       </div>
 
+      <NotificationProvidersSection providers={notificationProviders} clinicId={clinicId} />
       <ApiKeysSection apiKeys={apiKeys} clinicId={clinicId} />
       <WebhooksSection webhooks={webhooks} clinicId={clinicId} />
       <CalendarFeedSection apiKeys={apiKeys} clinicId={clinicId} />

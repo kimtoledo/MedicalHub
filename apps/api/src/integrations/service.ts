@@ -1,9 +1,10 @@
-import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes } from 'node:crypto';
+import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { and, asc, desc, eq, gte, lt, lte } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
 import { integrationApiKeys, integrationWebhookDeliveries, integrationWebhooks, appointments, branches, invoicePayments, invoiceTransactions, invoices, patients, services } from '@dentra/db/schema';
 import { writeAudit } from '@dentra/db/audit';
 import { AuditAction } from '@dentra/shared';
+import { decryptSecret as decryptSecretBox, encryptSecret as encryptSecretBox } from '../crypto/secret-box.js';
 
 export type IntegrationActor = { id: string; email: string; ipAddress?: string; userAgent?: string };
 export type IntegrationScope = 'appointments.read' | 'invoices.read' | 'webhooks.manage' | 'calendar.feed';
@@ -23,29 +24,12 @@ function issue(prefix: string) { return `${prefix}_${randomBytes(30).toString('b
 // cannot provide. This encrypts the secret at rest with a server-held key so
 // it can be recovered at delivery time without ever being stored in plaintext.
 // Exported (with the pair below) so their round-trip/tamper-detection behavior
-// can be unit-tested without a database.
-export function encryptionKey() {
-  const base = process.env.BETTER_AUTH_SECRET ?? process.env.SESSION_SECRET ?? 'development-secret-key-not-for-production-use';
-  return createHash('sha256').update(`${base}:webhook-secret-encryption`).digest();
-}
-export function encryptSecret(secret: string) {
-  const iv = randomBytes(12);
-  const cipher = createCipheriv('aes-256-gcm', encryptionKey(), iv);
-  const encrypted = Buffer.concat([cipher.update(secret, 'utf8'), cipher.final()]);
-  const tag = cipher.getAuthTag();
-  return [iv.toString('base64'), tag.toString('base64'), encrypted.toString('base64')].join(':');
-}
-export function decryptSecret(ciphertext: string): string | null {
-  try {
-    const [ivB64, tagB64, dataB64] = ciphertext.split(':');
-    if (!ivB64 || !tagB64 || !dataB64) return null;
-    const decipher = createDecipheriv('aes-256-gcm', encryptionKey(), Buffer.from(ivB64, 'base64'));
-    decipher.setAuthTag(Buffer.from(tagB64, 'base64'));
-    return Buffer.concat([decipher.update(Buffer.from(dataB64, 'base64')), decipher.final()]).toString('utf8');
-  } catch {
-    return null;
-  }
-}
+// can be unit-tested without a database. Thin wrappers over the shared,
+// purpose-keyed secret-box so this module's existing single-arg call sites
+// (and its tests) don't need to change.
+const WEBHOOK_SECRET_PURPOSE = 'webhook-secret-encryption';
+export function encryptSecret(secret: string) { return encryptSecretBox(WEBHOOK_SECRET_PURPOSE, secret); }
+export function decryptSecret(ciphertext: string): string | null { return decryptSecretBox(WEBHOOK_SECRET_PURPOSE, ciphertext); }
 
 export type IntegrationService = ReturnType<typeof createIntegrationService>;
 export function createIntegrationService(database: DB) {

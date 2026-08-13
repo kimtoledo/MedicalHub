@@ -350,5 +350,7 @@ export const AuditAction = {
   SUPPORT_ACCESS_USED: 'support_access.used',
   AI_IMAGING_ANALYZED: 'ai.imaging_analyzed',
   AI_IMAGING_CONFIRMED: 'ai.imaging_confirmed',
+  NOTIFICATION_PROVIDER_CONNECTED: 'notification_provider.connected',
+  NOTIFICATION_PROVIDER_REMOVED: 'notification_provider.removed',
 } as const;
 export type AuditAction = (typeof AuditAction)[keyof typeof AuditAction];

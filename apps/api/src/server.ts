@@ -45,6 +45,7 @@ import { createClinicTreatmentPlansService } from './clinic/treatment-plans-serv
 import { createClinicServiceCatalogService } from './clinic/service-catalog-service.js';
 import { createClinicInventoryService } from './clinic/inventory-service.js';
 import { createNotificationService } from './notifications/service.js';
+import { createNotificationProvidersService } from './notifications/providers-service.js';
 import { createRecallService } from './clinic/recall-service.js';
 import { createClinicReportsService } from './clinic/reports-service.js';
 import { createSubscriptionOperationsService } from './clinic/subscription-operations-service.js';
@@ -93,7 +94,8 @@ const adminAudit = createAdminAuditService(database.db);
 const adminDashboard = createAdminDashboardService(database.db);
 const entitlements = createEntitlementService(database.db);
 const publicDirectory = createPublicDirectoryService(database.db);
-const notifications = createNotificationService(database.db);
+const notificationProviders = createNotificationProvidersService(database.db);
+const notifications = createNotificationService(database.db, notificationProviders);
 const clinicRecalls = createRecallService(database.db, notifications);
 const clinicReports = createClinicReportsService(database.db);
 const subscriptionOperations = createSubscriptionOperationsService(database.db);
@@ -169,6 +171,7 @@ const app = await buildApp({
   payments,
   customDomains,
   integrations,
+  notificationProviders,
   platformOperations,
   aiImaging,
   kiosk,
@@ -212,6 +215,7 @@ try {
   // Recover any webhook deliveries left queued past their retry time by an
   // earlier process restart — in-process retry timers don't survive a restart.
   integrations.processDueDeliveries().catch((error: unknown) => app.log.error({ err: error }, 'Webhook delivery sweep failed'));
+  notifications.processDue().catch((error: unknown) => app.log.error({ err: error }, 'Notification delivery sweep failed'));
 } catch (error) {
   app.log.error({ err: error }, 'API failed to start');
   await app.close();

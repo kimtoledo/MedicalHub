@@ -1,15 +1,47 @@
 import { and, asc, eq, lte } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
 import { notificationOutbox } from '@dentra/db/schema';
+import type { NotificationProvidersService } from './providers-service.js';
 
 export type NotificationInput = { clinicId?: string | null; channel: 'email' | 'sms'; type: 'booking_confirmation' | 'appointment_reminder' | 'appointment_cancelled' | 'appointment_rescheduled' | 'recall_reminder'; recipient: string; subject: string; body: string; dedupeKey: string };
-export type NotificationProvider = { send: (input: { channel: 'email' | 'sms'; recipient: string; subject: string; body: string }) => Promise<void> };
 
 const safeContent = (input: NotificationInput) => ({ ...input, subject: input.subject.slice(0, 300), body: input.body.slice(0, 2000) });
+const MAX_ATTEMPTS = 5;
 
-export type NotificationService = { enqueue: (database: DB, input: NotificationInput) => Promise<{ id: string; duplicate: boolean }>; processDue: (limit?: number) => Promise<{ processed: number; sent: number; failed: number }> };
+export type NotificationService = {
+  enqueue: (database: DB, input: NotificationInput) => Promise<{ id: string; duplicate: boolean }>;
+  /** Attempts one queued row now — fire-and-forget after a caller's own transaction commits. Never awaited for its result by callers on the critical path. */
+  attemptDelivery: (id: string) => Promise<void>;
+  /** Drains anything left queued past its retry time — meant for a boot-time sweep after a process restart interrupts in-memory retry timers. */
+  processDue: (limit?: number) => Promise<{ processed: number; sent: number; failed: number }>;
+};
 
-export function createNotificationService(database: DB, provider: NotificationProvider = { send: async () => undefined }): NotificationService {
+/**
+ * Notifications are only ever actually sent through a clinic's own connected
+ * provider (see providers-service.ts) — there is no platform-wide fallback.
+ * A row for a clinic with no provider configured fails with a clear reason
+ * instead of being silently marked "sent" with nothing having gone out.
+ */
+export function createNotificationService(database: DB, providers?: NotificationProvidersService): NotificationService {
+  async function deliver(row: { id: string; clinicId: string | null; channel: 'email' | 'sms'; recipient: string; subject: string; body: string; attempts: string }) {
+    try {
+      if (!row.clinicId || !providers) throw new Error('No clinic-connected provider is configured for this notification');
+      await providers.send(row.clinicId, row.channel, row.recipient, row.subject, row.body);
+      await database.update(notificationOutbox).set({ status: 'sent', sentAt: new Date(), attempts: String(Number(row.attempts) + 1) }).where(eq(notificationOutbox.id, row.id));
+      return true;
+    } catch (caught) {
+      const attempts = Number(row.attempts) + 1;
+      const permanent = attempts >= MAX_ATTEMPTS;
+      await database.update(notificationOutbox).set({ status: permanent ? 'failed' : 'queued', attempts: String(attempts), lastError: caught instanceof Error ? caught.message.slice(0, 500) : 'Provider error', nextAttemptAt: new Date(Date.now() + Math.min(60, 2 ** attempts) * 60_000) }).where(eq(notificationOutbox.id, row.id));
+      if (!permanent) setTimeout(() => { void attemptDelivery(row.id); }, Math.min(60, 2 ** attempts) * 60_000);
+      return false;
+    }
+  }
+  async function attemptDelivery(id: string) {
+    const [row] = await database.select({ id: notificationOutbox.id, clinicId: notificationOutbox.clinicId, channel: notificationOutbox.channel, recipient: notificationOutbox.recipient, subject: notificationOutbox.subject, body: notificationOutbox.body, attempts: notificationOutbox.attempts, status: notificationOutbox.status }).from(notificationOutbox).where(eq(notificationOutbox.id, id)).limit(1);
+    if (!row || row.status !== 'queued') return;
+    await deliver(row);
+  }
   return {
     enqueue: async (db, input) => {
       const value = safeContent(input);
@@ -18,18 +50,11 @@ export function createNotificationService(database: DB, provider: NotificationPr
       const [created] = await db.insert(notificationOutbox).values({ ...value, clinicId: value.clinicId ?? null }).returning({ id: notificationOutbox.id });
       return { id: created.id, duplicate: false };
     },
+    attemptDelivery,
     processDue: async (limit = 50) => {
-      const rows = await database.select({ id: notificationOutbox.id, channel: notificationOutbox.channel, recipient: notificationOutbox.recipient, subject: notificationOutbox.subject, body: notificationOutbox.body, attempts: notificationOutbox.attempts }).from(notificationOutbox).where(and(eq(notificationOutbox.status, 'queued'), lte(notificationOutbox.nextAttemptAt, new Date()))).orderBy(asc(notificationOutbox.nextAttemptAt)).limit(limit);
+      const rows = await database.select({ id: notificationOutbox.id, clinicId: notificationOutbox.clinicId, channel: notificationOutbox.channel, recipient: notificationOutbox.recipient, subject: notificationOutbox.subject, body: notificationOutbox.body, attempts: notificationOutbox.attempts }).from(notificationOutbox).where(and(eq(notificationOutbox.status, 'queued'), lte(notificationOutbox.nextAttemptAt, new Date()))).orderBy(asc(notificationOutbox.nextAttemptAt)).limit(limit);
       let sent = 0; let failed = 0;
-      for (const row of rows) {
-        try {
-          await provider.send({ channel: row.channel, recipient: row.recipient, subject: row.subject, body: row.body });
-          await database.update(notificationOutbox).set({ status: 'sent', sentAt: new Date(), attempts: String(Number(row.attempts) + 1) }).where(eq(notificationOutbox.id, row.id)); sent++;
-        } catch (caught) {
-          const attempts = Number(row.attempts) + 1;
-          await database.update(notificationOutbox).set({ status: attempts >= 5 ? 'failed' : 'queued', attempts: String(attempts), lastError: caught instanceof Error ? caught.message.slice(0, 500) : 'Provider error', nextAttemptAt: new Date(Date.now() + Math.min(60, 2 ** attempts) * 60_000) }).where(eq(notificationOutbox.id, row.id)); failed++;
-        }
-      }
+      for (const row of rows) { if (await deliver(row)) sent++; else failed++; }
       return { processed: rows.length, sent, failed };
     },
   };

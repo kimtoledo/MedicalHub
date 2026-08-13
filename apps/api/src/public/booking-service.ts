@@ -153,14 +153,15 @@ export function createPublicBookingService(database: DB, notifications?: Notific
       const [created] = await transaction.insert(appointments).values({ clinicId: context.clinicId, branchId: context.branchId, serviceId: context.serviceId, dentistId: selected.dentistId, status: 'pending', startsAt: new Date(requested.startsAt), endsAt: new Date(requested.endsAt), patientFirstName: input.patientFirstName, patientLastName: input.patientLastName, patientPhone: input.patientPhone, patientEmail: input.patientEmail || null, chiefComplaint: input.chiefComplaint }).returning({ id: appointments.id });
       await transaction.insert(appointmentStatusHistory).values({ appointmentId: created.id, clinicId: context.clinicId, fromStatus: null, toStatus: 'pending', reason: 'Public online booking' });
       await writeAudit(transaction, { actorId: null, actorEmail: null, clinicId: context.clinicId, entityType: 'appointment', entityId: created.id, action: AuditAction.APPOINTMENT_CREATED, metadata: JSON.stringify({ source: 'public_booking', branchId: context.branchId, serviceId: context.serviceId, dentistId: selected.dentistId }), ipAddress: request.ipAddress, userAgent: request.userAgent });
-      if (notifications && input.patientEmail) {
-        await notifications.enqueue(transaction as unknown as DB, bookingConfirmationNotification({ clinicId: context.clinicId, patientEmail: input.patientEmail, appointmentId: created.id, clinicName: context.clinicName, branchName: context.branchName, startsAt: requested.startsAt, dedupeKey: `booking-confirmation:${created.id}` }));
-      }
+      const notification = notifications && input.patientEmail
+        ? await notifications.enqueue(transaction as unknown as DB, bookingConfirmationNotification({ clinicId: context.clinicId, patientEmail: input.patientEmail, appointmentId: created.id, clinicName: context.clinicName, branchName: context.branchName, startsAt: requested.startsAt, dedupeKey: `booking-confirmation:${created.id}` }))
+        : null;
       const stamp = input.date.replaceAll('-', '');
-      return { appointmentId: created.id, clinicId: context.clinicId, confirmationNumber: `DNT-${stamp}-${created.id.slice(0, 8).toUpperCase()}`, clinicName: context.clinicName, branchName: context.branchName, serviceName: context.serviceName, dentistName: `Dr. ${selected.firstName} ${selected.lastName}`, startsAt: requested.startsAt, endsAt: requested.endsAt, status: 'pending' as const };
+      return { appointmentId: created.id, clinicId: context.clinicId, notificationId: notification?.id ?? null, confirmationNumber: `DNT-${stamp}-${created.id.slice(0, 8).toUpperCase()}`, clinicName: context.clinicName, branchName: context.branchName, serviceName: context.serviceName, dentistName: `Dr. ${selected.firstName} ${selected.lastName}`, startsAt: requested.startsAt, endsAt: requested.endsAt, status: 'pending' as const };
       });
       integrations?.dispatchEvent(result.clinicId, 'appointment.created', { appointmentId: result.appointmentId, startsAt: result.startsAt });
-      const { clinicId: _clinicId, ...publicResult } = result;
+      if (result.notificationId) notifications?.attemptDelivery(result.notificationId);
+      const { clinicId: _clinicId, notificationId: _notificationId, ...publicResult } = result;
       return publicResult;
     },
   };

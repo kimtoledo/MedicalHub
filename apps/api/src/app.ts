@@ -107,6 +107,8 @@ import { registerPlatformOperationsRoutes } from './routes/platform-operations.j
 import type { PlatformOperationsService } from './platform/operations-service.js';
 import { registerAiImagingRoutes } from './routes/ai-imaging.js';
 import type { AiImagingService } from './clinic/ai-imaging-service.js';
+import { registerNotificationProviderRoutes } from './routes/notification-providers.js';
+import type { NotificationProvidersService } from './notifications/providers-service.js';
 import { registerKioskRoutes } from './routes/kiosk.js';
 import type { KioskService } from './kiosk/service.js';
 import type { AccountProfileService } from './profile/service.js';
@@ -167,6 +169,7 @@ export type BuildAppOptions = {
   payments?: PaymentService;
   customDomains?: CustomDomainService;
   integrations?: IntegrationService;
+  notificationProviders?: NotificationProvidersService;
   platformOperations?: PlatformOperationsService;
   aiImaging?: AiImagingService;
   kiosk?: KioskService;
@@ -345,6 +348,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (options.integrations) {
       await registerIntegrationRoutes(app, { auth: options.auth, integrations: options.integrations });
+    }
+    if (options.notificationProviders) {
+      await registerNotificationProviderRoutes(app, { auth: options.auth, providers: options.notificationProviders });
     }
     if (options.platformOperations) {
       await registerPlatformOperationsRoutes(app, { auth: options.auth, operations: options.platformOperations });
