@@ -1,13 +1,14 @@
 'use client';
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Building2, Loader2, Network, CircleDollarSign, Users, CalendarDays } from 'lucide-react';
+import { AlertCircle, Building2, Loader2, Network, CircleDollarSign, Users, CalendarDays, ClipboardList } from 'lucide-react';
 
 type OrganizationRow = { id: string; name: string; slug: string; role: Role };
 type Role = 'owner' | 'admin' | 'regional_manager' | 'viewer';
 type ClinicOption = { id: string; name: string; slug: string };
 type Workspace = { organization: { id: string; name: string; slug: string; description: string | null }; access: { role: Role; branchIds: string[] }; clinics: Array<{ clinicId: string; clinicName: string; branchId: string | null; branchName: string | null; branchActive: boolean | null }>; members: Array<{ id: string; userId: string; name: string; email: string; role: Role; branchIds: string[] }> };
 type Report = { clinicCount: number; branchCount: number; appointments: number; patients: number; revenuePhp: string; scope: string };
+type CatalogItem = { id: string; name: string; category: string; description: string | null; durationMinutes: string | number; basePricePhp: string | null; isActive: string | boolean };
 type ApiResponse<T> = { success: boolean; data?: T; error?: { message?: string } };
 
 async function read<T>(response: Response, fallback: string): Promise<T> {
@@ -22,6 +23,13 @@ export default function OrganizationWorkspace({ currentClinicId, canCreate }: { 
   const [selectedId, setSelectedId] = useState('');
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [report, setReport] = useState<Report | null>(null);
+  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [catalogName, setCatalogName] = useState('');
+  const [catalogCategory, setCatalogCategory] = useState('');
+  const [catalogDuration, setCatalogDuration] = useState(30);
+  const [catalogPrice, setCatalogPrice] = useState('');
+  const [adoptItemId, setAdoptItemId] = useState('');
+  const [adoptClinicId, setAdoptClinicId] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,14 +55,15 @@ export default function OrganizationWorkspace({ currentClinicId, canCreate }: { 
   }, []);
 
   const loadWorkspace = useCallback(async () => {
-    if (!selectedId) { setWorkspace(null); setReport(null); return; }
+    if (!selectedId) { setWorkspace(null); setReport(null); setCatalog([]); return; }
     setLoading(true); setError(null);
     try {
-      const [details, summary] = await Promise.all([
+      const [details, summary, catalogRows] = await Promise.all([
         read<Workspace>(await fetch(`/api/organizations/${selectedId}/workspace`, { cache: 'no-store' }), 'Unable to load organization workspace'),
         read<Report>(await fetch(`/api/organizations/${selectedId}/report`, { cache: 'no-store' }), 'Unable to load organization summary'),
+        read<CatalogItem[]>(await fetch(`/api/organizations/${selectedId}/service-catalog`, { cache: 'no-store' }), 'Unable to load service catalog'),
       ]);
-      setWorkspace(details); setReport(summary);
+      setWorkspace(details); setReport(summary); setCatalog(catalogRows);
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to load organization workspace'); }
     finally { setLoading(false); }
   }, [selectedId]);
@@ -87,6 +96,20 @@ export default function OrganizationWorkspace({ currentClinicId, canCreate }: { 
     try { await read(await fetch(`/api/organizations/${selectedId}/members`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: memberEmail, role: memberRole, branchIds: memberRole === 'regional_manager' ? branchIds : [] }) }), 'Unable to save organization member'); setMemberEmail(''); setMemberRole('viewer'); setBranchIds([]); setMessage('Organization member access saved.'); await loadWorkspace(); }
     catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to save organization member'); } finally { setSaving(false); }
   }
+  async function createCatalogItem(event: FormEvent) {
+    event.preventDefault(); if (!selectedId) return; setSaving(true); setError(null); setMessage(null);
+    try {
+      await read(await fetch(`/api/organizations/${selectedId}/service-catalog`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: catalogName, category: catalogCategory, durationMinutes: catalogDuration, basePricePhp: catalogPrice || null }) }), 'Unable to create catalog item');
+      setCatalogName(''); setCatalogCategory(''); setCatalogDuration(30); setCatalogPrice(''); setMessage('Catalog item added.'); await loadWorkspace();
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to create catalog item'); } finally { setSaving(false); }
+  }
+  async function adoptCatalogItem(event: FormEvent) {
+    event.preventDefault(); if (!selectedId || !adoptClinicId || !adoptItemId) return; setSaving(true); setError(null); setMessage(null);
+    try {
+      await read(await fetch(`/api/organizations/${selectedId}/service-catalog/adopt`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ clinicId: adoptClinicId, itemId: adoptItemId }) }), 'Unable to adopt catalog item');
+      setMessage('Catalog item adopted into the clinic price list.');
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to adopt catalog item'); } finally { setSaving(false); }
+  }
 
   if (loading && !organizations.length && !workspace) return <main className="p-4 sm:p-6 lg:p-8"><div className="flex items-center gap-2 rounded-2xl bg-white p-8 text-violet-600"><Loader2 className="animate-spin" /> Loading organization workspace…</div></main>;
   return <main className="p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-6xl space-y-6">
@@ -99,7 +122,10 @@ export default function OrganizationWorkspace({ currentClinicId, canCreate }: { 
       {manageable && <div className="grid gap-5 lg:grid-cols-2"><form onSubmit={attachClinic} className="rounded-2xl border border-violet-100 bg-white p-5"><h2 className="font-bold text-violet-950">Attach an administered clinic</h2><p className="mt-1 text-xs text-slate-500">You must also be a clinic owner or administrator of the selected clinic.</p><select required value={attachClinicId} onChange={(event) => setAttachClinicId(event.target.value)} className="mt-4 h-11 w-full rounded-xl border border-violet-200 px-3"><option value="">Select clinic</option>{availableToAttach.map((clinic) => <option key={clinic.id} value={clinic.id}>{clinic.name}</option>)}</select><button disabled={saving || !availableToAttach.length} className="mt-3 w-full rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">Attach clinic</button></form>
       <form onSubmit={saveMember} className="rounded-2xl border border-violet-100 bg-white p-5"><h2 className="font-bold text-violet-950">Add or update organization member</h2><label className="mt-3 block text-sm font-semibold">Dentra account email<input required type="email" value={memberEmail} onChange={(event) => setMemberEmail(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-violet-200 px-3" /></label><label className="mt-3 block text-sm font-semibold">Organization role<select value={memberRole} onChange={(event) => { setMemberRole(event.target.value as Role); setBranchIds([]); }} className="mt-1 h-11 w-full rounded-xl border border-violet-200 px-3"><option value="viewer">Viewer</option><option value="regional_manager">Regional manager</option><option value="admin">Admin</option>{workspace.access.role === 'owner' && <option value="owner">Owner</option>}</select></label>{memberRole === 'regional_manager' && <fieldset className="mt-3"><legend className="text-sm font-semibold">Assigned branches</legend><div className="mt-2 max-h-36 space-y-2 overflow-y-auto">{workspace.clinics.filter((branch) => branch.branchId).map((branch) => <label key={branch.branchId!} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={branchIds.includes(branch.branchId!)} onChange={(event) => setBranchIds((current) => event.target.checked ? [...current, branch.branchId!] : current.filter((id) => id !== branch.branchId))} />{branch.clinicName} · {branch.branchName}</label>)}</div></fieldset>}<button disabled={saving} className="mt-4 w-full rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">Save member access</button></form></div>}
       {manageable && <section className="rounded-2xl border border-violet-100 bg-white"><div className="border-b border-violet-100 p-5"><h2 className="font-bold text-violet-950">Organization members</h2></div><div className="divide-y divide-violet-50">{workspace.members.map((member) => <div key={member.id} className="flex flex-wrap items-center justify-between gap-2 p-4"><div><p className="text-sm font-semibold text-slate-800">{member.name || member.email}</p><p className="text-xs text-slate-500">{member.email}{member.branchIds.length ? ` · ${member.branchIds.length} assigned branch${member.branchIds.length === 1 ? '' : 'es'}` : ''}</p></div><span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold capitalize text-violet-700">{member.role.replace('_', ' ')}</span></div>)}</div></section>}
-      <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5"><h2 className="font-bold text-amber-900">Enterprise roadmap handoff</h2><p className="mt-1 text-sm text-amber-800">Central service catalogs, organization-level entitlement cascading, cross-clinic staff assignments, and consented patient transfers remain tracked in MVP 3 Task 05 and are not implied by this workspace.</p></section>
+      <section className="rounded-2xl border border-violet-100 bg-white"><div className="flex items-center gap-2 border-b border-violet-100 p-5"><ClipboardList className="text-violet-600" size={18} /><h2 className="font-bold text-violet-950">Central service catalog</h2></div><p className="px-5 pt-4 text-xs text-slate-500">Catalog items set a group-wide base price. A clinic adopts an item to add it to its own service list, then may still override the price locally at any time.</p>{catalog.length ? <div className="divide-y divide-violet-50">{catalog.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 p-4"><div><p className="text-sm font-semibold text-slate-800">{item.name}</p><p className="text-xs text-slate-500">{item.category} · {item.durationMinutes} min{item.basePricePhp ? ` · ₱${Number(item.basePricePhp).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : ''}</p></div>{String(item.isActive) !== 'true' && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">Inactive</span>}</div>)}</div> : <p className="p-5 pt-3 text-sm text-slate-500">No catalog items yet.</p>}
+      {manageable && <form onSubmit={createCatalogItem} className="grid gap-3 border-t border-violet-100 p-5 sm:grid-cols-2"><label className="text-sm font-semibold">Item name<input required minLength={2} maxLength={200} value={catalogName} onChange={(event) => setCatalogName(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-violet-200 px-3" /></label><label className="text-sm font-semibold">Category<input required maxLength={100} value={catalogCategory} onChange={(event) => setCatalogCategory(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-violet-200 px-3" /></label><label className="text-sm font-semibold">Duration (minutes)<input required type="number" min={5} max={480} value={catalogDuration} onChange={(event) => setCatalogDuration(Number(event.target.value))} className="mt-1 h-11 w-full rounded-xl border border-violet-200 px-3" /></label><label className="text-sm font-semibold">Base price (₱, optional)<input inputMode="decimal" value={catalogPrice} onChange={(event) => setCatalogPrice(event.target.value)} placeholder="e.g. 2500.00" className="mt-1 h-11 w-full rounded-xl border border-violet-200 px-3" /></label><button disabled={saving} className="rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50 sm:col-span-2">{saving ? 'Adding…' : 'Add catalog item'}</button></form>}</section>
+      {manageable && catalog.length > 0 && <form onSubmit={adoptCatalogItem} className="rounded-2xl border border-violet-100 bg-white p-5"><h2 className="font-bold text-violet-950">Adopt a catalog item into a clinic</h2><p className="mt-1 text-xs text-slate-500">The clinic must belong to this organization.</p><div className="mt-4 grid gap-3 sm:grid-cols-2"><select required value={adoptClinicId} onChange={(event) => setAdoptClinicId(event.target.value)} className="h-11 w-full rounded-xl border border-violet-200 px-3"><option value="">Select clinic</option>{groupedClinics.map(([clinicId, clinic]) => <option key={clinicId} value={clinicId}>{clinic.name}</option>)}</select><select required value={adoptItemId} onChange={(event) => setAdoptItemId(event.target.value)} className="h-11 w-full rounded-xl border border-violet-200 px-3"><option value="">Select catalog item</option>{catalog.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div><button disabled={saving} className="mt-3 w-full rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">Adopt into clinic</button></form>}
+      <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5"><h2 className="font-bold text-amber-900">Enterprise roadmap handoff</h2><p className="mt-1 text-sm text-amber-800">Organization-level entitlement cascading, cross-clinic staff assignments, and consented patient transfers remain tracked in MVP 3 Task 05 and are not implied by this workspace.</p></section>
     </>}
   </div></main>;
 }

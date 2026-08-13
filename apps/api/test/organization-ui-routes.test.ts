@@ -14,7 +14,7 @@ const ORGANIZATION_ID = '77777777-7777-4777-8777-777777777777';
 const BRANCH_ID = '88888888-8888-4888-8888-888888888888';
 const context: AuthorizationContext = { user: { id: USER_ID, email: 'owner@example.test', name: 'Owner', platformRole: null }, strategies: ['clinicMember'], clinicMemberships: [{ clinicId: CLINIC_ID, branchId: null, role: 'clinic_owner', dentistId: null }] };
 
-function organizationsMock() { return { create: vi.fn(), eligibleClinics: vi.fn(async () => []), attachClinic: vi.fn(), listMine: vi.fn(async () => []), workspace: vi.fn(async () => ({ organization: {}, access: {}, clinics: [], members: [] })), report: vi.fn(async () => ({})), upsertMember: vi.fn() } as unknown as OrganizationService; }
+function organizationsMock() { return { create: vi.fn(), eligibleClinics: vi.fn(async () => []), attachClinic: vi.fn(), listMine: vi.fn(async () => []), workspace: vi.fn(async () => ({ organization: {}, access: {}, clinics: [], members: [] })), report: vi.fn(async () => ({})), upsertMember: vi.fn(), listCatalog: vi.fn(async () => []), createCatalogItem: vi.fn(), updateCatalogItem: vi.fn(), adoptCatalogItem: vi.fn() } as unknown as OrganizationService; }
 function auth(value: AuthorizationContext | null): AuthServices { return { handler: vi.fn(), getSession: vi.fn(async () => value ? ({ session: { id: 'session', userId: value.user.id, expiresAt: new Date('2030-01-01') }, user: value.user }) : null), resolveAuthorization: vi.fn(async () => value) }; }
 let app: FastifyInstance | undefined;
 afterEach(async () => { await app?.close(); app = undefined; });
@@ -26,4 +26,50 @@ describe('enterprise organization UI routes', () => {
   it('denies attaching a clinic the actor does not administer', async () => { const organizations = await setup(); const response = await app!.inject({ method: 'POST', url: `/v1/organizations/${ORGANIZATION_ID}/clinics`, headers: { cookie: 'session=test' }, payload: { clinicId: OTHER_CLINIC_ID } }); expect(response.statusCode).toBe(403); expect(organizations.attachClinic).not.toHaveBeenCalled(); });
   it('passes bounded regional branch assignments to the service', async () => { const organizations = await setup(); const response = await app!.inject({ method: 'POST', url: `/v1/organizations/${ORGANIZATION_ID}/members`, headers: { cookie: 'session=test' }, payload: { email: 'regional@example.test', role: 'regional_manager', branchIds: [BRANCH_ID] } }); expect(response.statusCode).toBe(200); expect(organizations.upsertMember).toHaveBeenCalledWith(ORGANIZATION_ID, { email: 'regional@example.test', role: 'regional_manager', branchIds: [BRANCH_ID] }, expect.objectContaining({ id: USER_ID })); });
   it('requires authentication for consolidated reports', async () => { const organizations = await setup(null); const response = await app!.inject({ method: 'GET', url: `/v1/organizations/${ORGANIZATION_ID}/report` }); expect(response.statusCode).toBe(401); expect(organizations.report).not.toHaveBeenCalled(); });
+
+  it('lists the organization service catalog for an authenticated member', async () => {
+    const organizations = await setup();
+    vi.mocked(organizations.listCatalog).mockResolvedValueOnce([{ id: '99999999-9999-4999-8999-999999999999', name: 'Cleaning', category: 'Preventive', description: null, durationMinutes: '30', basePricePhp: '800.00', isActive: 'true' }] as never);
+    const response = await app!.inject({ method: 'GET', url: `/v1/organizations/${ORGANIZATION_ID}/service-catalog`, headers: { cookie: 'session=test' } });
+    expect(response.statusCode).toBe(200);
+    expect(organizations.listCatalog).toHaveBeenCalledWith(ORGANIZATION_ID, USER_ID);
+  });
+
+  it('creates a catalog item with a valid price', async () => {
+    const organizations = await setup();
+    vi.mocked(organizations.createCatalogItem).mockResolvedValueOnce({ id: '99999999-9999-4999-8999-999999999999' });
+    const response = await app!.inject({ method: 'POST', url: `/v1/organizations/${ORGANIZATION_ID}/service-catalog`, headers: { cookie: 'session=test' }, payload: { name: 'Cleaning', category: 'Preventive', durationMinutes: 30, basePricePhp: '800.00' } });
+    expect(response.statusCode).toBe(201);
+    expect(organizations.createCatalogItem).toHaveBeenCalledWith(ORGANIZATION_ID, expect.objectContaining({ name: 'Cleaning', basePricePhp: '800.00' }), expect.objectContaining({ id: USER_ID }));
+  });
+
+  it('rejects a malformed catalog item price at the route boundary', async () => {
+    const organizations = await setup();
+    const response = await app!.inject({ method: 'POST', url: `/v1/organizations/${ORGANIZATION_ID}/service-catalog`, headers: { cookie: 'session=test' }, payload: { name: 'Cleaning', category: 'Preventive', durationMinutes: 30, basePricePhp: 'free' } });
+    expect(response.statusCode).toBe(400);
+    expect(organizations.createCatalogItem).not.toHaveBeenCalled();
+  });
+
+  it('maps a forbidden catalog creation from a non-admin org member', async () => {
+    const organizations = await setup();
+    vi.mocked(organizations.createCatalogItem).mockRejectedValueOnce(new OrganizationError('FORBIDDEN', 'Organization administrator access is required', 403));
+    const response = await app!.inject({ method: 'POST', url: `/v1/organizations/${ORGANIZATION_ID}/service-catalog`, headers: { cookie: 'session=test' }, payload: { name: 'Cleaning', category: 'Preventive', durationMinutes: 30 } });
+    expect(response.statusCode).toBe(403);
+  });
+
+  it('lets a clinic administrator adopt a catalog item', async () => {
+    const organizations = await setup();
+    vi.mocked(organizations.adoptCatalogItem).mockResolvedValueOnce({ id: 'new-service' });
+    const response = await app!.inject({ method: 'POST', url: `/v1/organizations/${ORGANIZATION_ID}/service-catalog/adopt`, headers: { cookie: 'session=test' }, payload: { clinicId: CLINIC_ID, itemId: '99999999-9999-4999-8999-999999999999' } });
+    expect(response.statusCode).toBe(201);
+    expect(organizations.adoptCatalogItem).toHaveBeenCalledWith(ORGANIZATION_ID, CLINIC_ID, '99999999-9999-4999-8999-999999999999', expect.objectContaining({ id: USER_ID }));
+  });
+
+  it('surfaces a conflict when adopting into a clinic outside the organization', async () => {
+    const organizations = await setup();
+    vi.mocked(organizations.adoptCatalogItem).mockRejectedValueOnce(new OrganizationError('CLINIC_NOT_IN_ORGANIZATION', 'This clinic does not belong to the organization', 403));
+    const response = await app!.inject({ method: 'POST', url: `/v1/organizations/${ORGANIZATION_ID}/service-catalog/adopt`, headers: { cookie: 'session=test' }, payload: { clinicId: OTHER_CLINIC_ID, itemId: '99999999-9999-4999-8999-999999999999' } });
+    expect(response.statusCode).toBe(403);
+    expect(response.json().error.code).toBe('CLINIC_NOT_IN_ORGANIZATION');
+  });
 });

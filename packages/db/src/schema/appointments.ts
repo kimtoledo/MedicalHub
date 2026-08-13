@@ -3,6 +3,7 @@ import { branches } from './branches';
 import { clinics } from './clinics';
 import { dentists } from './dentists';
 import { patients } from './patients';
+import { organizationServices } from './organizations';
 import { id, timestamps } from './helpers';
 
 export const appointmentStatusEnum = pgEnum('appointment_status', [
@@ -29,6 +30,8 @@ export const services = pgTable(
     name: varchar('name', { length: 200 }).notNull(),
     category: varchar('category', { length: 100 }).notNull().default('General'),
     description: text('description'),
+    /** Set when this service was adopted from an organization's central catalog; NULL for a clinic-only service. */
+    organizationServiceId: uuid('organization_service_id').references(() => organizationServices.id, { onDelete: 'set null' }),
     /** Duration in minutes */
     durationMinutes: varchar('duration_minutes', { length: 10 }).notNull().default('30'),
     /** Price in PHP (two decimal places). NULL means price not yet set. */

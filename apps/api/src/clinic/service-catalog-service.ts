@@ -3,6 +3,7 @@ import type { DB } from '@dentra/db';
 import { writeAudit } from '@dentra/db/audit';
 import {
   branches,
+  organizationServices,
   servicePriceHistory,
   services,
 } from '@dentra/db/schema';
@@ -32,7 +33,7 @@ export type ServiceCatalogItem = {
   durationMinutes: string;
   basePricePhp: string | null;
   pricePhp: string | null;
-  priceSource: 'base' | 'branch';
+  priceSource: 'base' | 'branch' | 'organization';
   branchId: string | null;
   isBookable: boolean;
   isActive: boolean;
@@ -89,7 +90,7 @@ async function resolvePrice(
   branchId: string | null | undefined,
   at = new Date(),
   fallbackPrice: string | null = null,
-): Promise<{ pricePhp: string | null; source: 'base' | 'branch' }> {
+): Promise<{ pricePhp: string | null; source: 'base' | 'branch' | 'organization' }> {
   const latest = async (query: unknown) => {
     const builder = query as {
       orderBy?: (order: unknown) => { limit: (count: number) => Promise<Array<{ pricePhp: string | null }>> };
@@ -125,7 +126,17 @@ async function resolvePrice(
       or(isNull(servicePriceHistory.effectiveTo), gt(servicePriceHistory.effectiveTo, at)),
     )));
   const [basePrice] = basePriceRows;
-  return { pricePhp: basePrice ? basePrice.pricePhp : fallbackPrice, source: 'base' };
+  if (basePrice) return { pricePhp: basePrice.pricePhp, source: 'base' };
+
+  // Last-resort fallback: an org-catalog base price, only when the clinic
+  // has set neither a branch nor its own clinic-base price. This never
+  // overrides a clinic's own price — it only fills the gap when unset.
+  const [service] = await database.select({ organizationServiceId: services.organizationServiceId }).from(services).where(eq(services.id, serviceId)).limit(1);
+  if (service?.organizationServiceId) {
+    const [orgService] = await database.select({ basePricePhp: organizationServices.basePricePhp }).from(organizationServices).where(eq(organizationServices.id, service.organizationServiceId)).limit(1);
+    if (orgService?.basePricePhp !== undefined && orgService?.basePricePhp !== null) return { pricePhp: orgService.basePricePhp, source: 'organization' };
+  }
+  return { pricePhp: fallbackPrice, source: 'base' };
 }
 
 export async function getEffectiveServicePrice(

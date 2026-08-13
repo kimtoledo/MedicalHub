@@ -1,8 +1,10 @@
 import { and, count, countDistinct, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
-import { appointments, branches, clinicMemberships, clinics, invoices, organizationClinics, organizationMemberships, organizations, patients, users } from '@dentra/db/schema';
+import { appointments, branches, clinicMemberships, clinics, invoices, organizationClinics, organizationMemberships, organizationServices, organizations, patients, services, users } from '@dentra/db/schema';
 import { writeAudit } from '@dentra/db/audit';
 import { AuditAction } from '@dentra/shared';
+
+export type OrganizationServiceCatalogInput = { name: string; category: string; description?: string | null; durationMinutes: number; basePricePhp?: string | null; isActive?: boolean };
 
 export type OrganizationService = ReturnType<typeof createOrganizationService>;
 export type OrganizationRole = 'owner' | 'admin' | 'regional_manager' | 'viewer';
@@ -102,6 +104,59 @@ export function createOrganizationService(database: DB) {
         : await database.insert(organizationMemberships).values({ organizationId, userId: target.id, role: input.role, branchIds: JSON.stringify(branchIds) }).returning({ id: organizationMemberships.id });
       await writeAudit(database, { actorId: actor.id, actorEmail: actor.email, clinicId: null, entityType: 'organization_membership', entityId: saved.id, action: AuditAction.ORGANIZATION_MEMBER_UPDATED, metadata: JSON.stringify({ organizationId, userId: target.id, role: input.role, branchIds }), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
       return saved;
+    },
+
+    // ---------------------------------------------------------------------
+    // Central service catalog — org owner/admin manage; member clinics
+    // "adopt" an item to seed (never overwrite) their own service price.
+    // ---------------------------------------------------------------------
+
+    listCatalog: async (organizationId: string, userId: string) => {
+      const access = await member(organizationId, userId);
+      if (!access) throw new OrganizationError('FORBIDDEN', 'Organization access is required', 403);
+      return database.select({ id: organizationServices.id, name: organizationServices.name, category: organizationServices.category, description: organizationServices.description, durationMinutes: organizationServices.durationMinutes, basePricePhp: organizationServices.basePricePhp, isActive: organizationServices.isActive }).from(organizationServices).where(eq(organizationServices.organizationId, organizationId)).orderBy(organizationServices.category, organizationServices.name);
+    },
+
+    createCatalogItem: async (organizationId: string, input: OrganizationServiceCatalogInput, actor: Actor) => {
+      const access = await member(organizationId, actor.id);
+      if (!access || !['owner', 'admin'].includes(access.role)) throw new OrganizationError('FORBIDDEN', 'Organization administrator access is required', 403);
+      const [created] = await database.insert(organizationServices).values({ organizationId, name: input.name, category: input.category, description: input.description ?? null, durationMinutes: String(input.durationMinutes), basePricePhp: input.basePricePhp ?? null, isActive: input.isActive === false ? 'false' : 'true' }).returning({ id: organizationServices.id });
+      await writeAudit(database, { actorId: actor.id, actorEmail: actor.email, clinicId: null, entityType: 'organization_service', entityId: created.id, action: AuditAction.ORGANIZATION_SERVICE_CREATED, metadata: JSON.stringify({ organizationId, name: input.name }), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
+      return created;
+    },
+
+    updateCatalogItem: async (organizationId: string, itemId: string, input: Partial<OrganizationServiceCatalogInput>, actor: Actor) => {
+      const access = await member(organizationId, actor.id);
+      if (!access || !['owner', 'admin'].includes(access.role)) throw new OrganizationError('FORBIDDEN', 'Organization administrator access is required', 403);
+      const [existing] = await database.select({ id: organizationServices.id }).from(organizationServices).where(and(eq(organizationServices.id, itemId), eq(organizationServices.organizationId, organizationId))).limit(1);
+      if (!existing) throw new OrganizationError('NOT_FOUND', 'Catalog item not found', 404);
+      await database.update(organizationServices).set({
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.category !== undefined ? { category: input.category } : {}),
+        ...(input.description !== undefined ? { description: input.description || null } : {}),
+        ...(input.durationMinutes !== undefined ? { durationMinutes: String(input.durationMinutes) } : {}),
+        ...(input.basePricePhp !== undefined ? { basePricePhp: input.basePricePhp } : {}),
+        ...(input.isActive !== undefined ? { isActive: input.isActive ? 'true' : 'false' } : {}),
+        updatedAt: new Date(),
+      }).where(eq(organizationServices.id, itemId));
+      await writeAudit(database, { actorId: actor.id, actorEmail: actor.email, clinicId: null, entityType: 'organization_service', entityId: itemId, action: AuditAction.ORGANIZATION_SERVICE_UPDATED, metadata: JSON.stringify({ organizationId, fields: Object.keys(input) }), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
+      return { id: itemId };
+    },
+
+    /** Seeds a NEW clinic-level service from an org catalog item. Never touches an existing clinic service or its price — a clinic that already has its own service for this offering should keep managing it directly. */
+    adoptCatalogItem: async (organizationId: string, clinicId: string, itemId: string, actor: Actor) => {
+      const [clinicAccess, membership, catalogItem] = await Promise.all([
+        database.select({ id: clinicMemberships.id }).from(clinicMemberships).where(and(eq(clinicMemberships.userId, actor.id), eq(clinicMemberships.clinicId, clinicId), inArray(clinicMemberships.role, ['clinic_owner', 'clinic_admin']), eq(clinicMemberships.isActive, 'true'))).limit(1),
+        database.select({ id: organizationClinics.id }).from(organizationClinics).where(and(eq(organizationClinics.organizationId, organizationId), eq(organizationClinics.clinicId, clinicId))).limit(1),
+        database.select({ id: organizationServices.id, name: organizationServices.name, category: organizationServices.category, description: organizationServices.description, durationMinutes: organizationServices.durationMinutes }).from(organizationServices).where(and(eq(organizationServices.id, itemId), eq(organizationServices.organizationId, organizationId))).limit(1),
+      ]);
+      if (!clinicAccess[0]) throw new OrganizationError('CLINIC_ACCESS_REQUIRED', 'You must be an owner or administrator of the clinic adopting this item', 403);
+      if (!membership[0]) throw new OrganizationError('CLINIC_NOT_IN_ORGANIZATION', 'This clinic does not belong to the organization', 403);
+      if (!catalogItem[0]) throw new OrganizationError('NOT_FOUND', 'Catalog item not found', 404);
+      const item = catalogItem[0];
+      const [created] = await database.insert(services).values({ clinicId, organizationServiceId: item.id, name: item.name, category: item.category, description: item.description, durationMinutes: item.durationMinutes, isBookable: true }).returning({ id: services.id });
+      await writeAudit(database, { actorId: actor.id, actorEmail: actor.email, clinicId, entityType: 'service', entityId: created.id, action: AuditAction.ORGANIZATION_SERVICE_ADOPTED, metadata: JSON.stringify({ organizationId, organizationServiceId: item.id }), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
+      return created;
     },
   };
 }
