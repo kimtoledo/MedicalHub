@@ -34,4 +34,5 @@ export * from './integrations';
 export * from './platform-operations';
 export * from './ai-imaging';
 export * from './notification-providers';
+export * from './patient-referrals';
 export * from './helpers';

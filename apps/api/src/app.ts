@@ -67,6 +67,8 @@ import { registerPublicBookingRoutes } from './routes/public-booking.js';
 import { registerClinicSettingsRoutes } from './routes/clinic-settings.js';
 import { registerClinicWorkspaceRoutes } from './routes/clinic-workspace.js';
 import { registerClinicPatientRoutes } from './routes/clinic-patients.js';
+import { registerPatientReferralRoutes } from './routes/patient-referrals.js';
+import type { PatientReferralService } from './clinic/patient-referrals-service.js';
 import { registerClinicEncounterRoutes } from './routes/clinic-encounters.js';
 import { registerClinicOdontogramRoutes } from './routes/clinic-odontogram.js';
 import { registerClinicTreatmentRoutes } from './routes/clinic-treatments.js';
@@ -149,6 +151,7 @@ export type BuildAppOptions = {
   clinicSettings?: ClinicSettingsService;
   clinicWorkspace?: ClinicWorkspaceService;
   clinicPatients?: ClinicPatientsService;
+  patientReferrals?: PatientReferralService;
   clinicEncounters?: ClinicEncountersService;
   clinicOdontogram?: ClinicOdontogramService;
   clinicTreatments?: ClinicTreatmentsService;
@@ -286,6 +289,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (options.clinicPatients && options.entitlements) {
       await registerClinicPatientRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, patients: options.clinicPatients });
+    }
+    if (options.patientReferrals && options.entitlements) {
+      await registerPatientReferralRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, referrals: options.patientReferrals });
     }
     if (options.clinicEncounters && options.entitlements) {
       await registerClinicEncounterRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, encounters: options.clinicEncounters });

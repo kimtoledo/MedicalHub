@@ -12,7 +12,7 @@
 | `02-search-discovery.md` | Location-aware clinic/dentist search, SEO directories | ✅ Done |
 | `03-verification-moderation.md` | Dentist/clinic verification workflow, trust badges | ✅ Done |
 | `04-reviews.md` | Patient review submission, moderation, clinic response | ✅ Done |
-| `05-enterprise-multibranch.md` | Organization hierarchy, consolidated reporting, regional roles | 🔵 Active |
+| `05-enterprise-multibranch.md` | Organization hierarchy, consolidated reporting, regional roles | ✅ Done |
 | `06-advanced-analytics.md` | Conversion, cohort, trend, and revenue analytics | ✅ Done |
 | `07-online-payments.md` | Patient checkout, webhooks, refunds, reconciliation | ✅ Done |
 | `08-custom-domains.md` | Clinic custom domain mapping, SSL, canonical redirects | ✅ Done |

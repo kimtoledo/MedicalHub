@@ -77,6 +77,15 @@ Updated manually after each session or merged task.
 - Verified the grant-check logic directly against a real seeded clinic through all its states (no grant, pending, approved+unexpired, approved+expired — all resolved correctly), plus the full 398-test suite passes with no regressions to normal clinic-member access paths
 - Verified repository-wide TypeScript checks and production web/API builds
 
+### ✅ Consented patient referral/transfer — enterprise multi-branch fully done
+- User decision: shared registry — both clinics can see a referral once it exists, but the underlying clinical record stays tenant-isolated per clinic (never merged or literally shared)
+- New `patient_referrals` table links a source clinic's patient to a target clinic in the same organization; creating one without `consented: true` is a hard 422 (`CONSENT_REQUIRED`)
+- Accepting a referral creates a brand-new patient row at the target clinic seeded with only basic demographics (never medical/dental history), inside the same transaction as the referral's status update — reused the same patient-number-generation logic as normal patient creation rather than calling out to a separately-transacted service, to keep both writes atomic
+- New endpoints (`POST/GET /v1/clinic/patient-referrals`, `POST .../accept`, `POST .../decline`) and a new "Referrals" page in the clinic app (sidebar entry, create form, accept/decline actions)
+- Verified end-to-end against real seeded clinics: consent enforcement, shared visibility on both sides, tenant isolation of the newly created patient record, and both accept/decline paths
+- Verified 408 passing API tests, repository-wide TypeScript checks, and production web/API builds
+- This was the last open item in `mvp3/05-enterprise-multibranch.md` — every "Done looks like" bullet is now delivered and the task is marked ✅ Done
+
 ### ✅ Search and Discovery — fully done
 - Added the final "Remaining" item: a "Near me" geolocation button on `/clinics` that requests `navigator.geolocation` and round-trips through the existing `latitude`/`longitude`/`maxDistanceKm` query params the backend already validated and consumed — no backend change needed, just the missing browser-side control, plus a "Clear location" toggle and persistence across pagination/filters
 - Verified end-to-end against a running dev server (toggled button state, "within X km of you" copy) rather than just typechecking
