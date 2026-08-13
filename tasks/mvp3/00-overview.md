@@ -26,7 +26,7 @@
 | `16-reviews-ui.md` | Patient review, public display, response, and moderation UI | ✅ Done |
 | `17-enterprise-organization-ui.md` | Organization selector, membership, and consolidated workspace | ✅ Done |
 | `18-advanced-analytics-ui.md` | Tenant-scoped trends, rates, charts, and exports | ✅ Done |
-| `19-online-payment-checkout-ui.md` | Clinic payment links and public checkout/status pages | 🔲 Queued |
+| `19-online-payment-checkout-ui.md` | Clinic payment links and public checkout/status pages | ✅ Done |
 | `20-custom-domain-settings-ui.md` | DNS instructions, verification, and activation UI | 🔲 Queued |
 | `21-integrations-settings-ui.md` | API keys, webhooks, calendar, and accounting export UI | 🔲 Queued |
 | `22-platform-operations-console.md` | Support-access and tenant export/offboarding queues | 🔲 Queued |

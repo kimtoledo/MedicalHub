@@ -33,6 +33,14 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Online payment checkout UI
+- Added clinic-facing invoice payment-link management (create, one-time copyable URL, list, cancel) to the invoice detail page, gated by `billing.payments` entitlement and role
+- Added `GET .../payment-links` and `POST .../payment-links/:linkId/cancel` API endpoints; cancellation only applies to active links and is audited
+- Added a public, unauthenticated `/pay/[token]` status page with explicit paid/expired/cancelled/failed/retry/awaiting-confirmation states and a matching API proxy
+- Live GCash/Maya/card checkout redirect stays out of scope until a provider is selected and credentials/compliance review are complete; the public page states this honestly rather than showing a non-functional pay button
+- Reconciled clinic-recorded refunds against online payment records so the payment-link page reflects a refund once billing records it, without ever accepting a client-reported payment status
+- Verified 300 passing API tests (10 new), 5 passing web tests, repository-wide TypeScript checks, production web/API builds, and clean diff validation
+
 ### ✅ Advanced analytics UI
 - Added a responsive `/app/analytics` workspace with Manila-time date presets, custom date bounds, assigned-branch filtering, metric definitions, and decision-useful appointment/revenue trends
 - Added accessible Dentra-colored charts with tabular alternatives, aggregate-only CSV export, empty/loading/error/retry states, and a bounded 366-day API range

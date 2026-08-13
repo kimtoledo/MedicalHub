@@ -11,6 +11,7 @@ import {
   invoicePayments,
   invoiceTransactions,
   invoices,
+  onlinePayments,
   patients,
   services,
   treatmentRecords,
@@ -652,7 +653,13 @@ export function createClinicBillingService(db: DB): ClinicBillingService {
         if (amount > refundable + 0.01) throw new BillingError('INVALID_AMOUNT', `Refund exceeds refundable payments of ₱${Math.max(0, refundable).toFixed(2)}`);
         await tx.insert(invoiceTransactions).values({ invoiceId, clinicId, type: 'refund', amountPhp, paymentMethod: (paymentMethod ?? null) as 'cash' | 'gcash' | 'card' | 'bank_transfer' | 'other' | null, transactionDate, reason: reason.trim(), recordedBy });
         const totalRefunded = refunds.reduce((sum, row) => sum + Number(row.amountPhp), 0) + amount;
-        await tx.update(invoices).set({ status: totalRefunded >= payments.reduce((sum, row) => sum + Number(row.amountPhp), 0) - 0.01 ? 'refunded' : 'partially_paid' }).where(eq(invoices.id, invoiceId));
+        const fullyRefunded = totalRefunded >= payments.reduce((sum, row) => sum + Number(row.amountPhp), 0) - 0.01;
+        await tx.update(invoices).set({ status: fullyRefunded ? 'refunded' : 'partially_paid' }).where(eq(invoices.id, invoiceId));
+        // Reconcile against online payments so the payment-link status page reflects clinic-recorded
+        // refunds; this only marks the platform's own record, it never accepts a client-reported status.
+        if (fullyRefunded) {
+          await tx.update(onlinePayments).set({ status: 'refunded', updatedAt: new Date() }).where(and(eq(onlinePayments.invoiceId, invoiceId), eq(onlinePayments.clinicId, clinicId), eq(onlinePayments.status, 'succeeded')));
+        }
         await writeAudit(tx, { clinicId, actorId: recordedBy, action: AuditAction.INVOICE_REFUNDED, entityType: 'invoice', entityId: invoiceId, metadata: JSON.stringify({ amountPhp, transactionDate }), });
       });
     },

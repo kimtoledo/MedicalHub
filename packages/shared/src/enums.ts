@@ -297,6 +297,7 @@ export const AuditAction = {
   ORGANIZATION_CLINIC_ATTACHED: 'organization.clinic_attached',
   ORGANIZATION_MEMBER_UPDATED: 'organization.member_updated',
   PAYMENT_LINK_CREATED: 'payment_link.created',
+  PAYMENT_LINK_CANCELLED: 'payment_link.cancelled',
   PAYMENT_WEBHOOK_PROCESSED: 'payment_webhook.processed',
   DOMAIN_ADDED: 'domain.added',
   DOMAIN_CHECKED: 'domain.checked',

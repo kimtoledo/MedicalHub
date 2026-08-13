@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Printer, CreditCard, CheckCircle, RotateCcw, Shield, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import type { InvoiceDetail } from "./page";
+import PaymentLinksPanel from "./PaymentLinksPanel";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -398,6 +399,8 @@ export default function InvoiceDetailClient({
             </p>
           </div>
         </div>
+
+        {isPending && <PaymentLinksPanel clinicId={clinicId} invoiceId={invoice.id} />}
       </div>
 
       <style>{`
