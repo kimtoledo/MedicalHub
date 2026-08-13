@@ -33,6 +33,12 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Search and Discovery — fully done
+- Added the final "Remaining" item: a "Near me" geolocation button on `/clinics` that requests `navigator.geolocation` and round-trips through the existing `latitude`/`longitude`/`maxDistanceKm` query params the backend already validated and consumed — no backend change needed, just the missing browser-side control, plus a "Clear location" toggle and persistence across pagination/filters
+- Verified end-to-end against a running dev server (toggled button state, "within X km of you" copy) rather than just typechecking
+- Verified 374 passing API tests, 5 passing web tests, repository-wide TypeScript checks, and production web/API builds
+- Every bullet in `mvp3/02-search-discovery.md`'s original "Done looks like" is now delivered: location/near-me search, open-slot labeling, ranking by proximity/completeness/verification, Schema.org markup, distance-aware results
+
 ### 🔄 Schema.org structured data (search discovery)
 - Clinic microsites now emit `Dentist` JSON-LD (address, geo when available, opening hours parsed from the same format the booking engine reads, `aggregateRating` only when a review actually exists); dentist profiles emit `Person` JSON-LD with `worksFor` links to affiliated clinics; both directory listing pages emit an `ItemList` of the current page
 - All JSON-LD is escaped before `dangerouslySetInnerHTML` since the content is clinic/dentist-authored and an unescaped `</script>` would break out of the script context

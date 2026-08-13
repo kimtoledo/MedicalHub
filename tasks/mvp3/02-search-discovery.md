@@ -1,6 +1,6 @@
 # Search and Discovery
 
-> **Status:** 🔵 Active — discovery baseline delivered
+> **Status:** ✅ Done
 
 ---
 
@@ -26,7 +26,9 @@ Patients looking for a dentist or clinic need a searchable, location-aware direc
 - **Open-slot computation and ranking weights (this update):** clinic and dentist directory results now carry `hasOpenSlotSoon`, computed in bulk (batched branch/assignment/appointment queries, no N+1) by checking the next 7 days of each branch's parsed operating hours against its assigned dentists' existing appointments — reusing the exact slot-generation/overlap logic the real booking engine uses (`parseHours`/`generatedSlots`/`overlaps`, exported from `booking-service.ts` for this), so the badge reflects genuine availability rather than a guess. A result with none is labeled “No open slots this week” per the task's own requirement.
 - Clinic ranking now applies verification tier (`verified` > `pending` > `unverified`) at the SQL level — correct across pages, not just within one — with profile-completeness and open-slot status as an in-page refinement, mirroring the pre-existing (and equally page-scoped) distance-sort behavior; when a location is given, distance stays primary and rank becomes the tie-break.
 - **Schema.org markup (this update):** clinic microsites emit `Dentist` JSON-LD (address, geo when a branch has coordinates, opening hours parsed from the same free-text format the booking engine reads, and `aggregateRating` only when at least one review exists — never a fabricated 0-review rating); dentist profiles emit `Person` JSON-LD with `worksFor` linking to affiliated clinics. Both directory listing pages (`/clinics`, `/dentists`) emit an `ItemList` of the current page's results. All JSON-LD is escaped (`<` → `<`) before being written via `dangerouslySetInnerHTML`, since the underlying strings are clinic/dentist-authored content and an unescaped `</script>` sequence would break out of the script context. Verified by running both apps and inspecting the actual rendered `<script type=”application/ld+json”>` output, not just a typecheck.
-- Remaining: browser “near me” geolocation UI.
+- **Browser “near me” UI (this update):** a client component on `/clinics` requests `navigator.geolocation`, then round-trips through the existing `latitude`/`longitude`/`maxDistanceKm` query params (no new backend work needed — this baseline already validated and consumed them, just had no browser-side UI to set them). Persists across pagination and search-filter changes; a “Clear location” control removes it. Verified end-to-end against a running dev server, not just typechecked.
+
+All items originally listed under “Done looks like” are now delivered.
 
 ---
 
