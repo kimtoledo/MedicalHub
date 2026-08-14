@@ -69,7 +69,7 @@ export type PublicClinicDetail = {
   logoUrl: string | null; coverUrl: string | null; email: string | null; phone: string | null;
   website: string | null; address: string | null; city: string | null; province: string | null;
   mapUrl: string | null; facebookUrl: string | null; instagramUrl: string | null; verificationStatus: string;
-  themePreset?: string; brandAccent?: string; showGallery?: boolean; showTeam?: boolean; showServices?: boolean; seoTitle?: string | null; seoDescription?: string | null; ogImageUrl?: string | null;
+  themePreset?: string; brandAccent?: string; coverMode?: string; logoUpdatedAt?: Date | null; coverUpdatedAt?: Date | null; showGallery?: boolean; showTeam?: boolean; showServices?: boolean; seoTitle?: string | null; seoDescription?: string | null; ogImageUrl?: string | null;
   gallery?: Array<{ id: string; imageUrl: string; altText: string; caption: string | null }>;
   branches: Array<{ id: string; name: string; phone: string | null; email: string | null; address: string | null; city: string | null; province: string | null; mapUrl: string | null; latitude: string | null; longitude: string | null; operatingHours: Record<string, string> }>;
   services: Array<{ id: string; name: string; description: string | null; durationMinutes: string }>;
@@ -148,7 +148,7 @@ export function createPublicDirectoryService(database: DB): PublicDirectoryServi
         description: clinics.description, logoUrl: clinics.logoUrl, coverUrl: clinics.coverUrl,
         email: clinics.email, phone: clinics.phone, website: clinics.website, address: clinics.address,
         city: clinics.city, province: clinics.province, mapUrl: clinics.mapUrl,
-        facebookUrl: clinics.facebookUrl, instagramUrl: clinics.instagramUrl, verificationStatus: clinics.verificationStatus, themePreset: clinics.themePreset, brandAccent: clinics.brandAccent, showGallery: clinics.showGallery, showTeam: clinics.showTeam, showServices: clinics.showServices, seoTitle: clinics.seoTitle, seoDescription: clinics.seoDescription, ogImageUrl: clinics.ogImageUrl,
+        facebookUrl: clinics.facebookUrl, instagramUrl: clinics.instagramUrl, verificationStatus: clinics.verificationStatus, themePreset: clinics.themePreset, brandAccent: clinics.brandAccent, coverMode: clinics.coverMode, logoUpdatedAt: clinics.logoUpdatedAt, coverUpdatedAt: clinics.coverUpdatedAt, showGallery: clinics.showGallery, showTeam: clinics.showTeam, showServices: clinics.showServices, seoTitle: clinics.seoTitle, seoDescription: clinics.seoDescription, ogImageUrl: clinics.ogImageUrl,
       }).from(clinics).where(and(eq(clinics.slug, slug), publicClinic)).limit(1);
       if (!clinic) return null;
       const [branchRows, serviceRows, dentistRows, galleryRows] = await Promise.all([

@@ -55,6 +55,13 @@ export const clinics = pgTable(
     description: text('description'),
     logoUrl: varchar('logo_url', { length: 500 }),
     coverUrl: varchar('cover_url', { length: 500 }),
+    /** 'image' shows the uploaded/pasted coverUrl as the hero background; 'gradient' renders a CSS gradient from themePreset/brandAccent instead. */
+    coverMode: varchar('cover_mode', { length: 20 }).notNull().default('gradient'),
+    /** Set when a logo is uploaded via the branding endpoint (not when logoUrl is Super-Admin-pasted); drives the public serving route + cache-busting. */
+    logoUpdatedAt: timestamp('logo_updated_at', { withTimezone: true }),
+    logoMimeType: varchar('logo_mime_type', { length: 20 }),
+    coverUpdatedAt: timestamp('cover_updated_at', { withTimezone: true }),
+    coverMimeType: varchar('cover_mime_type', { length: 20 }),
     heroText: varchar('hero_text', { length: 300 }),
 
     // Address

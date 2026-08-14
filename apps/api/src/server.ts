@@ -39,6 +39,7 @@ import { createEntitlementService } from './entitlements/service.js';
 import { createPublicDirectoryService } from './public/directory-service.js';
 import { createPublicBookingService } from './public/booking-service.js';
 import { createClinicSettingsService } from './clinic/settings-service.js';
+import { createClinicBrandingService } from './clinic/branding-service.js';
 import { createClinicWorkspaceService } from './clinic/workspace-service.js';
 import { createClinicPatientsService } from './clinic/patients-service.js';
 import { createPatientReferralService } from './clinic/patient-referrals-service.js';
@@ -129,6 +130,7 @@ const profiles = createAccountProfileService(database.db);
 const dentistProfiles = createDentistProfileService(database.db);
 const publicBooking = createPublicBookingService(database.db, notifications, integrations);
 const clinicSettings = createClinicSettingsService(database.db);
+const clinicBranding = createClinicBrandingService(database.db);
 const clinicWorkspace = createClinicWorkspaceService(database.db);
 const clinicPatients = createClinicPatientsService(database.db);
 const patientReferrals = createPatientReferralService(database.db);
@@ -174,6 +176,7 @@ const app = await buildApp({
   publicDirectory,
   publicBooking,
   clinicSettings,
+  clinicBranding,
   clinicWorkspace,
   clinicPatients,
   patientReferrals,

@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Archive, BadgeCheck, BarChart3, BellRing, CreditCard, DollarSign, Globe, LifeBuoy, MessageSquare, Plug, Settings, Shield } from "lucide-react";
+import { Archive, BadgeCheck, BarChart3, BellRing, CalendarOff, CreditCard, DollarSign, Globe, LifeBuoy, MessageSquare, Plug, Settings, Shield } from "lucide-react";
 import ClinicMicrositeSettings from "@/components/app/ClinicMicrositeSettings";
 import AppPageError from "@/components/app/AppPageError";
 import { getClinicSession, getClinicShellContext } from "@/lib/clinic-session";
-import { ClinicSettingsLoadError, getClinicClosures, getClinicSettings, type ClinicClosure, type ClinicSettings } from "@/lib/clinic-settings";
+import { ClinicSettingsLoadError, getClinicSettings, type ClinicSettings } from "@/lib/clinic-settings";
 import { classifyClinicSettingsError } from "@/lib/clinic-settings-error";
 
 const operationalSettings = [
@@ -43,6 +43,12 @@ const operationalSettings = [
     icon: DollarSign,
     label: "Service Pricing",
     description: "Set the price for each dental service offered by your clinic.",
+  },
+  {
+    href: "/app/settings/holidays",
+    icon: CalendarOff,
+    label: "Holidays & Closures",
+    description: "Manage PH holidays and custom closure dates, in list or calendar view.",
   },
   {
     href: "/app/settings/inventory",
@@ -95,9 +101,8 @@ export default async function ClinicSettingsPage() {
   );
 
   let settings: ClinicSettings;
-  let closures: ClinicClosure[];
   try {
-    [settings, closures] = await Promise.all([getClinicSettings(identity.clinicId), getClinicClosures(identity.clinicId)]);
+    settings = await getClinicSettings(identity.clinicId);
   } catch (caught) {
     const kind = caught instanceof ClinicSettingsLoadError
       ? classifyClinicSettingsError(caught.status)
@@ -155,7 +160,7 @@ export default async function ClinicSettingsPage() {
           ))}
         </div>
 
-        <ClinicMicrositeSettings clinicId={identity.clinicId} settings={settings} closures={closures} />
+        <ClinicMicrositeSettings clinicId={identity.clinicId} settings={settings} />
       </div>
     </div>
   );

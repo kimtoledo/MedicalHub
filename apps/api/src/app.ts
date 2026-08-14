@@ -44,6 +44,7 @@ import type { EntitlementService } from './entitlements/service.js';
 import type { PublicDirectoryService } from './public/directory-service.js';
 import type { PublicBookingService } from './public/booking-service.js';
 import type { ClinicSettingsService } from './clinic/settings-service.js';
+import type { ClinicBrandingService } from './clinic/branding-service.js';
 import type { ClinicWorkspaceService } from './clinic/workspace-service.js';
 import type { ClinicPatientsService } from './clinic/patients-service.js';
 import type { ClinicEncountersService } from './clinic/encounters-service.js';
@@ -71,6 +72,7 @@ import { registerEntitlementRoutes } from './routes/entitlements.js';
 import { registerPublicDirectoryRoutes } from './routes/public-directory.js';
 import { registerPublicBookingRoutes } from './routes/public-booking.js';
 import { registerClinicSettingsRoutes } from './routes/clinic-settings.js';
+import { registerClinicBrandingRoutes } from './routes/clinic-branding.js';
 import { registerClinicWorkspaceRoutes } from './routes/clinic-workspace.js';
 import { registerClinicPatientRoutes } from './routes/clinic-patients.js';
 import { registerPatientReferralRoutes } from './routes/patient-referrals.js';
@@ -165,6 +167,7 @@ export type BuildAppOptions = {
   publicDirectory?: PublicDirectoryService;
   publicBooking?: PublicBookingService;
   clinicSettings?: ClinicSettingsService;
+  clinicBranding?: ClinicBrandingService;
   clinicWorkspace?: ClinicWorkspaceService;
   clinicPatients?: ClinicPatientsService;
   patientReferrals?: PatientReferralService;
@@ -318,6 +321,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         settings: options.clinicSettings,
         publication: options.adminClinicSettings,
       });
+    }
+    if (options.clinicBranding) {
+      await registerClinicBrandingRoutes(app, { auth: options.auth, branding: options.clinicBranding });
     }
     if (options.clinicWorkspace) {
       await registerClinicWorkspaceRoutes(app, { auth: options.auth, workspace: options.clinicWorkspace });

@@ -330,6 +330,13 @@
       "when": 1786715361141,
       "tag": "0046_wet_nehzno",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1786719657087,
+      "tag": "0047_mean_raider",
+      "breakpoints": true
     }
   ]
 }
