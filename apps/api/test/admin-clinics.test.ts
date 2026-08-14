@@ -2,9 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../src/app.js';
 import {
+  AdminClinicAccountUpdateError,
   AdminClinicBranchCreationError,
   AdminClinicCreationError,
   AdminClinicStatusError,
+  type AdminClinicAccountUpdateService,
   type AdminClinicBranchCreationService,
   type AdminClinicCreationService,
   type AdminClinicDetailService,
@@ -34,6 +36,17 @@ const superAdminContext: AuthorizationContext = {
     email: 'admin@dentra.ph',
     name: 'Dentra Admin',
     platformRole: 'super_admin',
+  },
+  strategies: ['superAdmin'],
+  clinicMemberships: [],
+};
+
+const platformSupportContext: AuthorizationContext = {
+  user: {
+    id: '44444444-4444-4444-8444-444444444444',
+    email: 'support@dentra.ph',
+    name: 'Dentra Support',
+    platformRole: 'platform_support',
   },
   strategies: ['superAdmin'],
   clinicMemberships: [],
@@ -138,6 +151,7 @@ function createClinicDetailService(): AdminClinicDetailService {
       phone: '+63 2 8123 4567',
       website: 'https://smilebrightdental.ph',
       description: 'Family dental clinic',
+      logoUrl: null,
       address: '123 Demo Street',
       city: 'Makati',
       province: 'Metro Manila',
@@ -276,6 +290,7 @@ async function createApp(
   status?: AdminClinicStatusService,
   branchCreation?: AdminClinicBranchCreationService,
   settings?: AdminClinicSettingsService,
+  accountUpdate?: AdminClinicAccountUpdateService,
 ) {
   app = await buildApp({
     config,
@@ -288,7 +303,27 @@ async function createApp(
     adminClinicStatus: status,
     adminClinicBranchCreation: branchCreation,
     adminClinicSettings: settings,
+    adminClinicAccountUpdate: accountUpdate,
   });
+}
+
+function createClinicAccountUpdateService(): AdminClinicAccountUpdateService {
+  return {
+    update: vi.fn(async (clinicId, input) => ({
+      id: clinicId,
+      name: input.name ?? 'Smile Bright Dental',
+      slug: input.slug ?? 'smile-bright-dental',
+      email: input.email ?? null,
+      phone: input.phone ?? null,
+      address: input.address ?? null,
+      city: input.city ?? null,
+      province: input.province ?? null,
+      website: input.website ?? null,
+      description: input.description ?? null,
+      logoUrl: input.logoUrl ?? null,
+      updatedAt: new Date('2026-08-11T00:00:00.000Z'),
+    })),
+  };
 }
 
 describe('GET /v1/admin/clinics', () => {
@@ -1019,5 +1054,130 @@ describe('Super Admin clinic package, override, and publication settings', () =>
     });
     expect(response.statusCode).toBe(statusCode);
     expect(response.json().error.code).toBe(code);
+  });
+});
+
+describe('PATCH /v1/admin/clinics/:clinicId', () => {
+  const clinicId = '00000000-0001-0000-0000-000000000001';
+
+  it('lets a super_admin update account info fields', async () => {
+    const accountUpdate = createClinicAccountUpdateService();
+    await createApp(
+      superAdminContext,
+      createClinicService(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      accountUpdate,
+    );
+    const response = await app!.inject({
+      method: 'PATCH',
+      url: `/v1/admin/clinics/${clinicId}`,
+      payload: { name: 'Smile Bright Dental Clinic', phone: '+63 2 8000 0000' },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(accountUpdate.update).toHaveBeenCalledWith(
+      clinicId,
+      expect.objectContaining({ name: 'Smile Bright Dental Clinic', phone: '+63 2 8000 0000' }),
+      expect.objectContaining({ id: superAdminContext.user.id }),
+    );
+  });
+
+  it('rejects a platform_support account from updating account info', async () => {
+    const accountUpdate = createClinicAccountUpdateService();
+    await createApp(
+      platformSupportContext,
+      createClinicService(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      accountUpdate,
+    );
+    const response = await app!.inject({
+      method: 'PATCH',
+      url: `/v1/admin/clinics/${clinicId}`,
+      payload: { name: 'Smile Bright Dental Clinic' },
+    });
+    expect(response.statusCode).toBe(403);
+    expect(accountUpdate.update).not.toHaveBeenCalled();
+  });
+
+  it('returns 409 SLUG_TAKEN when the new slug is already in use', async () => {
+    const accountUpdate = createClinicAccountUpdateService();
+    vi.mocked(accountUpdate.update).mockRejectedValueOnce(
+      new AdminClinicAccountUpdateError('SLUG_TAKEN', 'That clinic slug is already in use'),
+    );
+    await createApp(
+      superAdminContext,
+      createClinicService(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      accountUpdate,
+    );
+    const response = await app!.inject({
+      method: 'PATCH',
+      url: `/v1/admin/clinics/${clinicId}`,
+      payload: { slug: 'already-taken' },
+    });
+    expect(response.statusCode).toBe(409);
+    expect(response.json().error.code).toBe('SLUG_TAKEN');
+  });
+
+  it('returns 409 SLUG_LOCKED when changing the slug of a published clinic', async () => {
+    const accountUpdate = createClinicAccountUpdateService();
+    vi.mocked(accountUpdate.update).mockRejectedValueOnce(
+      new AdminClinicAccountUpdateError(
+        'SLUG_LOCKED',
+        'The clinic slug cannot change once the microsite has been published',
+      ),
+    );
+    await createApp(
+      superAdminContext,
+      createClinicService(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      accountUpdate,
+    );
+    const response = await app!.inject({
+      method: 'PATCH',
+      url: `/v1/admin/clinics/${clinicId}`,
+      payload: { slug: 'new-slug' },
+    });
+    expect(response.statusCode).toBe(409);
+    expect(response.json().error.code).toBe('SLUG_LOCKED');
+  });
+
+  it('returns 404 when the clinic does not exist', async () => {
+    const accountUpdate = createClinicAccountUpdateService();
+    vi.mocked(accountUpdate.update).mockRejectedValueOnce(
+      new AdminClinicAccountUpdateError('CLINIC_NOT_FOUND', 'Clinic not found'),
+    );
+    await createApp(
+      superAdminContext,
+      createClinicService(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      accountUpdate,
+    );
+    const response = await app!.inject({
+      method: 'PATCH',
+      url: `/v1/admin/clinics/${clinicId}`,
+      payload: { name: 'Anything' },
+    });
+    expect(response.statusCode).toBe(404);
+    expect(response.json().error.code).toBe('CLINIC_NOT_FOUND');
   });
 });

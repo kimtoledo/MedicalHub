@@ -5,9 +5,11 @@ import { isSuperAdmin } from '../auth/authorization.js';
 import { resolveRequestAuthorization } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
 import {
+  AdminClinicAccountUpdateError,
   AdminClinicBranchCreationError,
   AdminClinicCreationError,
   AdminClinicStatusError,
+  type AdminClinicAccountUpdateService,
   type AdminClinicBranchCreationService,
   type AdminClinicCreationService,
   type AdminClinicDetailService,
@@ -60,6 +62,48 @@ const optionalText = (maxLength: number) => z
   .union([z.string().trim().max(maxLength), z.null()])
   .optional()
   .transform((value) => value || null);
+
+const optionalUrl = (maxLength: number) => z
+  .union([z.string().trim().url().max(maxLength), z.literal(''), z.null()])
+  .optional()
+  .transform((value) => value || null);
+
+// PATCH-safe variants: a key that is absent from the request body must be
+// left untouched (undefined), not silently cleared to null. Only a key that
+// is present with an empty string/null value means "clear this field".
+// (optionalText/optionalUrl above collapse "absent" into null, which is
+// correct for creation but destructive for a partial update.)
+const optionalPatchText = (maxLength: number) => z
+  .union([z.string().trim().max(maxLength), z.null()])
+  .optional()
+  .transform((value) => (value === undefined ? undefined : value || null));
+
+const optionalPatchUrl = (maxLength: number) => z
+  .union([z.string().trim().url().max(maxLength), z.literal(''), z.null()])
+  .optional()
+  .transform((value) => (value === undefined ? undefined : value || null));
+
+const updateClinicAccountInfoBodySchema = z.object({
+  name: z.string().trim().min(2).max(200).optional(),
+  slug: z.string()
+    .trim()
+    .toLowerCase()
+    .min(2)
+    .max(80)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+    .optional(),
+  email: z
+    .union([z.string().trim().toLowerCase().email().max(255), z.literal(''), z.null()])
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value || null)),
+  phone: optionalPatchText(20),
+  address: optionalPatchText(500),
+  city: optionalPatchText(100),
+  province: optionalPatchText(100),
+  website: optionalPatchUrl(500),
+  description: optionalPatchText(5000),
+  logoUrl: optionalPatchUrl(500),
+}).strict();
 
 const createClinicBranchBodySchema = z.object({
   name: z.string().trim().min(2).max(200),
@@ -151,6 +195,11 @@ function getSettingsErrorStatus(error: AdminClinicSettingsError): number {
   return 409;
 }
 
+function getAccountUpdateErrorStatus(error: AdminClinicAccountUpdateError): number {
+  if (error.code === 'CLINIC_NOT_FOUND') return 404;
+  return 409;
+}
+
 type RegisterAdminClinicRoutesOptions = {
   auth: AuthServices;
   clinics: AdminClinicListService;
@@ -159,6 +208,7 @@ type RegisterAdminClinicRoutesOptions = {
   status?: AdminClinicStatusService;
   branchCreation?: AdminClinicBranchCreationService;
   settings?: AdminClinicSettingsService;
+  accountUpdate?: AdminClinicAccountUpdateService;
 };
 
 export async function registerAdminClinicRoutes(
@@ -317,6 +367,76 @@ export async function registerAdminClinicRoutes(
 
         const statusCode = error.code === 'CLINIC_NOT_FOUND' ? 404 : 409;
         return reply.status(statusCode).send({
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+          },
+        });
+      }
+    });
+  }
+
+  const accountUpdate = options.accountUpdate;
+  if (accountUpdate) {
+    app.patch('/v1/admin/clinics/:clinicId', async (request, reply) => {
+      const authorization = await resolveRequestAuthorization(request, options.auth);
+
+      if (!authorization) {
+        return reply.status(401).send({
+          success: false,
+          error: {
+            code: 'UNAUTHENTICATED',
+            message: 'A valid session is required',
+          },
+        });
+      }
+
+      if (!isSuperAdmin(authorization)) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Super Admin access is required',
+          },
+        });
+      }
+
+      const params = clinicParamsSchema.safeParse(request.params);
+      const body = updateClinicAccountInfoBodySchema.safeParse(request.body);
+      if (!params.success || !body.success) {
+        return reply.status(400).send({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid clinic account info update',
+          },
+        });
+      }
+
+      try {
+        const userAgent = request.headers['user-agent'];
+        const clinic = await accountUpdate.update(
+          params.data.clinicId,
+          body.data,
+          {
+            id: authorization.user.id,
+            email: authorization.user.email,
+            ipAddress: request.ip,
+            userAgent:
+              typeof userAgent === 'string'
+                ? userAgent.slice(0, 500)
+                : undefined,
+          },
+        );
+
+        return reply.send({ success: true, data: clinic });
+      } catch (error) {
+        if (!(error instanceof AdminClinicAccountUpdateError)) {
+          throw error;
+        }
+
+        return reply.status(getAccountUpdateErrorStatus(error)).send({
           success: false,
           error: {
             code: error.code,

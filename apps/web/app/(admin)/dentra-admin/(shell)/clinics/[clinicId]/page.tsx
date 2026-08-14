@@ -20,6 +20,7 @@ import {
   type ClinicStatus,
 } from '@/lib/admin-clinics';
 import ClinicStatusActions from '@/components/admin/ClinicStatusActions';
+import ClinicAccountInfoAction from '@/components/admin/ClinicAccountInfoAction';
 import AddClinicBranch from '@/components/admin/AddClinicBranch';
 import ClinicPackageAction from '@/components/admin/ClinicPackageAction';
 import ClinicPublicationAction from '@/components/admin/ClinicPublicationAction';
@@ -180,8 +181,34 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
 
         <div className="grid gap-6 lg:grid-cols-3">
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
-            <h2 className="font-bold text-slate-900">Account information</h2>
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="font-bold text-slate-900">Account information</h2>
+              <ClinicAccountInfoAction
+                clinicId={clinic.id}
+                clinicName={clinic.name}
+                publicationStatus={clinic.publicationStatus}
+                current={{
+                  name: clinic.name,
+                  slug: clinic.slug,
+                  email: clinic.email,
+                  phone: clinic.phone,
+                  address: clinic.address,
+                  city: clinic.city,
+                  province: clinic.province,
+                  website: clinic.website,
+                  description: clinic.description,
+                  logoUrl: clinic.logoUrl,
+                }}
+              />
+            </div>
             <dl className="mt-5 grid gap-5 sm:grid-cols-2">
+              {clinic.logoUrl && (
+                <div className="sm:col-span-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Logo</dt>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={clinic.logoUrl} alt={`${clinic.name} logo`} className="mt-2 h-12 w-12 rounded-xl border border-slate-200 object-contain" />
+                </div>
+              )}
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Slug</dt>
                 <dd className="mt-1 font-mono text-sm text-slate-800">{clinic.slug}</dd>

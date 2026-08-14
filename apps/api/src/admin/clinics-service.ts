@@ -124,6 +124,7 @@ export type AdminClinicDetail = {
   phone: string | null;
   website: string | null;
   description: string | null;
+  logoUrl: string | null;
   address: string | null;
   city: string | null;
   province: string | null;
@@ -394,6 +395,7 @@ export function createAdminClinicDetailService(
           phone: clinics.phone,
           website: clinics.website,
           description: clinics.description,
+          logoUrl: clinics.logoUrl,
           address: clinics.address,
           city: clinics.city,
           province: clinics.province,
@@ -662,6 +664,202 @@ export function createAdminClinicStatusService(
 
         return updatedClinic;
       }),
+  };
+}
+
+export type UpdateAdminClinicAccountInfoInput = {
+  name?: string;
+  slug?: string;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  city?: string | null;
+  province?: string | null;
+  website?: string | null;
+  description?: string | null;
+  logoUrl?: string | null;
+};
+
+export type UpdateAdminClinicAccountInfoActor = {
+  id: string;
+  email: string;
+  ipAddress?: string;
+  userAgent?: string;
+};
+
+export type UpdatedAdminClinicAccountInfo = {
+  id: string;
+  name: string;
+  slug: string;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
+  province: string | null;
+  website: string | null;
+  description: string | null;
+  logoUrl: string | null;
+  updatedAt: Date;
+};
+
+export type AdminClinicAccountUpdateErrorCode =
+  | 'CLINIC_NOT_FOUND'
+  | 'SLUG_TAKEN'
+  | 'SLUG_LOCKED';
+
+export class AdminClinicAccountUpdateError extends Error {
+  constructor(
+    public readonly code: AdminClinicAccountUpdateErrorCode,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'AdminClinicAccountUpdateError';
+  }
+}
+
+export type AdminClinicAccountUpdateService = {
+  update: (
+    clinicId: string,
+    input: UpdateAdminClinicAccountInfoInput,
+    actor: UpdateAdminClinicAccountInfoActor,
+  ) => Promise<UpdatedAdminClinicAccountInfo>;
+};
+
+const accountInfoFields = [
+  'name',
+  'slug',
+  'email',
+  'phone',
+  'address',
+  'city',
+  'province',
+  'website',
+  'description',
+  'logoUrl',
+] as const satisfies readonly (keyof UpdateAdminClinicAccountInfoInput)[];
+
+export function createAdminClinicAccountUpdateService(
+  database: DB,
+): AdminClinicAccountUpdateService {
+  return {
+    update: async (clinicId, input, actor) => {
+      try {
+        return await database.transaction(async (transaction) => {
+          const [clinic] = await transaction
+            .select({
+              name: clinics.name,
+              slug: clinics.slug,
+              email: clinics.email,
+              phone: clinics.phone,
+              address: clinics.address,
+              city: clinics.city,
+              province: clinics.province,
+              website: clinics.website,
+              description: clinics.description,
+              logoUrl: clinics.logoUrl,
+              publicationStatus: clinics.publicationStatus,
+            })
+            .from(clinics)
+            .where(and(eq(clinics.id, clinicId), isNull(clinics.deletedAt)))
+            .limit(1);
+
+          if (!clinic) {
+            throw new AdminClinicAccountUpdateError(
+              'CLINIC_NOT_FOUND',
+              'Clinic not found',
+            );
+          }
+
+          const slugChanged =
+            input.slug !== undefined && input.slug !== clinic.slug;
+
+          if (slugChanged && clinic.publicationStatus !== 'draft') {
+            throw new AdminClinicAccountUpdateError(
+              'SLUG_LOCKED',
+              'The clinic slug cannot change once the microsite has been published',
+            );
+          }
+
+          if (slugChanged) {
+            const [duplicateClinic] = await transaction
+              .select({ id: clinics.id })
+              .from(clinics)
+              .where(and(eq(clinics.slug, input.slug!), isNull(clinics.deletedAt)))
+              .limit(1);
+
+            if (duplicateClinic) {
+              throw new AdminClinicAccountUpdateError(
+                'SLUG_TAKEN',
+                'That clinic slug is already in use',
+              );
+            }
+          }
+
+          const changedFields = accountInfoFields.filter(
+            (field) => input[field] !== undefined && input[field] !== clinic[field],
+          );
+
+          const updateValues = Object.fromEntries(
+            changedFields.map((field) => [field, input[field]]),
+          );
+
+          const [updatedClinic] = await transaction
+            .update(clinics)
+            .set(updateValues)
+            .where(and(eq(clinics.id, clinicId), isNull(clinics.deletedAt)))
+            .returning({
+              id: clinics.id,
+              name: clinics.name,
+              slug: clinics.slug,
+              email: clinics.email,
+              phone: clinics.phone,
+              address: clinics.address,
+              city: clinics.city,
+              province: clinics.province,
+              website: clinics.website,
+              description: clinics.description,
+              logoUrl: clinics.logoUrl,
+              updatedAt: clinics.updatedAt,
+            });
+
+          if (changedFields.length > 0) {
+            await writeAudit(transaction, {
+              actorId: actor.id,
+              actorEmail: actor.email,
+              clinicId,
+              entityType: 'clinic',
+              entityId: clinicId,
+              action: AuditAction.CLINIC_UPDATED,
+              metadata: JSON.stringify({
+                changedFields,
+                previous: Object.fromEntries(
+                  changedFields.map((field) => [field, clinic[field]]),
+                ),
+                next: updateValues,
+              }),
+              ipAddress: actor.ipAddress,
+              userAgent: actor.userAgent,
+            });
+          }
+
+          return updatedClinic;
+        });
+      } catch (error) {
+        if (error instanceof AdminClinicAccountUpdateError) {
+          throw error;
+        }
+
+        const constraint = getUniqueConstraint(error);
+        if (constraint === 'clinics_slug_unique') {
+          throw new AdminClinicAccountUpdateError(
+            'SLUG_TAKEN',
+            'That clinic slug is already in use',
+          );
+        }
+
+        throw error;
+      }
+    },
   };
 }
 

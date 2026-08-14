@@ -25,7 +25,8 @@
 | `15-hmo-insurance.md` | HMO payer catalog, patient coverage, claim documents & tracker | ✅ Done |
 | `16-reports-workspace-completion.md` | Date/filter controls, detailed reports, and usable CSV exports | ✅ Done |
 | `17-hmo-claim-workflow-ux.md` | Replace raw UUID fields with guided patient/invoice/encounter selection | ✅ Done |
-| `18-pediatric-odontogram.md` | Pediatric (primary) tooth chart, per-surface + icon visual indicators | 🔵 Active |
+| `18-pediatric-odontogram.md` | Pediatric (primary) tooth chart, per-surface + icon visual indicators | ✅ Done |
+| `19-clinic-account-info-editing.md` | Super Admin edit form for clinic name/contact/address/web presence | ✅ Done |
 
 ---
 

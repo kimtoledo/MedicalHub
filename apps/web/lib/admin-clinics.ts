@@ -48,6 +48,7 @@ export type AdminClinicDetail = {
   phone: string | null;
   website: string | null;
   description: string | null;
+  logoUrl: string | null;
   address: string | null;
   city: string | null;
   province: string | null;

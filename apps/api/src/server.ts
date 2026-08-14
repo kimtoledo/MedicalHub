@@ -3,6 +3,7 @@ import { loadConfig } from './config.js';
 import { createDatabaseServices } from './database.js';
 import { createAuthServices } from './auth/service.js';
 import {
+  createAdminClinicAccountUpdateService,
   createAdminClinicCreationService,
   createAdminClinicBranchCreationService,
   createAdminClinicDetailService,
@@ -78,6 +79,7 @@ const adminClinicCreation = createAdminClinicCreationService(database.db);
 const adminClinicBranchCreation = createAdminClinicBranchCreationService(database.db);
 const adminClinicDetails = createAdminClinicDetailService(database.db);
 const adminClinicStatus = createAdminClinicStatusService(database.db);
+const adminClinicAccountUpdate = createAdminClinicAccountUpdateService(database.db);
 const integrations = createIntegrationService(database.db);
 const clinicBilling = createClinicBillingService(database.db, integrations);
 const clinicServiceList = createClinicServiceListService(database.db);
@@ -142,6 +144,7 @@ const app = await buildApp({
   adminClinicBranchCreation,
   adminClinicDetails,
   adminClinicStatus,
+  adminClinicAccountUpdate,
   adminClinicSettings,
   clinicBilling,
   clinicServiceList,

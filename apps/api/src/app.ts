@@ -10,6 +10,7 @@ import Fastify, {
 import type { ApiConfig } from './config.js';
 import type { AuthServices } from './auth/types.js';
 import type {
+  AdminClinicAccountUpdateService,
   AdminClinicCreationService,
   AdminClinicBranchCreationService,
   AdminClinicDetailService,
@@ -132,6 +133,7 @@ export type BuildAppOptions = {
   adminClinicBranchCreation?: AdminClinicBranchCreationService;
   adminClinicDetails?: AdminClinicDetailService;
   adminClinicStatus?: AdminClinicStatusService;
+  adminClinicAccountUpdate?: AdminClinicAccountUpdateService;
   adminClinicSettings?: AdminClinicSettingsService;
   clinicBilling?: ClinicBillingService;
   clinicServiceList?: ClinicServiceListService;
@@ -263,6 +265,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         branchCreation: options.adminClinicBranchCreation,
         details: options.adminClinicDetails,
         status: options.adminClinicStatus,
+        accountUpdate: options.adminClinicAccountUpdate,
         settings: options.adminClinicSettings,
       });
     }
