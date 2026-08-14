@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  appointmentDetailHref,
   canDentistManageAppointment,
   patientProfileHref,
 } from "./dentist-schedule-navigation";
@@ -19,5 +20,14 @@ describe("dentist schedule patient navigation", () => {
     expect(canDentistManageAppointment("dentist-1", "dentist-1")).toBe(true);
     expect(canDentistManageAppointment("dentist-2", "dentist-1")).toBe(false);
     expect(canDentistManageAppointment(null, "dentist-1")).toBe(false);
+  });
+
+  it("builds the appointment-detail path for both dentist and clinic views", () => {
+    expect(appointmentDetailHref("appt-1", true)).toBe(
+      "/app/dentist/schedule/appt-1",
+    );
+    expect(appointmentDetailHref("appt-1", false)).toBe(
+      "/app/appointments/appt-1",
+    );
   });
 });

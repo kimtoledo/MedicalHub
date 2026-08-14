@@ -19,6 +19,7 @@ import {
   dentists,
   patients,
   services,
+  users,
 } from "@dentra/db/schema";
 import { AuditAction, type AppointmentStatus } from "@dentra/shared";
 import type { PatientActor } from "./patients-service.js";
@@ -50,6 +51,27 @@ export type AppointmentView = {
   endsAt: Date | null;
   chiefComplaint: string | null;
 };
+export type AppointmentDetail = AppointmentView & {
+  branchAddress: string | null;
+  branchCity: string | null;
+  branchProvince: string | null;
+  patientPhone: string | null;
+  patientEmail: string | null;
+  notes: string | null;
+  cancellationReason: string | null;
+  confirmedAt: Date | null;
+  checkedInAt: Date | null;
+  completedAt: Date | null;
+  cancelledAt: Date | null;
+  statusHistory: Array<{
+    id: string;
+    fromStatus: string | null;
+    toStatus: string;
+    changedByName: string | null;
+    reason: string | null;
+    createdAt: Date;
+  }>;
+};
 export type ClinicDashboardService = {
   summary: (
     clinicId: string,
@@ -68,7 +90,13 @@ export type ClinicDashboardService = {
     date: string,
     status?: string,
     dentistId?: string,
+    endDate?: string,
   ) => Promise<AppointmentView[]>;
+  appointment: (
+    clinicId: string,
+    appointmentId: string,
+    dentistRestriction?: string,
+  ) => Promise<AppointmentDetail | null>;
   updateStatus: (
     clinicId: string,
     appointmentId: string,
@@ -100,9 +128,12 @@ export class ClinicDashboardError extends Error {
     super(message);
   }
 }
-function range(date: string) {
+function range(date: string, endDate?: string) {
   const start = new Date(`${date}T00:00:00+08:00`);
-  return { start, end: new Date(start.getTime() + 86_400_000) };
+  const end = endDate
+    ? new Date(new Date(`${endDate}T00:00:00+08:00`).getTime() + 86_400_000)
+    : new Date(start.getTime() + 86_400_000);
+  return { start, end };
 }
 const selection = {
   id: appointments.id,
@@ -159,8 +190,9 @@ export function createClinicDashboardService(
     date: string,
     status?: string,
     dentistId?: string,
+    endDate?: string,
   ) => {
-    const { start, end } = range(date);
+    const { start, end } = range(date, endDate);
     const rows = await database
       .select(selection)
       .from(appointments)
@@ -197,6 +229,80 @@ export function createClinicDashboardService(
   };
   return {
     appointments: list,
+    appointment: async (clinicId, appointmentId, dentistRestriction) => {
+      const [row] = await database
+        .select({
+          ...selection,
+          branchAddress: branches.address,
+          branchCity: branches.city,
+          branchProvince: branches.province,
+          patientPhone: appointments.patientPhone,
+          patientEmail: appointments.patientEmail,
+          notes: appointments.notes,
+          cancellationReason: appointments.cancellationReason,
+          confirmedAt: appointments.confirmedAt,
+          checkedInAt: appointments.checkedInAt,
+          completedAt: appointments.completedAt,
+          cancelledAt: appointments.cancelledAt,
+        })
+        .from(appointments)
+        .innerJoin(branches, eq(appointments.branchId, branches.id))
+        .leftJoin(
+          patients,
+          and(
+            eq(appointments.patientId, patients.id),
+            eq(patients.clinicId, clinicId),
+          ),
+        )
+        .leftJoin(dentists, eq(appointments.dentistId, dentists.id))
+        .leftJoin(
+          services,
+          and(
+            eq(appointments.serviceId, services.id),
+            eq(services.clinicId, clinicId),
+          ),
+        )
+        .where(
+          and(
+            eq(appointments.id, appointmentId),
+            eq(appointments.clinicId, clinicId),
+            dentistRestriction
+              ? eq(appointments.dentistId, dentistRestriction)
+              : undefined,
+          ),
+        )
+        .limit(1);
+      if (!row) return null;
+      const history = await database
+        .select({
+          id: appointmentStatusHistory.id,
+          fromStatus: appointmentStatusHistory.fromStatus,
+          toStatus: appointmentStatusHistory.toStatus,
+          changedByName: users.name,
+          reason: appointmentStatusHistory.reason,
+          createdAt: appointmentStatusHistory.createdAt,
+        })
+        .from(appointmentStatusHistory)
+        .leftJoin(users, eq(appointmentStatusHistory.changedBy, users.id))
+        .where(eq(appointmentStatusHistory.appointmentId, appointmentId))
+        .orderBy(asc(appointmentStatusHistory.createdAt));
+      const extra = row as unknown as Record<string, unknown>;
+      return {
+        ...normalize(row),
+        branchAddress: extra.branchAddress as string | null,
+        branchCity: extra.branchCity as string | null,
+        branchProvince: extra.branchProvince as string | null,
+        patientPhone: extra.patientPhone as string | null,
+        patientEmail: extra.patientEmail as string | null,
+        notes: extra.notes as string | null,
+        cancellationReason: extra.cancellationReason as string | null,
+        confirmedAt: extra.confirmedAt as Date | null,
+        checkedInAt: extra.checkedInAt as Date | null,
+        completedAt: extra.completedAt as Date | null,
+        cancelledAt: extra.cancelledAt as Date | null,
+        statusHistory: history,
+      };
+    },
     summary: async (clinicId, branchId, date) => {
       const rows = await list(clinicId, branchId, date);
       const [{ total }] = await database

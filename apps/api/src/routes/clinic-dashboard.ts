@@ -17,11 +17,13 @@ const today = () =>
     month: "2-digit",
     day: "2-digit",
   }).format(new Date());
-const date = z.union([z.literal("today").transform(() => today()), z.string().regex(/^\d{4}-\d{2}-\d{2}$/)]).default(today());
+const dateOnly = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const date = z.union([z.literal("today").transform(() => today()), dateOnly]).default(today());
 const clinicQuery = z.object({
   clinicId: postgresUuidSchema,
   branchId: postgresUuidSchema.optional(),
   date,
+  endDate: dateOnly.optional(),
   status: z
     .enum(Object.values(AppointmentStatus) as [string, ...string[]])
     .optional(),
@@ -184,8 +186,54 @@ export async function registerClinicDashboardRoutes(
           query.data.date,
           query.data.status,
           restriction,
+          query.data.endDate,
         ),
       });
+    } catch (caught) {
+      return error(reply, caught);
+    }
+  });
+  app.get("/v1/clinic/appointments/:appointmentId", async (request, reply) => {
+    const query = clinicQuery.pick({ clinicId: true }).safeParse(request.query);
+    const parsedParams = params.safeParse(request.params);
+    if (!query.success || !parsedParams.success)
+      return reply
+        .status(400)
+        .send({
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "A valid clinic id and appointment id are required",
+          },
+        });
+    const auth = await requireClinicFeature(
+      request,
+      reply,
+      options,
+      query.data.clinicId,
+      FeatureKey.APPOINTMENTS_CALENDAR,
+      [...readRoles],
+    );
+    if (!auth) return;
+    const restriction = getClinicAccess(auth, query.data.clinicId).some(
+      (item) => item.role !== "dentist",
+    )
+      ? undefined
+      : (dentistId(auth, query.data.clinicId) ?? undefined);
+    try {
+      const data = await options.dashboard.appointment(
+        query.data.clinicId,
+        parsedParams.data.appointmentId,
+        restriction,
+      );
+      if (!data)
+        return reply
+          .status(404)
+          .send({
+            success: false,
+            error: { code: "APPOINTMENT_NOT_FOUND", message: "Appointment not found" },
+          });
+      return reply.send({ success: true, data });
     } catch (caught) {
       return error(reply, caught);
     }
@@ -279,6 +327,7 @@ export async function registerClinicDashboardRoutes(
           query.data.date,
           query.data.status,
           dentist,
+          query.data.endDate,
         ),
       });
     } catch (caught) {

@@ -68,6 +68,7 @@ function service(): ClinicDashboardService {
       appointments: [],
     })),
     appointments: vi.fn(async () => []),
+    appointment: vi.fn(async () => null),
     updateStatus: vi.fn(async () => ({
       id: appointmentId,
       status: "checked_in",
@@ -141,6 +142,7 @@ describe("clinic dashboard routes", () => {
       "2030-01-10",
       undefined,
       dentistId,
+      undefined,
     );
     expect(s.updateStatus).toHaveBeenCalledWith(
       clinicId,

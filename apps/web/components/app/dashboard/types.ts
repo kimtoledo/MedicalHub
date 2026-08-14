@@ -38,6 +38,18 @@ export const todayManila = () =>
     month: "2-digit",
     day: "2-digit",
   }).format(new Date());
+export const addDays = (value: string, days: number) => {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+};
+export const mondayOf = (value: string) => {
+  const weekday = new Date(`${value}T12:00:00+08:00`).getUTCDay();
+  return addDays(value, weekday === 0 ? -6 : 1 - weekday);
+};
+export const dayLabel = (value: string) =>
+  new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", weekday: "short", day: "numeric", month: "short" }).format(new Date(`${value}T12:00:00+08:00`));
+export const weekRangeLabel = (weekStart: string) =>
+  `${dayLabel(weekStart)} – ${dayLabel(addDays(weekStart, 6))}`;
 export const time = (value: string) =>
   new Intl.DateTimeFormat("en-PH", {
     timeZone: "Asia/Manila",
