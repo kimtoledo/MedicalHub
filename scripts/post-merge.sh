@@ -14,17 +14,20 @@ npm install
 
 # Apply any pending Drizzle migrations to the Replit PostgreSQL database.
 # DATABASE_URL is read from Replit Secrets automatically.
-# drizzle-kit migrate is non-interactive and idempotent.
+#
+# We use scripts/apply-migrations.ts instead of `drizzle-kit migrate` because
+# drizzle-kit migrate hangs silently when the __drizzle_migrations tracking
+# table is out of sync with the actual DB state — a common occurrence after
+# cross-agent merges or manual out-of-band applies. Our custom runner is
+# idempotent, handles already-existing objects gracefully, and includes the
+# schema readiness check at the end.
 if [ -z "$DATABASE_URL" ]; then
   echo "❌  [post-merge] DATABASE_URL is not set — deployment cannot continue safely."
   echo "    Add DATABASE_URL to Replit Secrets, then rerun post-merge setup."
   exit 1
 else
   echo "==> [post-merge] Applying database migrations..."
-  cd packages/db
-  DRIZZLE_MIGRATION=true npx drizzle-kit migrate --config=drizzle.config.ts
-  cd ../..
-  npm run db:check
+  npx tsx scripts/apply-migrations.ts
   echo "✅  [post-merge] Migrations applied and schema verified."
 fi
 
