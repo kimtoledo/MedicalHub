@@ -80,11 +80,20 @@ export default function OdontogramChart({
   patientId,
   initial,
   dentists = [],
+  encounterId: lockedEncounterId,
+  dentistId: lockedDentistId,
+  readOnly = false,
 }: {
   clinicId: string;
   patientId: string;
   initial: OdontogramData;
   dentists?: ClinicDentistOption[];
+  /** When set (embedded inside an encounter page), every event recorded here is auto-linked to this encounter instead of asking the user to type one. */
+  encounterId?: string;
+  /** The encounter's own dentist — when set, events are attributed to them automatically instead of showing a picker. */
+  dentistId?: string;
+  /** Hides the record/correct form entirely — e.g. the encounter it's linked to is finalized. */
+  readOnly?: boolean;
 }) {
   const [dentition, setDentition] = useState<Dentition>('adult');
   const [selectedTooth, setSelectedTooth] = useState(ARCHES.adult.upper[7]);
@@ -213,8 +222,8 @@ export default function OdontogramChart({
       conditionCode: String(form.get('conditionCode') || '') || undefined,
       procedureCode: String(form.get('procedureCode') || '') || undefined,
       note: String(form.get('note') || '') || undefined,
-      encounterId: String(form.get('encounterId') || '') || undefined,
-      dentistId: String(form.get('dentistId') || '') || undefined,
+      encounterId: lockedEncounterId || String(form.get('encounterId') || '') || undefined,
+      dentistId: lockedDentistId || String(form.get('dentistId') || '') || undefined,
     };
     const path = correction
       ? `/api/clinic/patients/${patientId}/odontogram/${correction.id}/correct?clinicId=${encodeURIComponent(clinicId)}`
@@ -273,16 +282,18 @@ export default function OdontogramChart({
                       </p>
                       {item.correctionOf && <p className="mt-1 text-xs font-semibold text-amber-600">Correction of a prior event</p>}
                     </div>
-                    <button
-                      onClick={() => {
-                        setCorrection(item);
-                        setSelectedSurfaces(item.surfaces ? item.surfaces.split(',') : []);
-                      }}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-violet-600"
-                    >
-                      <RotateCcw size={13} />
-                      Correct
-                    </button>
+                    {!readOnly && (
+                      <button
+                        onClick={() => {
+                          setCorrection(item);
+                          setSelectedSurfaces(item.surfaces ? item.surfaces.split(',') : []);
+                        }}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-violet-600"
+                      >
+                        <RotateCcw size={13} />
+                        Correct
+                      </button>
+                    )}
                   </div>
                   {item.note && <p className="mt-3 text-sm text-slate-600">{item.note}</p>}
                 </article>
@@ -293,6 +304,14 @@ export default function OdontogramChart({
           )}
         </section>
       </div>
+      {readOnly ? (
+        <aside className="self-start rounded-2xl border border-violet-100 bg-white p-5 shadow-sm xl:sticky xl:top-4">
+          <p className="text-xs font-bold uppercase tracking-wide text-violet-600">Tooth {selectedTooth}</p>
+          <p className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700">
+            This encounter is finalized; the odontogram is read-only.
+          </p>
+        </aside>
+      ) : (
       <aside className="self-start rounded-2xl border border-violet-100 bg-white p-5 shadow-sm xl:sticky xl:top-4">
         <p className="text-xs font-bold uppercase tracking-wide text-violet-600">{correction ? 'Append correction' : 'Record event'}</p>
         <h2 className="mt-1 text-xl font-bold text-slate-900">Tooth {selectedTooth}</h2>
@@ -343,11 +362,17 @@ export default function OdontogramChart({
               ))}
             </select>
           </label>
-          <label className="block text-sm font-semibold text-slate-700">
-            Encounter ID (optional)
-            <input name="encounterId" defaultValue={correction?.encounterId ?? ''} className={field} />
-          </label>
-          {dentists.length > 0 && (
+          {lockedEncounterId ? (
+            <p className="rounded-xl bg-violet-50 px-3 py-2.5 text-xs font-semibold text-violet-700">
+              Linked to this encounter automatically
+            </p>
+          ) : (
+            <label className="block text-sm font-semibold text-slate-700">
+              Encounter ID (optional)
+              <input name="encounterId" defaultValue={correction?.encounterId ?? ''} className={field} />
+            </label>
+          )}
+          {!lockedDentistId && dentists.length > 0 && (
             <label className="block text-sm font-semibold text-slate-700">
               Attribute to dentist
               <select required name="dentistId" defaultValue="" className={field}>
@@ -377,6 +402,7 @@ export default function OdontogramChart({
           </button>
         </form>
       </aside>
+      )}
     </div>
   );
 }
