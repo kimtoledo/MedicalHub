@@ -24,7 +24,7 @@ The adult tooth chart lets dentists record conditions and procedures per tooth a
 
 ## Out of scope
 
-- Pediatric (primary) tooth chart (stretch or early MVP 2).
+- Pediatric (primary) tooth chart — see `tasks/mvp2/18-pediatric-odontogram.md`.
 - Radiograph overlays (MVP 2).
 - Printable odontogram report (MVP 2).
 
