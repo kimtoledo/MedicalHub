@@ -76,6 +76,7 @@ import { registerClinicPatientRoutes } from './routes/clinic-patients.js';
 import { registerPatientReferralRoutes } from './routes/patient-referrals.js';
 import type { PatientReferralService } from './clinic/patient-referrals-service.js';
 import { registerClinicEncounterRoutes } from './routes/clinic-encounters.js';
+import { registerClinicDentistsRoutes } from './routes/clinic-dentists.js';
 import { registerClinicOdontogramRoutes } from './routes/clinic-odontogram.js';
 import { registerClinicTreatmentRoutes } from './routes/clinic-treatments.js';
 import { registerClinicTreatmentPlanRoutes } from './routes/clinic-treatment-plans.js';
@@ -329,6 +330,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (options.clinicEncounters && options.entitlements) {
       await registerClinicEncounterRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, encounters: options.clinicEncounters });
+    }
+    if (options.entitlements && options.db) {
+      await registerClinicDentistsRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db });
     }
     if (options.clinicOdontogram && options.entitlements) {
       await registerClinicOdontogramRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, odontogram: options.clinicOdontogram });

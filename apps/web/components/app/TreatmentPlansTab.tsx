@@ -10,6 +10,7 @@ import {
   Trash2,
   XCircle,
 } from 'lucide-react';
+import type { ClinicDentistOption } from '@/lib/clinic-dentists';
 
 type ServiceOption = { id: string; name: string };
 type TreatmentRecord = { id: string; serviceId: string | null };
@@ -84,10 +85,12 @@ export default function TreatmentPlansTab({
   clinicId,
   patientId,
   canManage,
+  dentists = [],
 }: {
   clinicId: string;
   patientId: string;
   canManage: boolean;
+  dentists?: ClinicDentistOption[];
 }) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [services, setServices] = useState<ServiceOption[]>([]);
@@ -96,6 +99,7 @@ export default function TreatmentPlansTab({
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
+  const [dentistId, setDentistId] = useState('');
   const [items, setItems] = useState<DraftItem[]>([newDraftItem()]);
   const [saving, setSaving] = useState(false);
 
@@ -146,6 +150,10 @@ export default function TreatmentPlansTab({
       setError('Add a title, service, and estimated fee for every plan item.');
       return;
     }
+    if (dentists.length > 0 && !dentistId) {
+      setError('Select which dentist this plan is attributed to.');
+      return;
+    }
 
     setSaving(true);
     const response = await fetch(url(`patients/${patientId}/treatment-plans`), {
@@ -155,6 +163,7 @@ export default function TreatmentPlansTab({
         title,
         notes,
         items: items.map((item, index) => ({ ...item, sequence: index + 1 })),
+        ...(dentistId ? { dentistId } : {}),
       }),
     });
     if (!response.ok) {
@@ -166,6 +175,7 @@ export default function TreatmentPlansTab({
 
     setTitle('');
     setNotes('');
+    setDentistId('');
     setItems([newDraftItem()]);
     setSaving(false);
     await load();
@@ -262,6 +272,12 @@ export default function TreatmentPlansTab({
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Plan title" className="h-10 rounded-lg border border-violet-200 bg-white px-3 text-sm" required />
             <input value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Optional notes" className="h-10 rounded-lg border border-violet-200 bg-white px-3 text-sm" />
+            {dentists.length > 0 && (
+              <select value={dentistId} onChange={(event) => setDentistId(event.target.value)} className="h-10 rounded-lg border border-violet-200 bg-white px-3 text-sm" required>
+                <option value="">Attribute to dentist</option>
+                {dentists.map((item) => <option key={item.id} value={item.id}>Dr. {item.firstName} {item.lastName}</option>)}
+              </select>
+            )}
           </div>
           <div className="mt-4 space-y-3">
             {items.map((item, index) => (

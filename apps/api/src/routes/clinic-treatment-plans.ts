@@ -8,6 +8,7 @@ import {
   ClinicTreatmentPlanError,
   type ClinicTreatmentPlansService,
 } from '../clinic/treatment-plans-service.js';
+import { isActiveClinicDentist } from '../clinic/dentist-directory.js';
 import type { EntitlementService } from '../entitlements/service.js';
 import { postgresUuidSchema } from '../validation.js';
 
@@ -28,6 +29,8 @@ const createBody = z.object({
   title: z.string().trim().min(2).max(200),
   notes: z.string().trim().max(5000).optional(),
   items: z.array(itemInput).min(1).max(50),
+  /** Required when the caller isn't a dentist themselves — the dentist this plan is attributed to. */
+  dentistId: postgresUuidSchema.optional(),
 }).strict();
 const planPatchBody = z.object({
   title: z.string().trim().min(2).max(200).optional(),
@@ -39,11 +42,17 @@ const itemStatusBody = z.object({
   treatmentRecordId: postgresUuidSchema.optional(),
 }).strict();
 const viewRoles = ['clinic_owner', 'clinic_admin', 'dentist', 'dental_assistant'] as const;
+const authoringRoles = ['dentist', 'clinic_owner', 'clinic_admin'] as const;
+const adminRoles = new Set(['clinic_owner', 'clinic_admin']);
 
 function getDentistId(auth: AuthorizationContext, clinicId: string): string | null {
   return getClinicAccess(auth, clinicId).find(
     (item) => item.role === 'dentist' && item.dentistId,
   )?.dentistId ?? null;
+}
+
+function isClinicAdmin(auth: AuthorizationContext, clinicId: string): boolean {
+  return getClinicAccess(auth, clinicId).some((item) => adminRoles.has(item.role));
 }
 
 function actor(request: FastifyRequest, auth: AuthorizationContext) {
@@ -94,12 +103,21 @@ export async function registerClinicTreatmentPlanRoutes(
     if (!query.success || !params.success || !body.success) {
       return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Please check the treatment plan details' } });
     }
-    const auth = await requireClinicFeature(request, reply, options, query.data.clinicId, FeatureKey.TREATMENT_PLANS, ['dentist']);
+    const auth = await requireClinicFeature(request, reply, options, query.data.clinicId, FeatureKey.TREATMENT_PLANS, [...authoringRoles]);
     if (!auth) return;
-    const dentistId = getDentistId(auth, query.data.clinicId);
-    if (!dentistId) return reply.status(403).send({ success: false, error: { code: 'DENTIST_PROFILE_REQUIRED', message: 'A linked dentist profile is required' } });
+    const { dentistId: attributedDentistId, ...planInput } = body.data;
+    let dentistId = getDentistId(auth, query.data.clinicId);
+    if (!dentistId) {
+      if (!isClinicAdmin(auth, query.data.clinicId) || !attributedDentistId) {
+        return reply.status(403).send({ success: false, error: { code: 'DENTIST_PROFILE_REQUIRED', message: 'A linked dentist profile, or an attributed dentistId, is required' } });
+      }
+      if (!options.db || !(await isActiveClinicDentist(options.db, query.data.clinicId, attributedDentistId))) {
+        return reply.status(400).send({ success: false, error: { code: 'DENTIST_NOT_ASSIGNED', message: 'The selected dentist is not active in this clinic' } });
+      }
+      dentistId = attributedDentistId;
+    }
     try {
-      const created = await options.treatmentPlans.create(query.data.clinicId, params.data.patientId, dentistId, body.data, actor(request, auth));
+      const created = await options.treatmentPlans.create(query.data.clinicId, params.data.patientId, dentistId, planInput, actor(request, auth));
       return reply.status(201).send({ success: true, data: created });
     } catch (error) {
       return sendError(reply, error);
@@ -122,10 +140,10 @@ export async function registerClinicTreatmentPlanRoutes(
     const params = planParams.safeParse(request.params);
     const body = planPatchBody.safeParse(request.body);
     if (!query.success || !params.success || !body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Please check the treatment plan changes' } });
-    const auth = await requireClinicFeature(request, reply, options, query.data.clinicId, FeatureKey.TREATMENT_PLANS, ['dentist']);
+    const auth = await requireClinicFeature(request, reply, options, query.data.clinicId, FeatureKey.TREATMENT_PLANS, [...authoringRoles]);
     if (!auth) return;
     const dentistId = getDentistId(auth, query.data.clinicId);
-    if (!dentistId) return reply.status(403).send({ success: false, error: { code: 'DENTIST_PROFILE_REQUIRED', message: 'A linked dentist profile is required' } });
+    if (!dentistId && !isClinicAdmin(auth, query.data.clinicId)) return reply.status(403).send({ success: false, error: { code: 'DENTIST_PROFILE_REQUIRED', message: 'A linked dentist profile is required' } });
     try {
       return reply.send({ success: true, data: await options.treatmentPlans.updatePlan(query.data.clinicId, params.data.planId, dentistId, body.data, actor(request, auth)) });
     } catch (error) { return sendError(reply, error); }
@@ -136,10 +154,10 @@ export async function registerClinicTreatmentPlanRoutes(
     const params = itemParams.safeParse(request.params);
     const body = itemStatusBody.safeParse(request.body);
     if (!query.success || !params.success || !body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Please check the plan item status' } });
-    const auth = await requireClinicFeature(request, reply, options, query.data.clinicId, FeatureKey.TREATMENT_PLANS, ['dentist']);
+    const auth = await requireClinicFeature(request, reply, options, query.data.clinicId, FeatureKey.TREATMENT_PLANS, [...authoringRoles]);
     if (!auth) return;
     const dentistId = getDentistId(auth, query.data.clinicId);
-    if (!dentistId) return reply.status(403).send({ success: false, error: { code: 'DENTIST_PROFILE_REQUIRED', message: 'A linked dentist profile is required' } });
+    if (!dentistId && !isClinicAdmin(auth, query.data.clinicId)) return reply.status(403).send({ success: false, error: { code: 'DENTIST_PROFILE_REQUIRED', message: 'A linked dentist profile is required' } });
     try {
       return reply.send({ success: true, data: await options.treatmentPlans.updateItemStatus(query.data.clinicId, params.data.planId, params.data.itemId, dentistId, body.data, actor(request, auth)) });
     } catch (error) { return sendError(reply, error); }

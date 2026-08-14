@@ -7,6 +7,7 @@ import AiImagingTab from "@/components/app/AiImagingTab";
 import { HmoTab } from "./PatientDetailClient";
 import PatientPrescriptionsTab from "./PatientPrescriptionsTab";
 import TreatmentPlansTab from "@/components/app/TreatmentPlansTab";
+import type { ClinicDentistOption } from "@/lib/clinic-dentists";
 
 type ExtensionTab = "treatmentPlans" | "prescriptions" | "files" | "aiImaging" | "hmo";
 
@@ -20,6 +21,7 @@ export default function PatientRecordExtensions({
   canUseHmo,
   canUseTreatmentPlans,
   canManageTreatmentPlans,
+  dentists = [],
 }: {
   clinicId: string;
   patientId: string;
@@ -30,6 +32,7 @@ export default function PatientRecordExtensions({
   canUseHmo: boolean;
   canUseTreatmentPlans: boolean;
   canManageTreatmentPlans: boolean;
+  dentists?: ClinicDentistOption[];
 }) {
   const initialTab: ExtensionTab = canUseTreatmentPlans
     ? "treatmentPlans"
@@ -83,7 +86,7 @@ export default function PatientRecordExtensions({
         </div>
 
         {tab === "treatmentPlans" && canUseTreatmentPlans ? (
-          <TreatmentPlansTab clinicId={clinicId} patientId={patientId} canManage={canManageTreatmentPlans} />
+          <TreatmentPlansTab clinicId={clinicId} patientId={patientId} canManage={canManageTreatmentPlans} dentists={dentists} />
         ) : tab === "prescriptions" && canUsePrescriptions ? (
           <PatientPrescriptionsTab clinicId={clinicId} patientId={patientId} />
         ) : tab === "files" && canUseFiles ? (

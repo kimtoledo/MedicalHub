@@ -71,7 +71,16 @@ afterEach(async () => {
   app = undefined;
 });
 
-async function setup(value: AuthorizationContext | null, prescriptionService: ClinicPrescriptionService) {
+function fakeDb(dentistIsAssigned: boolean) {
+  const builder: Record<string, unknown> = {};
+  builder.select = () => builder;
+  builder.from = () => builder;
+  builder.where = () => builder;
+  builder.limit = async () => (dentistIsAssigned ? [{ id: 'assignment-1' }] : []);
+  return builder;
+}
+
+async function setup(value: AuthorizationContext | null, prescriptionService: ClinicPrescriptionService, db?: unknown) {
   app = await buildApp({
     config,
     checkDatabase: async () => undefined,
@@ -80,6 +89,7 @@ async function setup(value: AuthorizationContext | null, prescriptionService: Cl
     entitlements,
     clinicPrescription: prescriptionService,
     notifications,
+    db: db as never,
   });
 }
 
@@ -139,5 +149,83 @@ describe('clinic prescription signature/template/share-email routes', () => {
     });
     expect(response.statusCode).toBe(404);
     expect(prescriptionService.sharePrescriptionByEmail).toHaveBeenCalledWith(clinicId, prescriptionId, 'patient@example.com', notifications);
+  });
+
+  it('lets a clinic_admin save a signature for an actively-assigned dentist', async () => {
+    const prescriptionService = service();
+    await setup(contextFor('clinic_admin'), prescriptionService, fakeDb(true));
+    const response = await app!.inject({
+      method: 'PUT',
+      url: `/v1/clinic/${clinicId}/prescriptions/signature`,
+      payload: { signatureData: 'data:image/png;base64,AAAA', dentistId },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(prescriptionService.updateDentistSignature).toHaveBeenCalledWith(dentistId, 'data:image/png;base64,AAAA');
+  });
+
+  it('rejects a clinic_admin attributing a signature to a dentist not assigned to the clinic', async () => {
+    const prescriptionService = service();
+    await setup(contextFor('clinic_admin'), prescriptionService, fakeDb(false));
+    const response = await app!.inject({
+      method: 'PUT',
+      url: `/v1/clinic/${clinicId}/prescriptions/signature`,
+      payload: { signatureData: 'data:image/png;base64,AAAA', dentistId },
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error.code).toBe('DENTIST_NOT_ASSIGNED');
+    expect(prescriptionService.updateDentistSignature).not.toHaveBeenCalled();
+  });
+});
+
+describe('clinic prescription issue/amend routes', () => {
+  const encounterId = '00000000-0000-0000-0000-000000000601';
+  const items = [{ medicineName: 'Amoxicillin' }];
+
+  it('rejects a clinic_admin issuing a prescription with no attributed dentist', async () => {
+    const prescriptionService = service();
+    await setup(contextFor('clinic_admin'), prescriptionService);
+    const response = await app!.inject({
+      method: 'POST',
+      url: `/v1/clinic/${clinicId}/prescriptions`,
+      payload: { encounterId, items },
+    });
+    expect(response.statusCode).toBe(403);
+    expect(prescriptionService.issuePrescription).not.toHaveBeenCalled();
+  });
+
+  it('lets a clinic_admin issue a prescription attributed to an actively-assigned dentist', async () => {
+    const prescriptionService = service();
+    await setup(contextFor('clinic_admin'), prescriptionService, fakeDb(true));
+    const response = await app!.inject({
+      method: 'POST',
+      url: `/v1/clinic/${clinicId}/prescriptions`,
+      payload: { encounterId, items, dentistId },
+    });
+    expect(response.statusCode).toBe(201);
+    expect(prescriptionService.issuePrescription).toHaveBeenCalledWith(clinicId, expect.objectContaining({ callerDentistId: dentistId, issuedBy: 'user' }));
+  });
+
+  it('ignores a body dentistId when the caller is a dentist themselves', async () => {
+    const prescriptionService = service();
+    await setup(contextFor('dentist', dentistId), prescriptionService);
+    const response = await app!.inject({
+      method: 'POST',
+      url: `/v1/clinic/${clinicId}/prescriptions`,
+      payload: { encounterId, items, dentistId: otherDentistId },
+    });
+    expect(response.statusCode).toBe(201);
+    expect(prescriptionService.issuePrescription).toHaveBeenCalledWith(clinicId, expect.objectContaining({ callerDentistId: dentistId }));
+  });
+
+  it('lets a clinic_admin amend a prescription attributed to an actively-assigned dentist', async () => {
+    const prescriptionService = service();
+    await setup(contextFor('clinic_admin'), prescriptionService, fakeDb(true));
+    const response = await app!.inject({
+      method: 'POST',
+      url: `/v1/clinic/${clinicId}/prescriptions/${prescriptionId}/amend`,
+      payload: { items, dentistId },
+    });
+    expect(response.statusCode).toBe(201);
+    expect(prescriptionService.amendPrescription).toHaveBeenCalledWith(clinicId, prescriptionId, expect.objectContaining({ callerDentistId: dentistId }));
   });
 });

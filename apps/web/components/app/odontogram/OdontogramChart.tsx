@@ -28,6 +28,7 @@ import {
   TOOTH_PROCEDURES,
 } from '@dentra/shared';
 import type { OdontogramData, ToothEvent } from '@/lib/clinic-odontogram';
+import type { ClinicDentistOption } from '@/lib/clinic-dentists';
 
 type Dentition = 'adult' | 'pediatric';
 
@@ -78,10 +79,12 @@ export default function OdontogramChart({
   clinicId,
   patientId,
   initial,
+  dentists = [],
 }: {
   clinicId: string;
   patientId: string;
   initial: OdontogramData;
+  dentists?: ClinicDentistOption[];
 }) {
   const [dentition, setDentition] = useState<Dentition>('adult');
   const [selectedTooth, setSelectedTooth] = useState(ARCHES.adult.upper[7]);
@@ -211,6 +214,7 @@ export default function OdontogramChart({
       procedureCode: String(form.get('procedureCode') || '') || undefined,
       note: String(form.get('note') || '') || undefined,
       encounterId: String(form.get('encounterId') || '') || undefined,
+      dentistId: String(form.get('dentistId') || '') || undefined,
     };
     const path = correction
       ? `/api/clinic/patients/${patientId}/odontogram/${correction.id}/correct?clinicId=${encodeURIComponent(clinicId)}`
@@ -343,6 +347,21 @@ export default function OdontogramChart({
             Encounter ID (optional)
             <input name="encounterId" defaultValue={correction?.encounterId ?? ''} className={field} />
           </label>
+          {dentists.length > 0 && (
+            <label className="block text-sm font-semibold text-slate-700">
+              Attribute to dentist
+              <select required name="dentistId" defaultValue="" className={field}>
+                <option value="" disabled>
+                  Select dentist
+                </option>
+                {dentists.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    Dr. {item.firstName} {item.lastName}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <label className="block text-sm font-semibold text-slate-700">
             Note
             <textarea name="note" defaultValue={correction?.note ?? ''} rows={3} className={field} />

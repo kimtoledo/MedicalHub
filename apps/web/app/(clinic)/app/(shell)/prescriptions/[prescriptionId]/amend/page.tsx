@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { getClinicSession } from "@/lib/clinic-session";
 import { getBackendUrl } from "@/lib/backend";
+import { getClinicDentists } from "@/lib/clinic-dentists";
 import { cookies } from "next/headers";
 import AmendPrescriptionClient from "./AmendPrescriptionClient";
 import type { PrescriptionDetail } from "../page";
@@ -25,10 +26,13 @@ export default async function AmendPrescriptionPage({
   const json = await res.json() as { success: boolean; data: PrescriptionDetail };
   if (!json.success) redirect("/app/prescriptions");
 
+  const dentists = identity.isAdmin ? await getClinicDentists(identity.clinicId).catch(() => []) : [];
+
   return (
     <AmendPrescriptionClient
       original={json.data}
       clinicId={identity.clinicId}
+      dentists={dentists}
     />
   );
 }

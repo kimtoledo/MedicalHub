@@ -4,6 +4,7 @@ import { Loader2, Save } from "lucide-react";
 import type { EncounterRecord } from "@/lib/clinic-encounters";
 import type { PatientListItem } from "@/lib/clinic-patients";
 import type { ClinicBranchContext } from "@/lib/clinic-types";
+import type { ClinicDentistOption } from "@/lib/clinic-dentists";
 import { useConfirm } from "@/components/ConfirmDialogProvider";
 const field =
   "mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm disabled:bg-slate-100";
@@ -11,6 +12,7 @@ export default function EncounterForm({
   clinicId,
   branches,
   patients,
+  dentists = [],
   encounter,
   initialPatientId,
   initialAppointmentId,
@@ -18,6 +20,7 @@ export default function EncounterForm({
   clinicId: string;
   branches: ClinicBranchContext[];
   patients: PatientListItem[];
+  dentists?: ClinicDentistOption[];
   encounter?: EncounterRecord;
   initialPatientId?: string;
   initialAppointmentId?: string;
@@ -147,6 +150,21 @@ export default function EncounterForm({
               defaultValue={initialAppointmentId ?? ""}
               className={field}
             />
+          </label>
+        )}
+        {!encounter && dentists.length > 0 && (
+          <label className="text-sm font-semibold text-slate-700">
+            Attribute to dentist
+            <select required name="dentistId" defaultValue="" className={field}>
+              <option value="" disabled>
+                Select dentist
+              </option>
+              {dentists.map((item) => (
+                <option key={item.id} value={item.id}>
+                  Dr. {item.firstName} {item.lastName}
+                </option>
+              ))}
+            </select>
           </label>
         )}
       </div>

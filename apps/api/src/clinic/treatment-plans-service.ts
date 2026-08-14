@@ -79,7 +79,7 @@ export type ClinicTreatmentPlansService = {
   updatePlan: (
     clinicId: string,
     planId: string,
-    dentistId: string,
+    dentistId: string | null,
     input: { title?: string; notes?: string; status?: TreatmentPlanStatus },
     actor: PatientActor,
   ) => Promise<{ id: string; status: TreatmentPlanStatus }>;
@@ -87,7 +87,7 @@ export type ClinicTreatmentPlansService = {
     clinicId: string,
     planId: string,
     itemId: string,
-    dentistId: string,
+    dentistId: string | null,
     input: { status: TreatmentPlanItemStatus; treatmentRecordId?: string },
     actor: PatientActor,
   ) => Promise<{ id: string; status: TreatmentPlanItemStatus }>;
@@ -333,7 +333,7 @@ export function createClinicTreatmentPlansService(
           .limit(1)
           .for('update');
         if (!plan) throw new ClinicTreatmentPlanError('PLAN_NOT_FOUND', 'Treatment plan not found', 404);
-        if (plan.dentistId !== dentistId) throw new ClinicTreatmentPlanError('FORBIDDEN', 'Only the plan dentist can update this treatment plan', 403);
+        if (dentistId && plan.dentistId !== dentistId) throw new ClinicTreatmentPlanError('FORBIDDEN', 'Only the plan dentist can update this treatment plan', 403);
         if (plan.status === 'archived') throw new ClinicTreatmentPlanError('PLAN_ARCHIVED', 'Archived treatment plans are read-only', 409);
         if (plan.status === 'approved' && (input.title !== undefined || input.notes !== undefined)) {
           throw new ClinicTreatmentPlanError('PLAN_APPROVED', 'Approved treatment plans cannot be edited', 409);
@@ -390,7 +390,7 @@ export function createClinicTreatmentPlansService(
           .limit(1)
           .for('update');
         if (!plan) throw new ClinicTreatmentPlanError('PLAN_NOT_FOUND', 'Treatment plan not found', 404);
-        if (plan.dentistId !== dentistId) throw new ClinicTreatmentPlanError('FORBIDDEN', 'Only the plan dentist can update plan items', 403);
+        if (dentistId && plan.dentistId !== dentistId) throw new ClinicTreatmentPlanError('FORBIDDEN', 'Only the plan dentist can update plan items', 403);
         if (plan.status !== 'approved') {
           throw new ClinicTreatmentPlanError('PLAN_NOT_APPROVED', 'Approve this treatment plan before updating item progress', 409);
         }

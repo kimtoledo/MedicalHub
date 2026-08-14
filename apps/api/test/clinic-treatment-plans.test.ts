@@ -16,13 +16,15 @@ const planId = '00000000-0000-0000-0000-000000000701';
 
 const dentistContext: AuthorizationContext = { user: { id: 'user', email: 'dentist@test', name: 'Dentist', platformRole: null }, strategies: ['clinicMember'], clinicMemberships: [{ clinicId, branchId: null, role: 'dentist', dentistId }] };
 const receptionistContext: AuthorizationContext = { user: { id: 'user-2', email: 'reception@test', name: 'Receptionist', platformRole: null }, strategies: ['clinicMember'], clinicMemberships: [{ clinicId, branchId: null, role: 'receptionist', dentistId: null }] };
+const adminContext: AuthorizationContext = { user: { id: 'user-3', email: 'admin@test', name: 'Admin', platformRole: null }, strategies: ['clinicMember'], clinicMemberships: [{ clinicId, branchId: null, role: 'clinic_admin', dentistId: null }] };
 
 function auth(context: AuthorizationContext | null): AuthServices { return { handler: vi.fn(async () => new Response()), getSession: vi.fn(async () => context ? { session: { id: 's', userId: context.user.id, expiresAt: new Date('2030-01-01') }, user: context.user } : null), resolveAuthorization: vi.fn(async () => context) }; }
 const entitlements: EntitlementService = { resolve: vi.fn(async () => ({ clinic: { id: clinicId, name: 'Clinic', status: 'active', maintenanceMode: false }, subscription: null, entitlements: [{ featureKey: FeatureKey.TREATMENT_PLANS, isEnabled: true, source: 'package' as const, expiresAt: null }] })) };
 function service(): ClinicTreatmentPlansService { return { listForPatient: vi.fn(async () => []), get: vi.fn(async () => null), create: vi.fn(async () => ({ id: planId })), updatePlan: vi.fn(async () => ({ id: planId, status: 'approved' as const })), updateItemStatus: vi.fn(async () => ({ id: 'item', status: 'accepted' as const })) }; }
+function fakeDb(dentistIsAssigned: boolean) { const builder: Record<string, unknown> = {}; builder.select = () => builder; builder.from = () => builder; builder.where = () => builder; builder.limit = async () => (dentistIsAssigned ? [{ id: 'assignment-1' }] : []); return builder; }
 let app: FastifyInstance | undefined;
 afterEach(async () => { await app?.close(); app = undefined; });
-async function setup(context: AuthorizationContext | null, treatmentPlans: ClinicTreatmentPlansService) { app = await buildApp({ config, checkDatabase: async () => undefined, logger: false, auth: auth(context), entitlements, clinicTreatmentPlans: treatmentPlans }); }
+async function setup(context: AuthorizationContext | null, treatmentPlans: ClinicTreatmentPlansService, db?: unknown) { app = await buildApp({ config, checkDatabase: async () => undefined, logger: false, auth: auth(context), entitlements, clinicTreatmentPlans: treatmentPlans, db: db as never }); }
 
 describe('clinic treatment plan routes', () => {
   it('requires a treatment-plan entitlement and clinical role to list plans', async () => {
@@ -43,5 +45,25 @@ describe('clinic treatment plan routes', () => {
     const response = await app!.inject({ method: 'PATCH', url: `/v1/clinic/treatment-plans/${planId}/items/00000000-0000-0000-0000-000000000801/status?clinicId=${clinicId}`, payload: { status: 'completed' } });
     expect(response.statusCode).toBe(200);
     expect(plans.updateItemStatus).toHaveBeenCalledWith(clinicId, planId, '00000000-0000-0000-0000-000000000801', dentistId, { status: 'completed' }, expect.anything());
+  });
+
+  it('lets a clinic_admin create a plan attributed to an actively-assigned dentist', async () => {
+    const plans = service(); await setup(adminContext, plans, fakeDb(true));
+    const response = await app!.inject({ method: 'POST', url: `/v1/clinic/patients/${patientId}/treatment-plans?clinicId=${clinicId}`, payload: { title: 'Restorative care', dentistId, items: [{ serviceId, estimatedFeePhp: '2000.00', sequence: 1 }] } });
+    expect(response.statusCode).toBe(201);
+    expect(plans.create).toHaveBeenCalledWith(clinicId, patientId, dentistId, expect.not.objectContaining({ dentistId: expect.anything() }), expect.anything());
+  });
+
+  it('rejects a clinic_admin plan attributed to a dentist not assigned to the clinic', async () => {
+    const plans = service(); await setup(adminContext, plans, fakeDb(false));
+    const response = await app!.inject({ method: 'POST', url: `/v1/clinic/patients/${patientId}/treatment-plans?clinicId=${clinicId}`, payload: { title: 'Restorative care', dentistId, items: [{ serviceId, estimatedFeePhp: '2000.00', sequence: 1 }] } });
+    expect(response.statusCode).toBe(400); expect(response.json().error.code).toBe('DENTIST_NOT_ASSIGNED'); expect(plans.create).not.toHaveBeenCalled();
+  });
+
+  it('lets a clinic_admin update a plan item status without matching the plan dentist', async () => {
+    const plans = service(); await setup(adminContext, plans);
+    const response = await app!.inject({ method: 'PATCH', url: `/v1/clinic/treatment-plans/${planId}/items/00000000-0000-0000-0000-000000000801/status?clinicId=${clinicId}`, payload: { status: 'completed' } });
+    expect(response.statusCode).toBe(200);
+    expect(plans.updateItemStatus).toHaveBeenCalledWith(clinicId, planId, '00000000-0000-0000-0000-000000000801', null, { status: 'completed' }, expect.anything());
   });
 });

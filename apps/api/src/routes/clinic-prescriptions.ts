@@ -9,6 +9,7 @@ import {
   PrescriptionError,
   type ClinicPrescriptionService,
 } from '../clinic/prescription-service.js';
+import { isActiveClinicDentist } from '../clinic/dentist-directory.js';
 import type { NotificationService } from '../notifications/service.js';
 
 // ---------------------------------------------------------------------------
@@ -31,17 +32,26 @@ const prescriptionItemSchema = z.object({
   sortOrder: z.number().int().min(0).optional(),
 });
 
+/** Required on all of these when the caller isn't a dentist themselves — the dentist this action is attributed to. */
+const attributedDentistSchema = { dentistId: uuidSchema.optional() };
+
 const issuePrescriptionBodySchema = z.object({
   encounterId: uuidSchema,
   prcLicenseNumber: z.string().trim().max(50).nullish(),
   notes: z.string().trim().max(2000).nullish(),
   items: z.array(prescriptionItemSchema).min(1).max(20),
+  ...attributedDentistSchema,
 });
 
 const amendPrescriptionBodySchema = z.object({
   prcLicenseNumber: z.string().trim().max(50).nullish(),
   notes: z.string().trim().max(2000).nullish(),
   items: z.array(prescriptionItemSchema).min(1).max(20),
+  ...attributedDentistSchema,
+});
+
+const prescriberDefaultsQuerySchema = z.object({
+  ...attributedDentistSchema,
 });
 
 const listPrescriptionsQuerySchema = z.object({
@@ -63,10 +73,12 @@ const signatureBodySchema = z.object({
     .refine((v) => v === '' || v.startsWith('data:image/'), {
       message: 'signatureData must be a base64 image data-URL (data:image/...) or an empty string to clear',
     }),
+  ...attributedDentistSchema,
 });
 
 const templateBodySchema = z.object({
   templateId: z.enum(['classic', 'modern', 'minimal']),
+  ...attributedDentistSchema,
 });
 
 const shareEmailBodySchema = z.object({
@@ -95,6 +107,12 @@ function getCallerDentistId(authorization: AuthorizationContext, clinicId: strin
   return dentistMembership?.dentistId ?? null;
 }
 
+const adminRoles = new Set(['clinic_owner', 'clinic_admin']);
+
+function isClinicAdmin(authorization: AuthorizationContext, clinicId: string): boolean {
+  return getClinicAccess(authorization, clinicId).some((m) => adminRoles.has(m.role));
+}
+
 // ---------------------------------------------------------------------------
 // Route options
 // ---------------------------------------------------------------------------
@@ -108,6 +126,7 @@ export type ClinicPrescriptionRoutesOptions = {
 };
 
 const clinicalRoles = ['clinic_owner', 'clinic_admin', 'dentist', 'dental_assistant'] as const;
+const authoringRoles = ['dentist', 'clinic_owner', 'clinic_admin'] as const;
 
 // ---------------------------------------------------------------------------
 // Register routes
@@ -128,6 +147,24 @@ export async function registerClinicPrescriptionRoutes(
       : 400;
   }
 
+  /**
+   * Resolves the dentist a prescription-related action is attributed to: the
+   * caller's own dentist membership, or (for clinic_owner/clinic_admin) an
+   * explicitly-attributed dentistId validated as actively assigned here.
+   * Prescriber identity is never left to guesswork — someone must always be named.
+   */
+  async function resolveActingDentist(authorization: AuthorizationContext, clinicId: string, attributedDentistId?: string): Promise<{ dentistId: string } | { error: { code: string; message: string; statusCode: number } }> {
+    const own = getCallerDentistId(authorization, clinicId);
+    if (own) return { dentistId: own };
+    if (!isClinicAdmin(authorization, clinicId) || !attributedDentistId) {
+      return { error: { code: 'FORBIDDEN', message: 'Your account is not linked to a dentist profile, and no attributed dentistId was provided', statusCode: 403 } };
+    }
+    if (!options.db || !(await isActiveClinicDentist(options.db, clinicId, attributedDentistId))) {
+      return { error: { code: 'DENTIST_NOT_ASSIGNED', message: 'The selected dentist is not active in this clinic', statusCode: 400 } };
+    }
+    return { dentistId: attributedDentistId };
+  }
+
   // -----------------------------------------------------------------------
   // GET /v1/clinic/:clinicId/prescriptions/encounters
   // Returns finalized encounters available for prescription issuance.
@@ -135,20 +172,23 @@ export async function registerClinicPrescriptionRoutes(
   // -----------------------------------------------------------------------
   app.get('/v1/clinic/:clinicId/prescriptions/encounters', async (request, reply) => {
     const params = clinicParamsSchema.safeParse(request.params);
-    if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid clinic ID' } });
+    const query = prescriberDefaultsQuerySchema.safeParse(request.query);
+    if (!params.success || !query.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid clinic ID' } });
 
-    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.PRESCRIPTIONS, ['dentist']);
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.PRESCRIPTIONS, [...authoringRoles]);
     if (!authorization) return;
 
-    const callerDentistId = getCallerDentistId(authorization, params.data.clinicId);
-    if (!callerDentistId) {
-      return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Your account is not linked to a dentist profile' } });
-    }
-
     const callerBranchIds = getCallerBranchIds(authorization, params.data.clinicId);
+    const ownDentistId = getCallerDentistId(authorization, params.data.clinicId);
+    // Admins browsing without having picked a prescribing dentist yet only need the encounter list;
+    // defaults (license/signature/template) are fetched once they've picked one via `dentistId`.
+    const targetDentistId = ownDentistId ?? query.data.dentistId;
+    if (!ownDentistId && targetDentistId && (!options.db || !(await isActiveClinicDentist(options.db, params.data.clinicId, targetDentistId)))) {
+      return reply.status(400).send({ success: false, error: { code: 'DENTIST_NOT_ASSIGNED', message: 'The selected dentist is not active in this clinic' } });
+    }
     const [encounters, defaults] = await Promise.all([
       prescriptionService.listFinalizedEncounters(params.data.clinicId, callerBranchIds),
-      prescriptionService.getPrescriberDefaults(callerDentistId),
+      targetDentistId ? prescriptionService.getPrescriberDefaults(targetDentistId) : Promise.resolve({}),
     ]);
     return reply.send({ success: true, data: { encounters, ...defaults } });
   });
@@ -162,20 +202,18 @@ export async function registerClinicPrescriptionRoutes(
     const params = clinicParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid clinic ID' } });
 
-    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.PRESCRIPTIONS, ['dentist']);
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.PRESCRIPTIONS, [...authoringRoles]);
     if (!authorization) return;
-
-    const callerDentistId = getCallerDentistId(authorization, params.data.clinicId);
-    if (!callerDentistId) {
-      return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Your account is not linked to a dentist profile' } });
-    }
 
     const body = signatureBodySchema.safeParse(request.body);
     if (!body.success) {
       return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: body.error.issues.map((i) => i.message).join(', ') } });
     }
 
-    await prescriptionService.updateDentistSignature(callerDentistId, body.data.signatureData);
+    const resolved = await resolveActingDentist(authorization, params.data.clinicId, body.data.dentistId);
+    if ('error' in resolved) return reply.status(resolved.error.statusCode).send({ success: false, error: { code: resolved.error.code, message: resolved.error.message } });
+
+    await prescriptionService.updateDentistSignature(resolved.dentistId, body.data.signatureData);
     return reply.send({ success: true });
   });
 
@@ -188,20 +226,18 @@ export async function registerClinicPrescriptionRoutes(
     const params = clinicParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid clinic ID' } });
 
-    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.PRESCRIPTIONS, ['dentist']);
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.PRESCRIPTIONS, [...authoringRoles]);
     if (!authorization) return;
-
-    const callerDentistId = getCallerDentistId(authorization, params.data.clinicId);
-    if (!callerDentistId) {
-      return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Your account is not linked to a dentist profile' } });
-    }
 
     const body = templateBodySchema.safeParse(request.body);
     if (!body.success) {
       return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'templateId must be one of: classic, modern, minimal' } });
     }
 
-    await prescriptionService.updateDentistTemplate(callerDentistId, body.data.templateId);
+    const resolved = await resolveActingDentist(authorization, params.data.clinicId, body.data.dentistId);
+    if ('error' in resolved) return reply.status(resolved.error.statusCode).send({ success: false, error: { code: resolved.error.code, message: resolved.error.message } });
+
+    await prescriptionService.updateDentistTemplate(resolved.dentistId, body.data.templateId);
     return reply.send({ success: true });
   });
 
@@ -214,25 +250,24 @@ export async function registerClinicPrescriptionRoutes(
     const params = clinicParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid clinic ID' } });
 
-    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.PRESCRIPTIONS, ['dentist']);
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.PRESCRIPTIONS, [...authoringRoles]);
     if (!authorization) return;
-
-    const callerDentistId = getCallerDentistId(authorization, params.data.clinicId);
-    if (!callerDentistId) {
-      return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Your account is not linked to a dentist profile' } });
-    }
 
     const body = issuePrescriptionBodySchema.safeParse(request.body);
     if (!body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid prescription data' } });
 
+    const resolved = await resolveActingDentist(authorization, params.data.clinicId, body.data.dentistId);
+    if ('error' in resolved) return reply.status(resolved.error.statusCode).send({ success: false, error: { code: resolved.error.code, message: resolved.error.message } });
+
     const callerBranchIds = getCallerBranchIds(authorization, params.data.clinicId);
+    const { dentistId: _attributedDentistId, ...issueInput } = body.data;
 
     try {
       const result = await prescriptionService.issuePrescription(params.data.clinicId, {
-        ...body.data,
+        ...issueInput,
         callerBranchIds,
         issuedBy: authorization.user.id,
-        callerDentistId,
+        callerDentistId: resolved.dentistId,
       });
       return reply.status(201).send({ success: true, data: result });
     } catch (err) {
@@ -329,18 +364,17 @@ export async function registerClinicPrescriptionRoutes(
     const params = prescriptionParamsSchema.safeParse(request.params);
     if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid params' } });
 
-    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.PRESCRIPTIONS, ['dentist']);
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.PRESCRIPTIONS, [...authoringRoles]);
     if (!authorization) return;
-
-    const callerDentistId = getCallerDentistId(authorization, params.data.clinicId);
-    if (!callerDentistId) {
-      return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Your account is not linked to a dentist profile' } });
-    }
 
     const body = amendPrescriptionBodySchema.safeParse(request.body);
     if (!body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid amendment data' } });
 
+    const resolved = await resolveActingDentist(authorization, params.data.clinicId, body.data.dentistId);
+    if ('error' in resolved) return reply.status(resolved.error.statusCode).send({ success: false, error: { code: resolved.error.code, message: resolved.error.message } });
+
     const callerBranchIds = getCallerBranchIds(authorization, params.data.clinicId);
+    const { dentistId: _attributedDentistId, ...amendInput } = body.data;
 
     try {
       const result = await prescriptionService.amendPrescription(
@@ -348,10 +382,10 @@ export async function registerClinicPrescriptionRoutes(
         params.data.prescriptionId,
         {
           encounterId: '',   // unused in amendPrescription; original encounterId is preserved
-          ...body.data,
+          ...amendInput,
           callerBranchIds,
           issuedBy: authorization.user.id,
-          callerDentistId,
+          callerDentistId: resolved.dentistId,
         },
       );
       return reply.status(201).send({ success: true, data: result });

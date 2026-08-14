@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, FileText, User, Calendar, Loader2 } from "lucide-react";
+import type { ClinicDentistOption } from "@/lib/clinic-dentists";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -35,10 +36,12 @@ export default function NewPrescriptionClient({
   clinicId,
   initialEncounterId,
   embedded = false,
+  dentists = [],
 }: {
   clinicId: string;
   initialEncounterId?: string;
   embedded?: boolean;
+  dentists?: ClinicDentistOption[];
 }) {
   const router = useRouter();
   const containerClass = embedded
@@ -53,16 +56,19 @@ export default function NewPrescriptionClient({
   // Form state
   const [prcLicenseNumber, setPrcLicenseNumber] = useState("");
   const [notes, setNotes] = useState("");
+  const [dentistId, setDentistId] = useState("");
   const [rows, setRows] = useState<MedicineRow[]>([
     { id: Date.now(), medicineName: "", dosage: "", frequency: "", duration: "", specialInstructions: "" },
   ]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load finalized encounters that can have prescriptions
+  // Load finalized encounters that can have prescriptions (and, once a dentist is
+  // attributed, that dentist's saved PRC license default).
   useEffect(() => {
     setLoadingEncounters(true);
-    fetch(`/api/clinic/${clinicId}/prescriptions/encounters`, {
+    const query = dentistId ? `?dentistId=${encodeURIComponent(dentistId)}` : "";
+    fetch(`/api/clinic/${clinicId}/prescriptions/encounters${query}`, {
       credentials: "include",
       cache: "no-store",
     })
@@ -82,7 +88,7 @@ export default function NewPrescriptionClient({
       })
       .catch(() => undefined)
       .finally(() => setLoadingEncounters(false));
-  }, [clinicId, initialEncounterId]);
+  }, [clinicId, initialEncounterId, dentistId]);
 
   function addRow() {
     setRows((prev) => [
@@ -104,6 +110,7 @@ export default function NewPrescriptionClient({
     if (!selectedEncounter) { setError("Please select an encounter"); return; }
     const validRows = rows.filter((r) => r.medicineName.trim());
     if (validRows.length === 0) { setError("Add at least one medicine"); return; }
+    if (dentists.length > 0 && !dentistId) { setError("Select which dentist is prescribing"); return; }
 
     setSubmitting(true);
     setError(null);
@@ -117,6 +124,7 @@ export default function NewPrescriptionClient({
           encounterId: selectedEncounter.id,
           prcLicenseNumber: prcLicenseNumber.trim() || undefined,
           notes: notes.trim() || undefined,
+          dentistId: dentistId || undefined,
           items: validRows.map((r, idx) => ({
             medicineName: r.medicineName.trim(),
             dosage: r.dosage.trim() || undefined,
@@ -230,6 +238,24 @@ export default function NewPrescriptionClient({
         {/* PRC License */}
         <div className="bg-white rounded-2xl shadow-sm border border-violet-100 p-5 space-y-4">
           <h2 className="text-sm font-semibold text-violet-900">Dentist information</h2>
+          {dentists.length > 0 && (
+            <div>
+              <label className="block text-xs font-semibold text-violet-700 mb-1">
+                Prescribing dentist <span className="text-red-500">*</span>
+              </label>
+              <select
+                required
+                value={dentistId}
+                onChange={(e) => setDentistId(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-violet-200 text-sm text-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-400"
+              >
+                <option value="">Select dentist</option>
+                {dentists.map((item) => (
+                  <option key={item.id} value={item.id}>Dr. {item.firstName} {item.lastName}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label className="block text-xs font-semibold text-violet-700 mb-1">
               PRC License Number

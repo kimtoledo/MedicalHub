@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import EncounterForm from "@/components/app/encounters/EncounterForm";
 import { getClinicSession, getClinicShellContext } from "@/lib/clinic-session";
 import { getClinicPatientOptions } from "@/lib/clinic-patients";
+import { getClinicDentists } from "@/lib/clinic-dentists";
 export default async function NewEncounterPage({
   searchParams,
 }: {
@@ -9,9 +10,11 @@ export default async function NewEncounterPage({
 }) {
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
-  const [context, patientData] = await Promise.all([
+  const isDentist = identity.role === "dentist";
+  const [context, patientData, dentists] = await Promise.all([
     getClinicShellContext(identity),
     getClinicPatientOptions(identity.clinicId),
+    isDentist ? Promise.resolve([]) : getClinicDentists(identity.clinicId).catch(() => []),
   ]);
   return (
     <div className="p-4 sm:p-8">
@@ -27,6 +30,7 @@ export default async function NewEncounterPage({
             clinicId={identity.clinicId}
             branches={context.branches}
             patients={patientData.items}
+            dentists={dentists}
             initialPatientId={searchParams.patientId}
             initialAppointmentId={searchParams.appointmentId}
           />

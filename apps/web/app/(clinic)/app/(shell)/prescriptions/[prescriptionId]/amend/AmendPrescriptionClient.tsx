@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus, Trash2, FileText, Loader2, AlertTriangle } from "lucide-react";
 import type { PrescriptionDetail } from "../page";
+import type { ClinicDentistOption } from "@/lib/clinic-dentists";
 
 type MedicineRow = {
   id: number;
@@ -18,14 +19,17 @@ type MedicineRow = {
 export default function AmendPrescriptionClient({
   original,
   clinicId,
+  dentists = [],
 }: {
   original: PrescriptionDetail;
   clinicId: string;
+  dentists?: ClinicDentistOption[];
 }) {
   const router = useRouter();
 
   const [prcLicenseNumber, setPrcLicenseNumber] = useState(original.prcLicenseNumber ?? "");
   const [notes, setNotes] = useState(original.notes ?? "");
+  const [dentistId, setDentistId] = useState("");
   const [rows, setRows] = useState<MedicineRow[]>(
     original.items.length > 0
       ? original.items.map((item, idx) => ({
@@ -60,6 +64,7 @@ export default function AmendPrescriptionClient({
     e.preventDefault();
     const validRows = rows.filter((r) => r.medicineName.trim());
     if (validRows.length === 0) { setError("Add at least one medicine"); return; }
+    if (dentists.length > 0 && !dentistId) { setError("Select which dentist is prescribing"); return; }
 
     setSubmitting(true);
     setError(null);
@@ -74,6 +79,7 @@ export default function AmendPrescriptionClient({
           body: JSON.stringify({
             prcLicenseNumber: prcLicenseNumber.trim() || undefined,
             notes: notes.trim() || undefined,
+            dentistId: dentistId || undefined,
             items: validRows.map((r, idx) => ({
               medicineName: r.medicineName.trim(),
               dosage: r.dosage.trim() || undefined,
@@ -138,6 +144,24 @@ export default function AmendPrescriptionClient({
         {/* PRC License */}
         <div className="bg-white rounded-2xl shadow-sm border border-violet-100 p-5 space-y-4">
           <h2 className="text-sm font-semibold text-violet-900">Dentist information</h2>
+          {dentists.length > 0 && (
+            <div>
+              <label className="block text-xs font-semibold text-violet-700 mb-1">
+                Prescribing dentist <span className="text-red-500">*</span>
+              </label>
+              <select
+                required
+                value={dentistId}
+                onChange={(e) => setDentistId(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-violet-200 text-sm text-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-400"
+              >
+                <option value="">Select dentist</option>
+                {dentists.map((item) => (
+                  <option key={item.id} value={item.id}>Dr. {item.firstName} {item.lastName}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label className="block text-xs font-semibold text-violet-700 mb-1">
               PRC License Number

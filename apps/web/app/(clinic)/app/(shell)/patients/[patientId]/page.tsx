@@ -3,6 +3,7 @@ import PatientProfile from "@/components/app/patients/PatientProfile";
 import { getClinicPatient, type PatientDetail as ClinicPatientDetail } from "@/lib/clinic-patients";
 import { getClinicSession, getClinicShellContext } from "@/lib/clinic-session";
 import { getPatientTreatments } from "@/lib/clinic-treatments";
+import { getClinicDentists } from "@/lib/clinic-dentists";
 import PatientRecordExtensions from "./PatientRecordExtensions";
 
 export type PatientDetail = ClinicPatientDetail["patient"];
@@ -30,10 +31,11 @@ export default async function PatientPage({
   ]);
   if (!data) notFound();
 
-  const treatments = await getPatientTreatments(
-    identity.clinicId,
-    params.patientId,
-  ).catch(() => []);
+  const canManageTreatmentPlans = identity.membershipRole === "dentist" || identity.isAdmin;
+  const [treatments, dentists] = await Promise.all([
+    getPatientTreatments(identity.clinicId, params.patientId).catch(() => []),
+    identity.isAdmin ? getClinicDentists(identity.clinicId).catch(() => []) : Promise.resolve([]),
+  ]);
 
   return (
     <>
@@ -53,7 +55,8 @@ export default async function PatientPage({
         canUseAiImaging={hasAiImagingRole && Boolean(context.entitlements["ai.imaging"])}
         canUseHmo={Boolean(context.entitlements["hmo.claims"])}
         canUseTreatmentPlans={hasClinicalRole && Boolean(context.entitlements["clinical.treatment_plans"])}
-        canManageTreatmentPlans={identity.membershipRole === "dentist"}
+        canManageTreatmentPlans={canManageTreatmentPlans}
+        dentists={dentists}
       />
     </>
   );

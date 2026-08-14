@@ -9,6 +9,7 @@ import {
   ClinicEncounterError,
   type ClinicEncountersService,
 } from '../clinic/encounters-service.js';
+import { isActiveClinicDentist } from '../clinic/dentist-directory.js';
 import { postgresUuidSchema } from '../validation.js';
 
 const clinicQuery = z.object({ clinicId: postgresUuidSchema });
@@ -24,6 +25,8 @@ const body = z.object({
   branchId: postgresUuidSchema,
   patientId: postgresUuidSchema,
   appointmentId: postgresUuidSchema.optional(),
+  /** Required when the caller isn't a dentist themselves — the dentist this encounter is attributed to. */
+  dentistId: postgresUuidSchema.optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   chiefComplaint: optional(5000),
   examination: optional(10000),
@@ -33,12 +36,18 @@ const body = z.object({
   notes: optional(10000),
   status: z.enum(['draft', 'final']).default('draft'),
 }).strict();
-const patchBody = body.omit({ patientId: true, appointmentId: true }).partial().strict();
+const patchBody = body.omit({ patientId: true, appointmentId: true, dentistId: true }).partial().strict();
 const clinicalRoles = ['clinic_owner', 'clinic_admin', 'dentist', 'dental_assistant'] as const;
+const authoringRoles = ['dentist', 'clinic_owner', 'clinic_admin'] as const;
+const adminRoles = new Set(['clinic_owner', 'clinic_admin']);
 
 function dentistId(auth: AuthorizationContext, clinicId: string) {
   return getClinicAccess(auth, clinicId)
     .find((item) => item.role === 'dentist' && item.dentistId)?.dentistId ?? null;
+}
+
+function isClinicAdmin(auth: AuthorizationContext, clinicId: string) {
+  return getClinicAccess(auth, clinicId).some((item) => adminRoles.has(item.role));
 }
 
 function actor(request: FastifyRequest, auth: AuthorizationContext) {
@@ -190,18 +199,28 @@ export async function registerClinicEncounterRoutes(
       options,
       query.data.clinicId,
       FeatureKey.ENCOUNTERS,
-      ['dentist'],
+      [...authoringRoles],
     );
     if (!auth) return;
-    const dentist = dentistId(auth, query.data.clinicId);
+    const { dentistId: attributedDentistId, ...encounterInput } = parsed.data;
+    let dentist = dentistId(auth, query.data.clinicId);
     if (!dentist) {
-      return reply.status(403).send({
-        success: false,
-        error: {
-          code: 'DENTIST_PROFILE_REQUIRED',
-          message: 'A linked dentist profile is required',
-        },
-      });
+      if (!isClinicAdmin(auth, query.data.clinicId) || !attributedDentistId) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'DENTIST_PROFILE_REQUIRED',
+            message: 'A linked dentist profile, or an attributed dentistId, is required',
+          },
+        });
+      }
+      if (!options.db || !(await isActiveClinicDentist(options.db, query.data.clinicId, attributedDentistId))) {
+        return reply.status(400).send({
+          success: false,
+          error: { code: 'DENTIST_NOT_ASSIGNED', message: 'The selected dentist is not active in this clinic' },
+        });
+      }
+      dentist = attributedDentistId;
     }
     try {
       return reply.status(201).send({
@@ -209,7 +228,7 @@ export async function registerClinicEncounterRoutes(
         data: await options.encounters.create(
           query.data.clinicId,
           dentist,
-          parsed.data,
+          encounterInput,
           actor(request, auth),
         ),
       });
@@ -239,11 +258,11 @@ export async function registerClinicEncounterRoutes(
       options,
       query.data.clinicId,
       FeatureKey.ENCOUNTERS,
-      ['dentist'],
+      [...authoringRoles],
     );
     if (!auth) return;
     const dentist = dentistId(auth, query.data.clinicId);
-    if (!dentist) {
+    if (!dentist && !isClinicAdmin(auth, query.data.clinicId)) {
       return reply.status(403).send({
         success: false,
         error: {
