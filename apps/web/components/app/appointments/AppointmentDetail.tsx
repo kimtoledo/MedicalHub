@@ -1,14 +1,18 @@
 import Link from "next/link";
 import {
+  ArrowRight,
   CalendarClock,
   ClipboardList,
+  FileText,
   History,
   Mail,
   MapPin,
   Phone,
+  Receipt,
   Stethoscope,
 } from "lucide-react";
 import type { AppointmentDetail as AppointmentDetailData } from "@/lib/clinic-appointments";
+import type { EncounterRecord } from "@/lib/clinic-encounters";
 import AppointmentActions from "@/components/app/dashboard/AppointmentActions";
 import { statusStyle } from "@/components/app/dashboard/types";
 import { canDentistManageAppointment, patientProfileHref } from "@/lib/dentist-schedule-navigation";
@@ -21,16 +25,21 @@ export default function AppointmentDetail({
   clinicId,
   data,
   basePath,
+  encounterBasePath,
+  linkedEncounter = null,
   dentist = false,
   appointmentDentistId,
 }: {
   clinicId: string;
   data: AppointmentDetailData;
   basePath: string;
+  encounterBasePath: string;
+  linkedEncounter?: Pick<EncounterRecord, "id" | "status"> | null;
   dentist?: boolean;
   appointmentDentistId?: string | null;
 }) {
   const canManage = !dentist || canDentistManageAppointment(data.dentistId, appointmentDentistId);
+  const canDocument = dentist && canManage;
   const patientHref = patientProfileHref(data.patientId, dentist);
   return (
     <div className="p-4 sm:p-8">
@@ -138,6 +147,47 @@ export default function AppointmentDetail({
             </ol>
           ) : (
             <p className="mt-4 text-sm text-slate-500">No status changes recorded yet.</p>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-violet-100 bg-white p-5 shadow-sm lg:col-span-3">
+          <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-violet-600">
+            <FileText size={16} />Clinical documentation
+          </h2>
+          {!data.patientId ? (
+            <p className="mt-3 text-sm text-slate-500">This booking isn&apos;t linked to a patient record yet, so an encounter can&apos;t be documented here.</p>
+          ) : linkedEncounter ? (
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${statusStyle(linkedEncounter.status === "final" ? "completed" : "pending")}`}>
+                Encounter {linkedEncounter.status}
+              </span>
+              <Link
+                href={`${encounterBasePath}/${linkedEncounter.id}`}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-700"
+              >
+                {linkedEncounter.status === "final" ? "View encounter" : "Continue encounter"}<ArrowRight size={15} />
+              </Link>
+              {linkedEncounter.status === "final" && (
+                <Link
+                  href={`/app/billing/new?encounterId=${linkedEncounter.id}`}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-violet-200 px-4 py-2 text-sm font-bold text-violet-700 hover:bg-violet-50"
+                >
+                  <Receipt size={15} />Generate invoice
+                </Link>
+              )}
+            </div>
+          ) : canDocument ? (
+            <div className="mt-3">
+              <p className="text-sm text-slate-500">No encounter has been documented for this visit yet.</p>
+              <Link
+                href={`${encounterBasePath}/new?patientId=${data.patientId}&appointmentId=${data.id}`}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-700"
+              >
+                <Stethoscope size={15} />Start encounter<ArrowRight size={15} />
+              </Link>
+            </div>
+          ) : (
+            <p className="mt-3 text-sm text-slate-500">No encounter has been documented for this visit yet.</p>
           )}
         </section>
       </div>
