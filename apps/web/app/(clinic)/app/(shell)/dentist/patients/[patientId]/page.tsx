@@ -3,7 +3,7 @@ import PatientProfile from "@/components/app/patients/PatientProfile";
 import { getClinicPatient } from "@/lib/clinic-patients";
 import { getClinicSession, getClinicShellContext } from "@/lib/clinic-session";
 import { getPatientTreatments } from "@/lib/clinic-treatments";
-import PatientRecordExtensions from "../../../patients/[patientId]/PatientRecordExtensions";
+import { getOdontogram } from "@/lib/clinic-odontogram";
 
 export default async function DentistPatientPage({
   params,
@@ -20,28 +20,28 @@ export default async function DentistPatientPage({
     getClinicPatient(identity.clinicId, params.patientId, sort).catch(() => null),
   ]);
   if (!data) notFound();
-  const treatments = await getPatientTreatments(identity.clinicId, params.patientId).catch(() => []);
+  const canUseOdontogram = Boolean(context.entitlements["clinical.odontogram"]);
+  const [treatments, odontogram] = await Promise.all([
+    getPatientTreatments(identity.clinicId, params.patientId).catch(() => []),
+    canUseOdontogram ? getOdontogram(identity.clinicId, params.patientId).catch(() => null) : Promise.resolve(null),
+  ]);
   return (
-    <>
-      <PatientProfile
-        clinicId={identity.clinicId}
-        data={data}
-        basePath="/app/dentist/patients"
-        sort={sort}
-        treatments={treatments}
-        appointmentDentistId={identity.dentistId}
-      />
-      <PatientRecordExtensions
-        clinicId={identity.clinicId}
-        patientId={data.patient.id}
-        branchId={identity.branchId ?? ""}
-        canUsePrescriptions={Boolean(context.entitlements["clinical.prescriptions"])}
-        canUseFiles={false}
-        canUseAiImaging={false}
-        canUseHmo={false}
-        canUseTreatmentPlans={false}
-        canManageTreatmentPlans={false}
-      />
-    </>
+    <PatientProfile
+      clinicId={identity.clinicId}
+      data={data}
+      basePath="/app/dentist/patients"
+      sort={sort}
+      treatments={treatments}
+      appointmentDentistId={identity.dentistId}
+      branchId={identity.branchId ?? ""}
+      odontogram={odontogram}
+      canUsePrescriptions={Boolean(context.entitlements["clinical.prescriptions"])}
+      canUseOdontogram={canUseOdontogram}
+      canUseFiles={false}
+      canUseAiImaging={false}
+      canUseHmo={false}
+      canUseTreatmentPlans={false}
+      canManageTreatmentPlans={false}
+    />
   );
 }

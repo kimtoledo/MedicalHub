@@ -4,7 +4,7 @@ import { getClinicPatient, type PatientDetail as ClinicPatientDetail } from "@/l
 import { getClinicSession, getClinicShellContext } from "@/lib/clinic-session";
 import { getPatientTreatments } from "@/lib/clinic-treatments";
 import { getClinicDentists } from "@/lib/clinic-dentists";
-import PatientRecordExtensions from "./PatientRecordExtensions";
+import { getOdontogram } from "@/lib/clinic-odontogram";
 
 export type PatientDetail = ClinicPatientDetail["patient"];
 
@@ -32,32 +32,30 @@ export default async function PatientPage({
   if (!data) notFound();
 
   const canManageTreatmentPlans = identity.membershipRole === "dentist" || identity.isAdmin;
-  const [treatments, dentists] = await Promise.all([
+  const canUseOdontogram = hasClinicalRole && Boolean(context.entitlements["clinical.odontogram"]);
+  const [treatments, dentists, odontogram] = await Promise.all([
     getPatientTreatments(identity.clinicId, params.patientId).catch(() => []),
     identity.isAdmin ? getClinicDentists(identity.clinicId).catch(() => []) : Promise.resolve([]),
+    canUseOdontogram ? getOdontogram(identity.clinicId, params.patientId).catch(() => null) : Promise.resolve(null),
   ]);
 
   return (
-    <>
-      <PatientProfile
-        clinicId={identity.clinicId}
-        data={data}
-        basePath="/app/patients"
-        sort={sort}
-        treatments={treatments}
-      />
-      <PatientRecordExtensions
-        clinicId={identity.clinicId}
-        patientId={data.patient.id}
-        branchId={identity.branchId ?? ""}
-        canUsePrescriptions={hasClinicalRole && Boolean(context.entitlements["clinical.prescriptions"])}
-        canUseFiles={hasClinicalRole && Boolean(context.entitlements["clinical.radiographs"])}
-        canUseAiImaging={hasAiImagingRole && Boolean(context.entitlements["ai.imaging"])}
-        canUseHmo={Boolean(context.entitlements["hmo.claims"])}
-        canUseTreatmentPlans={hasClinicalRole && Boolean(context.entitlements["clinical.treatment_plans"])}
-        canManageTreatmentPlans={canManageTreatmentPlans}
-        dentists={dentists}
-      />
-    </>
+    <PatientProfile
+      clinicId={identity.clinicId}
+      data={data}
+      basePath="/app/patients"
+      sort={sort}
+      treatments={treatments}
+      branchId={identity.branchId ?? ""}
+      odontogram={odontogram}
+      dentists={dentists}
+      canUsePrescriptions={hasClinicalRole && Boolean(context.entitlements["clinical.prescriptions"])}
+      canUseOdontogram={canUseOdontogram}
+      canUseFiles={hasClinicalRole && Boolean(context.entitlements["clinical.radiographs"])}
+      canUseAiImaging={hasAiImagingRole && Boolean(context.entitlements["ai.imaging"])}
+      canUseHmo={Boolean(context.entitlements["hmo.claims"])}
+      canUseTreatmentPlans={hasClinicalRole && Boolean(context.entitlements["clinical.treatment_plans"])}
+      canManageTreatmentPlans={canManageTreatmentPlans}
+    />
   );
 }
