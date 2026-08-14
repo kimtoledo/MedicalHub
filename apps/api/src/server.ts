@@ -63,6 +63,7 @@ import { createIntegrationService } from './integrations/service.js';
 import { createPlatformOperationsService } from './platform/operations-service.js';
 import { createRetentionService } from './platform/retention-service.js';
 import { createSecurityAlertService } from './platform/security-alerts-service.js';
+import { createMetricsService } from './platform/metrics-service.js';
 import { createAiImagingService } from './clinic/ai-imaging-service.js';
 import { createKioskService } from './kiosk/service.js';
 import { createAccountProfileService } from './profile/service.js';
@@ -115,6 +116,7 @@ const customDomains = createCustomDomainService(database.db);
 const platformOperations = createPlatformOperationsService(database.db);
 const retention = createRetentionService(database.db);
 const securityAlerts = createSecurityAlertService(database.db);
+const metrics = createMetricsService();
 const aiImaging = createAiImagingService(database.db);
 const kiosk = createKioskService(database.db, entitlements, integrations);
 const profiles = createAccountProfileService(database.db);
@@ -185,6 +187,7 @@ const app = await buildApp({
   platformOperations,
   retention,
   securityAlerts,
+  metrics,
   aiImaging,
   kiosk,
   profiles,

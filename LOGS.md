@@ -103,6 +103,15 @@ Updated manually after each session or merged task.
 - Verified end-to-end against real seeded data for both features (including the dedup fix) and 428 passing API tests, repository-wide TypeScript checks, and production web/API builds
 - Remaining in `mvp3/11-platform-operations.md`: backup/restore drills (blocked on a backup-infra decision) and operational dashboards for error rates/slow queries/storage (new observability work, not started)
 
+### ✅ Operational dashboards — mvp3/11-platform-operations.md nearly fully done
+- Scoped down from "API error rates, slow query alerts, storage usage" to what's genuinely real without inventing external APM infra (no Prometheus/Datadog exists here)
+- Storage usage is fully real: `SUM(clinicalFiles.sizeBytes)` — every upload already records its byte size, zero new instrumentation
+- API error rate is a new in-process request counter (one Fastify `onResponse` hook using its built-in `reply.elapsedTime`) tallying total/4xx/5xx since the last restart — deliberately not persisted (no time-series store exists) and labeled "since last restart" rather than presented as historical
+- "Slow query alerts" scoped down to slow *requests* (same hook, HTTP-level duration) rather than per-SQL-query timing — instrumenting the shared `postgres.js` client used everywhere for per-query duration is a materially riskier change than its value justifies; drizzle's own `Logger` interface has no post-execution duration anyway
+- Replaced the three "Not yet wired to a live signal" placeholders in the Super Admin operations console with real numbers
+- Verified end-to-end (real completed requests including a real 404, real error rate; storage query runs cleanly against the real dev database) and 433 passing API tests, repository-wide TypeScript checks, and production web/API builds
+- Only backup/restore drills remain in this task, blocked on a backup-infra decision the user declined to make speculatively
+
 ### ✅ Search and Discovery — fully done
 - Added the final "Remaining" item: a "Near me" geolocation button on `/clinics` that requests `navigator.geolocation` and round-trips through the existing `latitude`/`longitude`/`maxDistanceKm` query params the backend already validated and consumed — no backend change needed, just the missing browser-side control, plus a "Clear location" toggle and persistence across pagination/filters
 - Verified end-to-end against a running dev server (toggled button state, "within X km of you" copy) rather than just typechecking

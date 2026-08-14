@@ -1,6 +1,6 @@
 import { Client as StorageClient } from '@replit/object-storage';
 import { alias } from 'drizzle-orm/pg-core';
-import { and, asc, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
 import {
   appointmentStatusHistory, appointments, branches, clinicReviews, clinicalFiles, clinics,
@@ -152,6 +152,15 @@ export function createPlatformOperationsService(database: DB) {
       return { buffer, filename: `dentra-export-${row.id}.json` };
     },
     activeClinics: async () => database.select({ id: clinics.id, name: clinics.name, status: clinics.status, maintenanceMode: clinics.maintenanceMode, createdAt: clinics.createdAt }).from(clinics).orderBy(asc(clinics.name)),
+    // Real usage from clinicalFiles.sizeBytes, which every upload already
+    // records — no new instrumentation. Tenant export artifacts sit in the
+    // same object-storage bucket but their size isn't tracked in the DB,
+    // so this is clinical-file storage specifically, labeled as such.
+    storageUsage: async () => {
+      const [totalRow] = await database.select({ totalBytes: sql<string>`coalesce(sum(${clinicalFiles.sizeBytes}), 0)`, fileCount: sql<string>`count(*)` }).from(clinicalFiles);
+      const byClinic = await database.select({ clinicId: clinicalFiles.clinicId, clinicName: clinics.name, totalBytes: sql<string>`coalesce(sum(${clinicalFiles.sizeBytes}), 0)`, fileCount: sql<string>`count(*)` }).from(clinicalFiles).innerJoin(clinics, eq(clinics.id, clinicalFiles.clinicId)).groupBy(clinicalFiles.clinicId, clinics.name).orderBy(desc(sql`sum(${clinicalFiles.sizeBytes})`)).limit(10);
+      return { totalBytes: Number(totalRow?.totalBytes ?? 0), fileCount: Number(totalRow?.fileCount ?? 0), topClinics: byClinic.map((row) => ({ clinicId: row.clinicId, clinicName: row.clinicName, totalBytes: Number(row.totalBytes), fileCount: Number(row.fileCount) })) };
+    },
     setMaintenanceMode: async (clinicId: string, enabled: boolean, actor: OperationsActor) => {
       const [row] = await database.update(clinics).set({ maintenanceMode: enabled }).where(eq(clinics.id, clinicId)).returning({ id: clinics.id, name: clinics.name, maintenanceMode: clinics.maintenanceMode });
       if (!row) throw new OperationsError('CLINIC_NOT_FOUND', 'Clinic not found', 404);

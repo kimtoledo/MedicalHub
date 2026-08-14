@@ -63,6 +63,7 @@ import { registerAdminDashboardRoutes } from './routes/admin-dashboard.js';
 import type { AdminDashboardService } from './admin/dashboard-service.js';
 import { registerAdminSettingsRoutes } from './routes/admin-settings.js';
 import type { PlatformSettingsService } from './admin/platform-settings-service.js';
+import type { MetricsService } from './platform/metrics-service.js';
 import { registerEntitlementRoutes } from './routes/entitlements.js';
 import { registerPublicDirectoryRoutes } from './routes/public-directory.js';
 import { registerPublicBookingRoutes } from './routes/public-booking.js';
@@ -150,6 +151,7 @@ export type BuildAppOptions = {
   adminAudit?: AdminAuditService;
   adminDashboard?: AdminDashboardService;
   adminSettings?: PlatformSettingsService;
+  metrics?: MetricsService;
   entitlements?: EntitlementService;
   publicDirectory?: PublicDirectoryService;
   publicBooking?: PublicBookingService;
@@ -209,6 +211,14 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   await app.register(helmet);
   await app.register(cookie);
   await app.register(rateLimit, { global: false });
+
+  if (options.metrics) {
+    const metrics = options.metrics;
+    app.addHook('onResponse', async (request, reply) => {
+      metrics.recordRequest({ method: request.method, url: request.routeOptions?.url ?? request.url, statusCode: reply.statusCode, durationMs: reply.elapsedTime });
+    });
+  }
+
   // Multipart uploads — 20 MB limit, 1 file per request
   await app.register(multipart, {
     // files: allow up to 5 for the public remote-consult endpoint;
@@ -371,7 +381,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       await registerNotificationProviderRoutes(app, { auth: options.auth, providers: options.notificationProviders });
     }
     if (options.platformOperations) {
-      await registerPlatformOperationsRoutes(app, { auth: options.auth, operations: options.platformOperations, retention: options.retention, securityAlerts: options.securityAlerts });
+      await registerPlatformOperationsRoutes(app, { auth: options.auth, operations: options.platformOperations, retention: options.retention, securityAlerts: options.securityAlerts, metrics: options.metrics });
     }
     if (options.aiImaging && options.entitlements) {
       await registerAiImagingRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, imaging: options.aiImaging });

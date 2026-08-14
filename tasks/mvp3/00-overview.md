@@ -18,7 +18,7 @@
 | `08-custom-domains.md` | Clinic custom domain mapping, SSL, canonical redirects | ✅ Done |
 | `09-integrations-api.md` | Partner API, webhooks, calendar/accounting export | ✅ Done |
 | `10-offline-mode.md` | Secure, minimal offline clinical access (threat-modeled) | ⛔ Blocked |
-| `11-platform-operations.md` | Support tooling, tenant export, retention, security alerts | 🔵 Active — export generation, feature-flag rollout, maintenance mode, and support-access enforcement now real |
+| `11-platform-operations.md` | Support tooling, tenant export, retention, security alerts | 🔵 Active — only backup/restore drills remain (blocked on infra decision) |
 | `12-ai-imaging.md` | AI radiograph analysis, oral health scoring, AI diagnostics assistant | 🔵 Active |
 | `13-kiosk-checkin.md` | Tablet self-check-in for high-volume clinic branches | ✅ Done |
 | `14-patient-portal-experience.md` | Complete signup, linking, requests, details, and account UX | ✅ Done |

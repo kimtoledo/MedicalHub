@@ -491,17 +491,34 @@ function SecurityAlertsSection() {
   );
 }
 
+type MetricsSummary = { sinceRestart: string; totalRequests: number; clientErrorCount: number; serverErrorCount: number; errorRatePercent: number; slowRequestThresholdMs: number; recentSlowRequests: Array<{ method: string; url: string; statusCode: number; durationMs: number; at: string }> };
+type StorageUsage = { totalBytes: number; fileCount: number; topClinics: Array<{ clinicId: string; clinicName: string; totalBytes: number; fileCount: number }> };
+
+function formatBytes(bytes: number) {
+  if (bytes === 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  return `${(bytes / 1024 ** exponent).toFixed(exponent === 0 ? 0 : 1)} ${units[exponent]}`;
+}
+
 function PlatformInventorySection() {
   const [clinics, setClinics] = useState<ClinicSummary[]>([]);
+  const [metrics, setMetrics] = useState<MetricsSummary | null>(null);
+  const [storage, setStorage] = useState<StorageUsage | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const response = await fetch('/api/admin/operations/clinics', { cache: 'no-store' });
-    const payload = await response.json();
+    const [clinicsResponse, metricsResponse, storageResponse] = await Promise.all([
+      fetch('/api/admin/operations/clinics', { cache: 'no-store' }),
+      fetch('/api/admin/operations/metrics', { cache: 'no-store' }),
+      fetch('/api/admin/operations/storage-usage', { cache: 'no-store' }),
+    ]);
     setLoading(false);
-    if (response.ok) setClinics(payload.data);
+    if (clinicsResponse.ok) setClinics((await clinicsResponse.json()).data);
+    if (metricsResponse.ok) setMetrics((await metricsResponse.json()).data);
+    if (storageResponse.ok) setStorage((await storageResponse.json()).data);
   }, []);
 
   useEffect(() => { void load(); }, [load]);
@@ -544,16 +561,33 @@ function PlatformInventorySection() {
         </div>
       </details>
       <div className="grid gap-3 sm:grid-cols-3">
-        {[
-          { label: 'API error rate', note: 'Not yet wired to a live signal' },
-          { label: 'Slow query alerts', note: 'Not yet wired to a live signal' },
-          { label: 'Storage usage', note: 'Not yet wired to a live signal' },
-        ].map((metric) => (
-          <div key={metric.label} className="rounded-xl bg-slate-50 p-3 opacity-70">
-            <p className="text-xs font-semibold text-slate-500">{metric.label}</p>
-            <p className="text-xs text-slate-400">{metric.note}</p>
-          </div>
-        ))}
+        <div className="rounded-xl bg-slate-50 p-3">
+          <p className="text-xs font-semibold text-slate-500">API error rate</p>
+          {metrics ? (
+            <>
+              <p className="text-sm font-bold text-slate-800">{metrics.errorRatePercent}% <span className="font-normal text-slate-400">of {metrics.totalRequests} requests</span></p>
+              <p className="text-xs text-slate-400">Since last restart ({formatManila(metrics.sinceRestart)}) — not a persisted historical record</p>
+            </>
+          ) : <p className="text-xs text-slate-400">Loading…</p>}
+        </div>
+        <div className="rounded-xl bg-slate-50 p-3">
+          <p className="text-xs font-semibold text-slate-500">Slow requests (&gt;{metrics ? metrics.slowRequestThresholdMs : 1000}ms)</p>
+          {metrics ? (
+            <>
+              <p className="text-sm font-bold text-slate-800">{metrics.recentSlowRequests.length} recent</p>
+              <p className="text-xs text-slate-400">{metrics.recentSlowRequests[0] ? `Latest: ${metrics.recentSlowRequests[0].method} ${metrics.recentSlowRequests[0].url} (${metrics.recentSlowRequests[0].durationMs.toFixed(0)}ms)` : 'None since last restart'}</p>
+            </>
+          ) : <p className="text-xs text-slate-400">Loading…</p>}
+        </div>
+        <div className="rounded-xl bg-slate-50 p-3">
+          <p className="text-xs font-semibold text-slate-500">Clinical file storage</p>
+          {storage ? (
+            <>
+              <p className="text-sm font-bold text-slate-800">{formatBytes(storage.totalBytes)}</p>
+              <p className="text-xs text-slate-400">{storage.fileCount} file{storage.fileCount === 1 ? '' : 's'} across all clinics</p>
+            </>
+          ) : <p className="text-xs text-slate-400">Loading…</p>}
+        </div>
       </div>
       {error && <p role="alert" className="mt-3 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
     </section>
