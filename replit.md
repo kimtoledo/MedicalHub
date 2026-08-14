@@ -48,12 +48,11 @@ docs/         # Product spec, architecture, MVP plans, API contracts
 scripts/      # Migration helpers and post-merge automation
 ```
 
-## Stack
-
-- **Frontend**: Next.js 14 App Router, React 18, TypeScript, Tailwind CSS
-- **Backend**: Fastify 5, TypeScript, Drizzle ORM, PostgreSQL — live at port 3001
-- **Auth**: Better Auth — database-backed, HTTP-only sessions; email/password sign-in; public sign-up disabled
-- **Design**: Tonik-inspired — violet palette, rounded cards, pill buttons
+### Stack
+- **ORM**: Drizzle ORM — schema in `packages/db/src/schema/`
+- **Migrations**: Drizzle Kit — SQL files in `packages/db/migrations/`
+- **Driver**: postgres.js
+- **Database**: Replit PostgreSQL — `DATABASE_URL` from Replit Secrets
 
 ## Key docs (read before major changes)
 

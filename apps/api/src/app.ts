@@ -132,6 +132,7 @@ export type BuildAppOptions = {
   adminClinicBranchCreation?: AdminClinicBranchCreationService;
   adminClinicDetails?: AdminClinicDetailService;
   adminClinicStatus?: AdminClinicStatusService;
+  adminClinicSettings?: AdminClinicSettingsService;
   clinicBilling?: ClinicBillingService;
   clinicServiceList?: ClinicServiceListService;
   clinicPrescription?: ClinicPrescriptionService;
@@ -140,7 +141,6 @@ export type BuildAppOptions = {
   remoteConsults?: RemoteConsultsService;
   hmo?: HmoService;
   db?: import('@dentra/db').DB;
-  adminClinicSettings?: AdminClinicSettingsService;
   adminDentists?: AdminDentistListService;
   adminDentistCreation?: AdminDentistCreationService;
   adminDentistDetails?: AdminDentistDetailService;
