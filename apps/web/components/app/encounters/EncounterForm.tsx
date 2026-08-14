@@ -152,23 +152,24 @@ function NoteField({
   return (
     <label className="block text-sm font-semibold text-slate-700">
       {label}
-      <div className="mt-1.5 flex flex-wrap gap-1.5">
-        {presets.map((term) => (
-          <button
-            key={term}
-            type="button"
-            disabled={disabled}
-            onClick={() => onChange(toggleTerm(value, term))}
-            className={`rounded-full border px-2.5 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
-              active.has(term)
-                ? "border-violet-600 bg-violet-600 text-white"
-                : "border-slate-300 text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            {term}
-          </button>
-        ))}
-      </div>
+      {!disabled && (
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
+          {presets.map((term) => (
+            <button
+              key={term}
+              type="button"
+              onClick={() => onChange(toggleTerm(value, term))}
+              className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                active.has(term)
+                  ? "border-violet-600 bg-violet-600 text-white"
+                  : "border-slate-300 text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              {term}
+            </button>
+          ))}
+        </div>
+      )}
       <textarea
         disabled={disabled}
         name={name}
