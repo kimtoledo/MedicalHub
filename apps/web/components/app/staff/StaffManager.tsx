@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { ChevronDown, MailPlus, MapPin, RefreshCw, ShieldCheck, UserCog, UserMinus } from "lucide-react";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 
 type ClinicRole = "clinic_owner" | "clinic_admin" | "dentist" | "receptionist" | "dental_assistant" | "cashier" | "inventory_staff";
 type StaffMember = {
@@ -54,6 +55,7 @@ function roleLabel(role: ClinicRole) {
 }
 
 export default function StaffManager({ clinicId, currentUserId, currentRole }: { clinicId: string; currentUserId: string; currentRole: string }) {
+  const confirmDialog = useConfirm();
   const [data, setData] = useState<StaffData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +87,17 @@ export default function StaffManager({ clinicId, currentUserId, currentRole }: {
       return true;
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to save change"); return false; }
     finally { setBusy(null); }
+  }
+
+  async function removeMember(member: StaffMember) {
+    const confirmed = await confirmDialog({
+      title: "Remove staff member",
+      message: `Remove ${member.name} from this clinic?`,
+      tone: "danger",
+      confirmLabel: "Yes, remove",
+    });
+    if (!confirmed) return;
+    void mutate(member.membershipId, `/api/clinic/${clinicId}/staff/${member.membershipId}`, { method: "DELETE" }, "Membership removed.");
   }
 
   async function addBranch(userId: string, branchId: string) {
@@ -147,7 +160,7 @@ export default function StaffManager({ clinicId, currentUserId, currentRole }: {
                       <select aria-label={`Role for ${member.name}`} value={member.role} disabled={disabled || (member.role === "clinic_owner" && currentRole !== "clinic_owner")} onChange={(event) => void mutate(member.membershipId, `/api/clinic/${clinicId}/staff/${member.membershipId}`, { method: "PATCH", body: JSON.stringify({ role: event.target.value }) }, "Role updated.")} className="h-10 rounded-xl border border-slate-300 px-2 text-sm disabled:bg-slate-50">{roles.filter((role) => currentRole === "clinic_owner" || role.value !== "clinic_owner").map((role) => <option key={role.value} value={role.value}>{role.label}</option>)}</select>
                       <select aria-label={`Branch for ${member.name}`} value={member.branchId ?? ""} disabled={disabled} onChange={(event) => void mutate(member.membershipId, `/api/clinic/${clinicId}/staff/${member.membershipId}`, { method: "PATCH", body: JSON.stringify({ branchId: event.target.value || null }) }, "Branch access updated.")} className="h-10 rounded-xl border border-slate-300 px-2 text-sm disabled:bg-slate-50"><option value="">All branches</option>{data.branches.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
                       <button disabled={disabled} onClick={() => void mutate(member.membershipId, `/api/clinic/${clinicId}/staff/${member.membershipId}`, { method: "PATCH", body: JSON.stringify({ isActive: member.status === "inactive" }) }, member.status === "inactive" ? "Membership activated." : "Membership deactivated.")} className="h-10 rounded-xl border border-slate-300 px-3 text-sm font-medium text-slate-700 disabled:opacity-40">{member.status === "inactive" ? "Activate" : "Deactivate"}</button>
-                      <button disabled={disabled} onClick={() => { if (window.confirm(`Remove ${member.name} from this clinic?`)) void mutate(member.membershipId, `/api/clinic/${clinicId}/staff/${member.membershipId}`, { method: "DELETE" }, "Membership removed."); }} className="inline-flex h-10 items-center justify-center gap-1 rounded-xl border border-red-200 px-3 text-sm font-medium text-red-600 disabled:opacity-40"><UserMinus size={15} /> Remove</button>
+                      <button disabled={disabled} onClick={() => void removeMember(member)} className="inline-flex h-10 items-center justify-center gap-1 rounded-xl border border-red-200 px-3 text-sm font-medium text-red-600 disabled:opacity-40"><UserMinus size={15} /> Remove</button>
                     </div>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">

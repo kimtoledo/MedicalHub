@@ -5,6 +5,7 @@ import {
   Upload, FileImage, FileText, File, Trash2, ExternalLink,
   X, ChevronDown, Loader2, ImageIcon,
 } from "lucide-react";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -95,6 +96,7 @@ export default function FilesTab({
   branchId: string;
   allowUpload?: boolean;
 }) {
+  const confirmDialog = useConfirm();
   const [files, setFiles] = useState<FileItem[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -221,7 +223,8 @@ export default function FilesTab({
   }
 
   async function handleDelete(fileId: string) {
-    if (!confirm("Delete this file? This cannot be undone.")) return;
+    const confirmed = await confirmDialog({ title: "Delete file", message: "Delete this file? This cannot be undone.", tone: "danger" });
+    if (!confirmed) return;
     setDeletingId(fileId);
     try {
       await fetch(`/api/clinic/${clinicId}/files/${fileId}`, {

@@ -7,6 +7,7 @@ import {
   X, Loader2, ChevronDown, ImageIcon, AlertCircle,
 } from "lucide-react";
 import type { AssessmentDetail } from "./page";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 
 const NEXT_STEP_OPTIONS = [
   { value: "in_clinic_visit", label: "Schedule an in-clinic visit" },
@@ -39,6 +40,7 @@ export default function RemoteConsultDetailClient({
   isDentist: boolean;
 }) {
   const { color: badgeColor, Icon: StatusIcon } = statusBadge(assessment.status);
+  const confirmDialog = useConfirm();
 
   // Photo viewer state
   const [viewerIdx, setViewerIdx]     = useState<number | null>(null);
@@ -98,7 +100,8 @@ export default function RemoteConsultDetailClient({
   }
 
   async function handleClose() {
-    if (!confirm("Close this consultation? No further action will be recorded.")) return;
+    const confirmed = await confirmDialog({ title: "Close consultation", message: "Close this consultation? No further action will be recorded.", tone: "danger" });
+    if (!confirmed) return;
     await fetch(`/api/clinic/${clinicId}/remote-consults/${assessment.id}/close`, {
       method: "PATCH",
       credentials: "include",

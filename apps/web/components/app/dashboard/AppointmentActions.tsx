@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 const actions: Record<string, Array<{ label: string; status: string }>> = {
   pending: [
     { label: "Confirm", status: "confirmed" },
@@ -33,14 +34,17 @@ export default function AppointmentActions({
   onUpdated?: () => void;
 }) {
   const router = useRouter();
+  const confirmDialog = useConfirm();
   const [saving, setSaving] = useState("");
   const [error, setError] = useState("");
   async function update(next: string) {
-    if (
-      (next === "cancelled" || next === "no_show") &&
-      !window.confirm(`Mark this appointment as ${next.replace("_", " ")}?`)
-    )
-      return;
+    const destructive = next === "cancelled" || next === "no_show";
+    const confirmed = await confirmDialog({
+      title: "Confirm status change",
+      message: `Mark this appointment as ${next.replace("_", " ")}?`,
+      tone: destructive ? "danger" : "default",
+    });
+    if (!confirmed) return;
     setSaving(next);
     setError("");
     try {

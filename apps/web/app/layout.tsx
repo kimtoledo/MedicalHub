@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { ConfirmDialogProvider } from "@/components/ConfirmDialogProvider";
 import "./globals.css";
 
 const inter = Inter({
@@ -36,7 +37,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${inter.className} antialiased`}>{children}</body>
+      <body className={`${inter.variable} ${inter.className} antialiased`}>
+        <ConfirmDialogProvider>{children}</ConfirmDialogProvider>
+      </body>
     </html>
   );
 }

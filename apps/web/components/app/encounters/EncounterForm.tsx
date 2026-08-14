@@ -4,6 +4,7 @@ import { Loader2, Save } from "lucide-react";
 import type { EncounterRecord } from "@/lib/clinic-encounters";
 import type { PatientListItem } from "@/lib/clinic-patients";
 import type { ClinicBranchContext } from "@/lib/clinic-types";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 const field =
   "mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm disabled:bg-slate-100";
 export default function EncounterForm({
@@ -21,6 +22,7 @@ export default function EncounterForm({
   initialPatientId?: string;
   initialAppointmentId?: string;
 }) {
+  const confirmDialog = useConfirm();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const readOnly = encounter?.status === "final";
@@ -28,9 +30,11 @@ export default function EncounterForm({
     if (!form.reportValidity()) return;
     if (
       status === "final" &&
-      !window.confirm(
-        "Finalize this encounter? Finalized clinical records are read-only.",
-      )
+      !(await confirmDialog({
+        title: "Finalize encounter",
+        message: "Finalize this encounter? Finalized clinical records are read-only.",
+        tone: "danger",
+      }))
     )
       return;
     setSaving(true);

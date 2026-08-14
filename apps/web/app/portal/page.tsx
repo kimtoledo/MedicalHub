@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { CalendarDays, FileText, HeartPulse, Link2, Loader2, LogIn, LogOut, ShieldCheck, Star, UserRound } from 'lucide-react';
 import PatientReviewsPanel from '@/components/portal/PatientReviewsPanel';
+import { useConfirm } from '@/components/ConfirmDialogProvider';
 
 type LinkRecord = { clinicId: string; patientId: string; clinicName: string; patientFirstName: string; patientLastName: string };
 type Appointment = { id: string; clinicId: string; patientId: string; clinicName: string; serviceName: string | null; status: string; startsAt: string; endsAt: string };
@@ -32,6 +33,7 @@ function Empty({ children }: { children: string }) {
 }
 
 export default function PatientPortalPage() {
+  const confirmDialog = useConfirm();
   const [data, setData] = useState<PortalData | null>(null);
   const [checking, setChecking] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -94,7 +96,12 @@ export default function PatientPortalPage() {
   }
 
   async function revoke(link: LinkRecord) {
-    if (!confirm(`Remove access to your ${link.clinicName} record? You can link it again later with consent.`)) return;
+    const confirmed = await confirmDialog({
+      title: 'Remove clinic access',
+      message: `Remove access to your ${link.clinicName} record? You can link it again later with consent.`,
+      tone: 'danger',
+    });
+    if (!confirmed) return;
     setBusy(true); setError(null);
     try {
       await api(`/api/patient/links/${link.clinicId}/${link.patientId}`, { method: 'DELETE' });

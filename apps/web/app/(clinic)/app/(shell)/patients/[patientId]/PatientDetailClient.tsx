@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, User, ImageIcon, Shield, Plus, Trash2, Loader2 } from "lucide-react";
 import FilesTab from "@/components/app/FilesTab";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 import type { PatientDetail } from "./page";
 
 type Tab = "profile" | "files" | "hmo";
@@ -33,6 +34,7 @@ export function HmoTab({
   clinicId: string;
   patientId: string;
 }) {
+  const confirmDialog = useConfirm();
   const [memberships, setMemberships] = useState<HmoMembership[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -86,7 +88,8 @@ export function HmoTab({
   }
 
   async function remove(id: string) {
-    if (!confirm("Remove this HMO membership?")) return;
+    const confirmed = await confirmDialog({ title: "Remove HMO membership", message: "Remove this HMO membership?", tone: "danger" });
+    if (!confirmed) return;
     await fetch(`/api/clinic/${clinicId}/patients/${patientId}/hmo/${id}`, {
       method: "DELETE", credentials: "include",
     });
