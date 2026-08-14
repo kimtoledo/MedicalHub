@@ -677,57 +677,6 @@ export function createAdminClinicDentistsListService(
   };
 }
 
-export type AdminClinicMemberListItem = {
-  id: string;
-  userId: string;
-  name: string;
-  email: string;
-  role: typeof clinicMemberships.$inferSelect.role;
-  branchId: string | null;
-  branchName: string | null;
-  isActive: boolean;
-  joinedAt: string | null;
-};
-
-export type AdminClinicMembersListService = {
-  listMembers: (clinicId: string) => Promise<AdminClinicMemberListItem[]>;
-};
-
-export function createAdminClinicMembersListService(
-  database: DB,
-): AdminClinicMembersListService {
-  return {
-    listMembers: async (clinicId) => {
-      const rows = await database
-        .select({
-          id: clinicMemberships.id,
-          userId: users.id,
-          name: users.name,
-          email: users.email,
-          role: clinicMemberships.role,
-          branchId: clinicMemberships.branchId,
-          branchName: branches.name,
-          isActive: clinicMemberships.isActive,
-          joinedAt: clinicMemberships.joinedAt,
-        })
-        .from(clinicMemberships)
-        .innerJoin(users, eq(clinicMemberships.userId, users.id))
-        .leftJoin(branches, eq(clinicMemberships.branchId, branches.id))
-        .where(
-          and(
-            eq(clinicMemberships.clinicId, clinicId),
-            eq(clinicMemberships.isActive, 'true'),
-            isNull(users.deletedAt),
-          ),
-        )
-        .orderBy(clinicMemberships.role, users.name)
-        .limit(RELATED_LIST_LIMIT);
-
-      return rows.map((row) => ({ ...row, branchName: row.branchName ?? null, isActive: row.isActive === 'true' }));
-    },
-  };
-}
-
 export type AdminClinicPatientListItem = {
   id: string;
   patientNumber: string;
@@ -741,6 +690,7 @@ export type AdminClinicPatientListItem = {
 export type ListAdminClinicPatientsInput = {
   page: number;
   pageSize: number;
+  search?: string;
 };
 
 export type AdminClinicPatientsListResult = {
@@ -765,7 +715,18 @@ export function createAdminClinicPatientsListService(
 ): AdminClinicPatientsListService {
   return {
     listPatients: async (clinicId, input) => {
-      const where = and(eq(patients.clinicId, clinicId), isNull(patients.deletedAt));
+      const search = input.search?.trim();
+      const where = and(
+        eq(patients.clinicId, clinicId),
+        isNull(patients.deletedAt),
+        search
+          ? or(
+              ilike(patients.firstName, `%${search}%`),
+              ilike(patients.lastName, `%${search}%`),
+              ilike(patients.patientNumber, `%${search}%`),
+            )
+          : undefined,
+      );
 
       const [totalRow] = await database
         .select({ total: count(patients.id) })

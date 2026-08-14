@@ -277,6 +277,8 @@ No manual step is needed on Replit after a merge.
 
 ## Running the app
 
+> **For AI agents (Claude, Codex, etc.):** once the user asks for the local dev servers to be running (to test in the browser), keep them running across turns — don't stop `npm run dev` / `npm run api:dev` as a "cleanup" step after applying a change. If the user reports `ERR_CONNECTION_REFUSED` on `localhost:5001`/`:3001`, that means the server was stopped (or crashed) — check with `lsof -i :5001` / `lsof -i :3001`, then restart it yourself rather than asking the user to do it. Only stop the servers if the user explicitly asks, or if a port conflict requires bouncing the process to pick up a config change (e.g. `next.config.js`).
+
 ### Frontend (Next.js)
 
 ```bash

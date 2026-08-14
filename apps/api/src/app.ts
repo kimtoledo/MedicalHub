@@ -16,7 +16,6 @@ import type {
   AdminClinicDentistsListService,
   AdminClinicDetailService,
   AdminClinicListService,
-  AdminClinicMembersListService,
   AdminClinicPatientsListService,
   AdminClinicStatusService,
 } from './admin/clinics-service.js';
@@ -96,6 +95,7 @@ import { registerSubscriptionOperationRoutes } from './routes/subscription-opera
 import type { SubscriptionOperationsService } from './clinic/subscription-operations-service.js';
 import type { ClinicStaffService } from './clinic/staff-service.js';
 import { registerClinicStaffRoutes } from './routes/clinic-staff.js';
+import { registerAdminClinicStaffRoutes } from './routes/admin-clinic-staff.js';
 import { registerPatientPortalRoutes } from './routes/patient-portal.js';
 import type { PatientPortalService } from './patient/portal-service.js';
 import { registerVerificationRoutes } from './routes/verification.js';
@@ -138,8 +138,8 @@ export type BuildAppOptions = {
   adminClinicStatus?: AdminClinicStatusService;
   adminClinicAccountUpdate?: AdminClinicAccountUpdateService;
   adminClinicDentistsList?: AdminClinicDentistsListService;
-  adminClinicMembersList?: AdminClinicMembersListService;
   adminClinicPatientsList?: AdminClinicPatientsListService;
+  adminClinicStaff?: ClinicStaffService;
   adminClinicSettings?: AdminClinicSettingsService;
   clinicBilling?: ClinicBillingService;
   clinicServiceList?: ClinicServiceListService;
@@ -273,10 +273,12 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         status: options.adminClinicStatus,
         accountUpdate: options.adminClinicAccountUpdate,
         dentistsList: options.adminClinicDentistsList,
-        membersList: options.adminClinicMembersList,
         patientsList: options.adminClinicPatientsList,
         settings: options.adminClinicSettings,
       });
+    }
+    if (options.adminClinicStaff) {
+      await registerAdminClinicStaffRoutes(app, { auth: options.auth, staff: options.adminClinicStaff });
     }
     if (options.adminDentists) {
       await registerAdminDentistRoutes(app, {

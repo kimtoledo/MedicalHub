@@ -301,7 +301,7 @@ export default function ClinicDetailTabs({
       )}
 
       {tab === 'dentists' && <ClinicDentistsTab clinicId={clinic.id} />}
-      {tab === 'users' && <ClinicMembersTab clinicId={clinic.id} />}
+      {tab === 'users' && <ClinicMembersTab clinicId={clinic.id} branches={clinic.branches} />}
       {tab === 'patients' && <ClinicPatientsTab clinicId={clinic.id} />}
     </div>
   );

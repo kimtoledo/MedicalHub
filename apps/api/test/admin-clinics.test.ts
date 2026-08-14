@@ -12,7 +12,6 @@ import {
   type AdminClinicDentistsListService,
   type AdminClinicDetailService,
   type AdminClinicListService,
-  type AdminClinicMembersListService,
   type AdminClinicPatientsListService,
   type AdminClinicStatusService,
 } from '../src/admin/clinics-service.js';
@@ -22,6 +21,7 @@ import {
   AdminClinicSettingsError,
   type AdminClinicSettingsService,
 } from '../src/admin/clinic-settings-service.js';
+import { ClinicStaffError, type ClinicStaffService } from '../src/clinic/staff-service.js';
 
 const config: ApiConfig = {
   nodeEnv: 'test',
@@ -298,8 +298,8 @@ async function createApp(
   settings?: AdminClinicSettingsService,
   accountUpdate?: AdminClinicAccountUpdateService,
   dentistsList?: AdminClinicDentistsListService,
-  membersList?: AdminClinicMembersListService,
   patientsList?: AdminClinicPatientsListService,
+  staff?: ClinicStaffService,
 ) {
   app = await buildApp({
     config,
@@ -314,8 +314,8 @@ async function createApp(
     adminClinicSettings: settings,
     adminClinicAccountUpdate: accountUpdate,
     adminClinicDentistsList: dentistsList,
-    adminClinicMembersList: membersList,
     adminClinicPatientsList: patientsList,
+    adminClinicStaff: staff,
   });
 }
 
@@ -354,21 +354,33 @@ function createClinicDentistsListService(): AdminClinicDentistsListService {
   };
 }
 
-function createClinicMembersListService(): AdminClinicMembersListService {
+function createStaffService(): ClinicStaffService {
   return {
-    listMembers: vi.fn(async () => [
-      {
-        id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
-        userId: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
-        name: 'Demo Owner',
-        email: 'owner@example.com',
-        role: 'clinic_owner' as const,
-        branchId: null,
-        branchName: null,
-        isActive: true,
-        joinedAt: '2026-01-02T00:00:00.000Z',
-      },
-    ]),
+    list: vi.fn(async () => ({
+      branches: [{ id: '88888888-8888-4888-8888-888888888888', name: 'Main Branch', isMain: true }],
+      permissionKeys: [],
+      members: [
+        {
+          membershipId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+          userId: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+          name: 'Demo Owner',
+          email: 'owner@example.com',
+          role: 'clinic_owner' as const,
+          branchId: null,
+          isActive: true,
+          invitedAt: '2026-01-01T00:00:00.000Z',
+          joinedAt: '2026-01-02T00:00:00.000Z',
+          status: 'active' as const,
+          permissions: [],
+        },
+      ],
+    })),
+    invite: vi.fn(async () => ({ membershipId: 'ffffffff-ffff-4fff-8fff-ffffffffffff', delivery: 'pending_provider' as const })),
+    resendInvite: vi.fn(async () => ({ membershipId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', delivery: 'pending_provider' as const })),
+    update: vi.fn(async () => ({ membershipId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd' })),
+    addBranchAssignment: vi.fn(async () => ({ membershipId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd' })),
+    remove: vi.fn(async () => ({ membershipId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd' })),
+    updatePermission: vi.fn(async () => ({ membershipId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', permissionKey: 'appointments.manage', isEnabled: true })),
   };
 }
 
@@ -1278,37 +1290,6 @@ describe('GET /v1/admin/clinics/:clinicId/dentists', () => {
   });
 });
 
-describe('GET /v1/admin/clinics/:clinicId/members', () => {
-  const clinicId = '00000000-0001-0000-0000-000000000001';
-
-  it('lets a super_admin list clinic staff', async () => {
-    const membersList = createClinicMembersListService();
-    await createApp(
-      superAdminContext,
-      createClinicService(),
-      undefined, undefined, undefined, undefined, undefined, undefined, undefined,
-      membersList,
-    );
-    const response = await app!.inject({ method: 'GET', url: `/v1/admin/clinics/${clinicId}/members` });
-    expect(response.statusCode).toBe(200);
-    expect(response.json().data).toHaveLength(1);
-    expect(membersList.listMembers).toHaveBeenCalledWith(clinicId);
-  });
-
-  it('rejects a platform_support account', async () => {
-    const membersList = createClinicMembersListService();
-    await createApp(
-      platformSupportContext,
-      createClinicService(),
-      undefined, undefined, undefined, undefined, undefined, undefined, undefined,
-      membersList,
-    );
-    const response = await app!.inject({ method: 'GET', url: `/v1/admin/clinics/${clinicId}/members` });
-    expect(response.statusCode).toBe(403);
-    expect(membersList.listMembers).not.toHaveBeenCalled();
-  });
-});
-
 describe('GET /v1/admin/clinics/:clinicId/patients', () => {
   const clinicId = '00000000-0001-0000-0000-000000000001';
 
@@ -1317,12 +1298,25 @@ describe('GET /v1/admin/clinics/:clinicId/patients', () => {
     await createApp(
       superAdminContext,
       createClinicService(),
-      undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined,
+      undefined, undefined, undefined, undefined, undefined, undefined, undefined,
       patientsList,
     );
     const response = await app!.inject({ method: 'GET', url: `/v1/admin/clinics/${clinicId}/patients?page=2&pageSize=50` });
     expect(response.statusCode).toBe(200);
-    expect(patientsList.listPatients).toHaveBeenCalledWith(clinicId, { page: 2, pageSize: 50 });
+    expect(patientsList.listPatients).toHaveBeenCalledWith(clinicId, { page: 2, pageSize: 50, search: '' });
+  });
+
+  it('forwards a search term to the service', async () => {
+    const patientsList = createClinicPatientsListService();
+    await createApp(
+      superAdminContext,
+      createClinicService(),
+      undefined, undefined, undefined, undefined, undefined, undefined, undefined,
+      patientsList,
+    );
+    const response = await app!.inject({ method: 'GET', url: `/v1/admin/clinics/${clinicId}/patients?search=Cruz` });
+    expect(response.statusCode).toBe(200);
+    expect(patientsList.listPatients).toHaveBeenCalledWith(clinicId, { page: 1, pageSize: 20, search: 'Cruz' });
   });
 
   it('rejects a platform_support account', async () => {
@@ -1330,7 +1324,7 @@ describe('GET /v1/admin/clinics/:clinicId/patients', () => {
     await createApp(
       platformSupportContext,
       createClinicService(),
-      undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined,
+      undefined, undefined, undefined, undefined, undefined, undefined, undefined,
       patientsList,
     );
     const response = await app!.inject({ method: 'GET', url: `/v1/admin/clinics/${clinicId}/patients` });

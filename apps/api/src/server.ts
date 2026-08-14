@@ -9,7 +9,6 @@ import {
   createAdminClinicDentistsListService,
   createAdminClinicDetailService,
   createAdminClinicListService,
-  createAdminClinicMembersListService,
   createAdminClinicPatientsListService,
   createAdminClinicStatusService,
 } from './admin/clinics-service.js';
@@ -84,7 +83,6 @@ const adminClinicDetails = createAdminClinicDetailService(database.db);
 const adminClinicStatus = createAdminClinicStatusService(database.db);
 const adminClinicAccountUpdate = createAdminClinicAccountUpdateService(database.db);
 const adminClinicDentistsList = createAdminClinicDentistsListService(database.db);
-const adminClinicMembersList = createAdminClinicMembersListService(database.db);
 const adminClinicPatientsList = createAdminClinicPatientsListService(database.db);
 const integrations = createIntegrationService(database.db);
 const clinicBilling = createClinicBillingService(database.db, integrations);
@@ -152,7 +150,6 @@ const app = await buildApp({
   adminClinicStatus,
   adminClinicAccountUpdate,
   adminClinicDentistsList,
-  adminClinicMembersList,
   adminClinicPatientsList,
   adminClinicSettings,
   clinicBilling,
@@ -187,6 +184,7 @@ const app = await buildApp({
   clinicReports,
   subscriptionOperations,
   clinicStaff,
+  adminClinicStaff: clinicStaff,
   patientPortal,
   verification,
   reviews,

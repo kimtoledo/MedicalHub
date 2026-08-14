@@ -15,7 +15,6 @@ import {
   type AdminClinicDentistsListService,
   type AdminClinicDetailService,
   type AdminClinicListService,
-  type AdminClinicMembersListService,
   type AdminClinicPatientsListService,
   type AdminClinicStatusService,
 } from '../admin/clinics-service.js';
@@ -204,6 +203,7 @@ function getAccountUpdateErrorStatus(error: AdminClinicAccountUpdateError): numb
 }
 
 const listClinicPatientsQuerySchema = z.object({
+  search: z.string().trim().max(100).default(''),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
@@ -218,7 +218,6 @@ type RegisterAdminClinicRoutesOptions = {
   settings?: AdminClinicSettingsService;
   accountUpdate?: AdminClinicAccountUpdateService;
   dentistsList?: AdminClinicDentistsListService;
-  membersList?: AdminClinicMembersListService;
   patientsList?: AdminClinicPatientsListService;
 };
 
@@ -484,36 +483,6 @@ export async function registerAdminClinicRoutes(
       }
 
       const items = await dentistsList.listDentists(params.data.clinicId);
-      return reply.send({ success: true, data: items });
-    });
-  }
-
-  const membersList = options.membersList;
-  if (membersList) {
-    app.get('/v1/admin/clinics/:clinicId/members', async (request, reply) => {
-      const authorization = await resolveRequestAuthorization(request, options.auth);
-      if (!authorization) {
-        return reply.status(401).send({
-          success: false,
-          error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' },
-        });
-      }
-      if (!isSuperAdmin(authorization)) {
-        return reply.status(403).send({
-          success: false,
-          error: { code: 'FORBIDDEN', message: 'Super Admin access is required' },
-        });
-      }
-
-      const params = clinicParamsSchema.safeParse(request.params);
-      if (!params.success) {
-        return reply.status(400).send({
-          success: false,
-          error: { code: 'VALIDATION_ERROR', message: 'Invalid clinic identifier' },
-        });
-      }
-
-      const items = await membersList.listMembers(params.data.clinicId);
       return reply.send({ success: true, data: items });
     });
   }
