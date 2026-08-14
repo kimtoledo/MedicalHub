@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
+import { FeatureKey } from '@dentra/shared';
 import { buildApp } from '../src/app.js';
 import type { AuthServices, AuthorizationContext } from '../src/auth/types.js';
 import type { ApiConfig } from '../src/config.js';
+import type { EntitlementService } from '../src/entitlements/service.js';
 import type { OrganizationService } from '../src/organizations/service.js';
 import { OrganizationError } from '../src/organizations/service.js';
 
@@ -16,9 +18,10 @@ const context: AuthorizationContext = { user: { id: USER_ID, email: 'owner@examp
 
 function organizationsMock() { return { create: vi.fn(), eligibleClinics: vi.fn(async () => []), attachClinic: vi.fn(), listMine: vi.fn(async () => []), workspace: vi.fn(async () => ({ organization: {}, access: {}, clinics: [], members: [] })), report: vi.fn(async () => ({})), upsertMember: vi.fn(), listCatalog: vi.fn(async () => []), createCatalogItem: vi.fn(), updateCatalogItem: vi.fn(), adoptCatalogItem: vi.fn(), listEntitlements: vi.fn(async () => []), grantEntitlement: vi.fn(), revokeEntitlement: vi.fn() } as unknown as OrganizationService; }
 function auth(value: AuthorizationContext | null): AuthServices { return { handler: vi.fn(), getSession: vi.fn(async () => value ? ({ session: { id: 'session', userId: value.user.id, expiresAt: new Date('2030-01-01') }, user: value.user }) : null), resolveAuthorization: vi.fn(async () => value) }; }
+const entitlements: EntitlementService = { resolve: vi.fn(async (id) => ({ clinic: { id, name: 'Clinic', status: 'active', maintenanceMode: false }, subscription: null, entitlements: [FeatureKey.ORGANIZATIONS_MANAGE].map((featureKey) => ({ featureKey, isEnabled: true, source: 'package' as const, expiresAt: null })) })) };
 let app: FastifyInstance | undefined;
 afterEach(async () => { await app?.close(); app = undefined; });
-async function setup(value: AuthorizationContext | null = context) { const organizations = organizationsMock(); app = await buildApp({ config, checkDatabase: vi.fn(async () => undefined), auth: auth(value), organizations }); return organizations; }
+async function setup(value: AuthorizationContext | null = context) { const organizations = organizationsMock(); app = await buildApp({ config, checkDatabase: vi.fn(async () => undefined), auth: auth(value), entitlements, organizations }); return organizations; }
 
 describe('enterprise organization UI routes', () => {
   it('loads workspace data using only the authenticated user identity', async () => { const organizations = await setup(); const response = await app!.inject({ method: 'GET', url: `/v1/organizations/${ORGANIZATION_ID}/workspace`, headers: { cookie: 'session=test' } }); expect(response.statusCode).toBe(200); expect(organizations.workspace).toHaveBeenCalledWith(ORGANIZATION_ID, USER_ID); });

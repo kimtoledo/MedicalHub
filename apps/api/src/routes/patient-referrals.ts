@@ -28,7 +28,7 @@ export async function registerPatientReferralRoutes(app: FastifyInstance, option
   app.get('/v1/clinic/patient-referrals', async (request, reply) => {
     const query = clinicQuery.safeParse(request.query);
     if (!query.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid clinic identifier' } });
-    const authorization = await requireClinicFeature(request, reply, options, query.data.clinicId, FeatureKey.PATIENTS_MANAGE);
+    const authorization = await requireClinicFeature(request, reply, options, query.data.clinicId, FeatureKey.PATIENT_REFERRALS);
     if (!authorization) return;
     return reply.send({ success: true, data: await options.referrals.listForClinic(query.data.clinicId) });
   });
@@ -37,7 +37,7 @@ export async function registerPatientReferralRoutes(app: FastifyInstance, option
     const query = clinicQuery.safeParse(request.query);
     const body = createBody.safeParse(request.body);
     if (!query.success || !body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: body.success ? 'Invalid clinic identifier' : body.error.issues[0]?.message ?? 'Invalid referral' } });
-    const authorization = await requireClinicFeature(request, reply, options, query.data.clinicId, FeatureKey.PATIENTS_MANAGE, [...createRoles]);
+    const authorization = await requireClinicFeature(request, reply, options, query.data.clinicId, FeatureKey.PATIENT_REFERRALS, [...createRoles]);
     if (!authorization) return;
     try {
       const created = await options.referrals.create(query.data.clinicId, body.data.sourcePatientId, body.data.targetClinicId, { reason: body.data.reason, consented: body.data.consented }, actor(request, authorization));
@@ -49,7 +49,7 @@ export async function registerPatientReferralRoutes(app: FastifyInstance, option
     const query = clinicQuery.safeParse(request.query);
     const params = referralParams.safeParse(request.params);
     if (!query.success || !params.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid referral request' } });
-    const authorization = await requireClinicFeature(request, reply, options, query.data.clinicId, FeatureKey.PATIENTS_MANAGE, [...respondRoles]);
+    const authorization = await requireClinicFeature(request, reply, options, query.data.clinicId, FeatureKey.PATIENT_REFERRALS, [...respondRoles]);
     if (!authorization) return;
     try {
       const result = await options.referrals.accept(params.data.referralId, query.data.clinicId, actor(request, authorization));
@@ -61,7 +61,7 @@ export async function registerPatientReferralRoutes(app: FastifyInstance, option
     const query = clinicQuery.safeParse(request.query);
     const params = referralParams.safeParse(request.params);
     if (!query.success || !params.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid referral request' } });
-    const authorization = await requireClinicFeature(request, reply, options, query.data.clinicId, FeatureKey.PATIENTS_MANAGE, [...respondRoles]);
+    const authorization = await requireClinicFeature(request, reply, options, query.data.clinicId, FeatureKey.PATIENT_REFERRALS, [...respondRoles]);
     if (!authorization) return;
     try {
       const result = await options.referrals.decline(params.data.referralId, query.data.clinicId, actor(request, authorization));

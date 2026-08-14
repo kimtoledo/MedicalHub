@@ -380,8 +380,8 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     if (options.reviews) {
       await registerReviewRoutes(app, { auth: options.auth, reviews: options.reviews });
     }
-    if (options.organizations) {
-      await registerOrganizationRoutes(app, { auth: options.auth, organizations: options.organizations });
+    if (options.organizations && options.entitlements) {
+      await registerOrganizationRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, organizations: options.organizations });
     }
     if (options.clinicAnalytics && options.entitlements) {
       await registerClinicAnalyticsRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, analytics: options.clinicAnalytics });
@@ -389,11 +389,11 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     if (options.payments && options.entitlements) {
       await registerOnlinePaymentRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, payments: options.payments });
     }
-    if (options.customDomains) {
-      await registerCustomDomainRoutes(app, { auth: options.auth, domains: options.customDomains });
+    if (options.customDomains && options.entitlements) {
+      await registerCustomDomainRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, domains: options.customDomains });
     }
-    if (options.integrations) {
-      await registerIntegrationRoutes(app, { auth: options.auth, integrations: options.integrations, publicBooking: options.publicBooking });
+    if (options.integrations && options.entitlements) {
+      await registerIntegrationRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, integrations: options.integrations, publicBooking: options.publicBooking });
     }
     if (options.notificationProviders) {
       await registerNotificationProviderRoutes(app, { auth: options.auth, providers: options.notificationProviders });

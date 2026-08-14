@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { getClinicSession } from "@/lib/clinic-session";
+import { getClinicSession, getClinicShellContext } from "@/lib/clinic-session";
 import { getBackendUrl } from "@/lib/backend";
 import IntegrationsClient from "./IntegrationsClient";
 
@@ -48,6 +48,8 @@ export default async function IntegrationsPage() {
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
   if (!identity.isAdmin) redirect("/app/settings");
+  const context = await getClinicShellContext(identity).catch(() => null);
+  if (!context?.entitlements["integrations.api"]) notFound();
 
   const cookieHeader = cookies().toString();
   const [apiKeys, webhooks, notificationProviders] = await Promise.all([

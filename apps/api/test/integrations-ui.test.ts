@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
+import { FeatureKey } from '@dentra/shared';
 import { buildApp } from '../src/app.js';
 import type { AuthServices, AuthorizationContext, ClinicRole } from '../src/auth/types.js';
+import type { EntitlementService } from '../src/entitlements/service.js';
 import type { IntegrationService } from '../src/integrations/service.js';
 import { IntegrationError } from '../src/integrations/service.js';
 import type { PublicBookingService } from '../src/public/booking-service.js';
@@ -19,9 +21,10 @@ function auth(value: AuthorizationContext): AuthServices { return { handler: vi.
 function integrations(overrides: Record<string, unknown> = {}): IntegrationService { return { listKeys: vi.fn(async () => []), createKey: vi.fn(), revokeKey: vi.fn(), authenticate: vi.fn(async () => null), listWebhooks: vi.fn(async () => []), createWebhook: vi.fn(), disableWebhook: vi.fn(), appointments: vi.fn(async () => []), dispatchEvent: vi.fn(), processDueDeliveries: vi.fn(async () => ({ processed: 0 })), listDeliveries: vi.fn(async () => []), accountingLedger: vi.fn(async () => []), clinicSlug: vi.fn(async () => 'smile-dental'), ...overrides } as unknown as IntegrationService; }
 function publicBooking(overrides: Record<string, unknown> = {}): PublicBookingService { return { availability: vi.fn(), book: vi.fn(), ...overrides } as unknown as PublicBookingService; }
 
+const entitlements: EntitlementService = { resolve: vi.fn(async (id) => ({ clinic: { id, name: 'Clinic', status: 'active', maintenanceMode: false }, subscription: null, entitlements: [FeatureKey.INTEGRATIONS_API].map((featureKey) => ({ featureKey, isEnabled: true, source: 'package' as const, expiresAt: null })) })) };
 let app: FastifyInstance | undefined;
 afterEach(async () => { await app?.close(); app = undefined; });
-async function setup(role: ClinicRole, service: IntegrationService, booking?: PublicBookingService) { app = await buildApp({ config, checkDatabase: vi.fn(async () => undefined), auth: auth(context(role)), integrations: service, publicBooking: booking }); }
+async function setup(role: ClinicRole, service: IntegrationService, booking?: PublicBookingService) { app = await buildApp({ config, checkDatabase: vi.fn(async () => undefined), auth: auth(context(role)), entitlements, integrations: service, publicBooking: booking }); }
 
 describe('integrations settings UI API', () => {
   it('creates an API key and returns the one-time secret', async () => {

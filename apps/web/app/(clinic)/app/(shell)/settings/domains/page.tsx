@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { getClinicSession } from "@/lib/clinic-session";
+import { getClinicSession, getClinicShellContext } from "@/lib/clinic-session";
 import { getBackendUrl } from "@/lib/backend";
 import DomainsClient from "./DomainsClient";
 
@@ -19,6 +19,8 @@ export default async function CustomDomainsPage() {
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
   if (!identity.isAdmin) redirect("/app/settings");
+  const context = await getClinicShellContext(identity).catch(() => null);
+  if (!context?.entitlements["custom_domain.manage"]) notFound();
 
   const cookieHeader = cookies().toString();
   const res = await fetch(

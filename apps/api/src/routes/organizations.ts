@@ -1,11 +1,15 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { hasClinicAccess } from '../auth/authorization.js';
+import { FeatureKey } from '@dentra/shared';
 import { resolveRequestAuthorization } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
+import { requireClinicFeature } from '../clinic/access.js';
+import type { EntitlementService } from '../entitlements/service.js';
 import type { OrganizationService } from '../organizations/service.js';
 import { OrganizationError } from '../organizations/service.js';
 import { postgresUuidSchema } from '../validation.js';
+
+const adminRoles = ['clinic_owner', 'clinic_admin'] as const;
 
 const create = z.object({ name: z.string().trim().min(2).max(200), slug: z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/), clinicId: postgresUuidSchema }).strict();
 const org = z.object({ organizationId: postgresUuidSchema });
@@ -20,11 +24,12 @@ const entitlementFeatureParams = org.extend({ featureKey: z.string().trim().min(
 const actor = (request: FastifyRequest, auth: { user: { id: string; email: string } }) => ({ id: auth.user.id, email: auth.user.email, ipAddress: request.ip, userAgent: request.headers['user-agent'] });
 const sendError = (reply: any, caught: unknown) => { if (caught instanceof OrganizationError) return reply.status(caught.statusCode).send({ success: false, error: { code: caught.code, message: caught.message } }); throw caught; };
 
-export async function registerOrganizationRoutes(app: FastifyInstance, options: { auth: AuthServices; organizations: OrganizationService }) {
+export async function registerOrganizationRoutes(app: FastifyInstance, options: { auth: AuthServices; entitlements: EntitlementService; db?: import('@dentra/db').DB; organizations: OrganizationService }) {
   app.post('/v1/organizations', async (request, reply) => {
-    const body = create.safeParse(request.body); const auth = await resolveRequestAuthorization(request, options.auth);
+    const body = create.safeParse(request.body);
     if (!body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid organization' } });
-    if (!auth || !hasClinicAccess(auth, body.data.clinicId, ['clinic_owner', 'clinic_admin'])) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic administrator access is required' } });
+    const auth = await requireClinicFeature(request, reply, options, body.data.clinicId, FeatureKey.ORGANIZATIONS_MANAGE, [...adminRoles]);
+    if (!auth) return;
     try { return reply.status(201).send({ success: true, data: await options.organizations.create(body.data, actor(request, auth)) }); } catch (caught) { return sendError(reply, caught); }
   });
   app.get('/v1/organizations', async (request, reply) => {
@@ -44,9 +49,10 @@ export async function registerOrganizationRoutes(app: FastifyInstance, options: 
     try { return reply.send({ success: true, data: await options.organizations.workspace(params.data.organizationId, auth.user.id) }); } catch (caught) { return sendError(reply, caught); }
   });
   app.post('/v1/organizations/:organizationId/clinics', async (request, reply) => {
-    const params = org.safeParse(request.params); const body = attach.safeParse(request.body); const auth = await resolveRequestAuthorization(request, options.auth);
+    const params = org.safeParse(request.params); const body = attach.safeParse(request.body);
     if (!params.success || !body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid organization clinic link' } });
-    if (!auth || !hasClinicAccess(auth, body.data.clinicId, ['clinic_owner', 'clinic_admin'])) return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'You must administer the clinic being attached' } });
+    const auth = await requireClinicFeature(request, reply, options, body.data.clinicId, FeatureKey.ORGANIZATIONS_MANAGE, [...adminRoles]);
+    if (!auth) return;
     try { return reply.status(201).send({ success: true, data: await options.organizations.attachClinic(params.data.organizationId, body.data.clinicId, actor(request, auth)) }); } catch (caught) { return sendError(reply, caught); }
   });
   app.get('/v1/organizations/:organizationId/report', async (request, reply) => {

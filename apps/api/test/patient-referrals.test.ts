@@ -19,7 +19,7 @@ const receptionist: AuthorizationContext = { ...owner, clinicMemberships: [{ cli
 const targetOwner: AuthorizationContext = { ...owner, clinicMemberships: [{ clinicId: targetClinicId, branchId: null, role: 'clinic_owner', dentistId: null }] };
 
 const auth = (context: AuthorizationContext | null): AuthServices => ({ handler: vi.fn(async () => new Response()), getSession: vi.fn(async () => context ? { session: { id: 'session', userId: context.user.id, expiresAt: new Date('2030-01-01') }, user: context.user } : null), resolveAuthorization: vi.fn(async () => context) });
-const entitlements = (): EntitlementService => ({ resolve: vi.fn(async (id) => ({ clinic: { id, name: 'Clinic', status: 'active', maintenanceMode: false }, subscription: null, entitlements: [FeatureKey.PATIENTS_MANAGE].map((featureKey) => ({ featureKey, isEnabled: true, source: 'package' as const, expiresAt: null })) })) });
+const entitlements = (): EntitlementService => ({ resolve: vi.fn(async (id) => ({ clinic: { id, name: 'Clinic', status: 'active', maintenanceMode: false }, subscription: null, entitlements: [FeatureKey.PATIENTS_MANAGE, FeatureKey.PATIENT_REFERRALS].map((featureKey) => ({ featureKey, isEnabled: true, source: 'package' as const, expiresAt: null })) })) });
 
 function referralsService(overrides: Partial<PatientReferralService> = {}): PatientReferralService {
   return {

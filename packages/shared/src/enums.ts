@@ -101,6 +101,8 @@ export const FeatureKey = {
 
   // Patient features
   PATIENTS_MANAGE: 'patients.manage',
+  /** Cross-clinic patient referrals — manual add-on, not included in any default package. */
+  PATIENT_REFERRALS: 'patients.referrals',
   CLINICAL_RECORDS: 'clinical.records',
   ODONTOGRAM: 'clinical.odontogram',
   ENCOUNTERS: 'clinical.encounters',
@@ -146,6 +148,15 @@ export const FeatureKey = {
   // Branch management
   BRANCHES_MULTI: 'branches.multi',
   KIOSK_CHECKIN: 'kiosk.checkin',
+
+  // Multi-clinic organizations (franchise/chain management) — manual add-on, not included in any default package.
+  ORGANIZATIONS_MANAGE: 'organizations.manage',
+
+  // Custom domain — manual add-on, not included in any default package.
+  CUSTOM_DOMAIN: 'custom_domain.manage',
+
+  // Integrations & API (scoped API keys, webhooks, partner/accounting export) — manual add-on, not included in any default package.
+  INTEGRATIONS_API: 'integrations.api',
 } as const;
 export type FeatureKey = (typeof FeatureKey)[keyof typeof FeatureKey];
 

@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
+import { FeatureKey } from '@dentra/shared';
 import { buildApp } from '../src/app.js';
 import type { AuthServices, AuthorizationContext, ClinicRole } from '../src/auth/types.js';
+import type { EntitlementService } from '../src/entitlements/service.js';
 import type { CustomDomainService } from '../src/domains/service.js';
 import { CustomDomainError } from '../src/domains/service.js';
 import type { ApiConfig } from '../src/config.js';
@@ -14,9 +16,10 @@ function context(role: ClinicRole): AuthorizationContext { return { user: { id: 
 function auth(value: AuthorizationContext): AuthServices { return { handler: vi.fn(), getSession: vi.fn(async () => ({ session: { id: 'session', userId: value.user.id, expiresAt: new Date('2030-01-01') }, user: value.user })), resolveAuthorization: vi.fn(async () => value) }; }
 function domains(overrides: Record<string, unknown> = {}): CustomDomainService { return { add: vi.fn(), list: vi.fn(async () => []), verify: vi.fn(), activate: vi.fn(), ...overrides } as unknown as CustomDomainService; }
 
+const entitlements: EntitlementService = { resolve: vi.fn(async (id) => ({ clinic: { id, name: 'Clinic', status: 'active', maintenanceMode: false }, subscription: null, entitlements: [FeatureKey.CUSTOM_DOMAIN].map((featureKey) => ({ featureKey, isEnabled: true, source: 'package' as const, expiresAt: null })) })) };
 let app: FastifyInstance | undefined;
 afterEach(async () => { await app?.close(); app = undefined; });
-async function setup(role: ClinicRole, service: CustomDomainService) { app = await buildApp({ config, checkDatabase: vi.fn(async () => undefined), auth: auth(context(role)), customDomains: service }); }
+async function setup(role: ClinicRole, service: CustomDomainService) { app = await buildApp({ config, checkDatabase: vi.fn(async () => undefined), auth: auth(context(role)), entitlements, customDomains: service }); }
 
 describe('custom domain settings UI API', () => {
   it('adds a custom domain and returns DNS instructions', async () => {
