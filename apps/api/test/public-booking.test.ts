@@ -12,7 +12,7 @@ const dentistId = '00000000-0000-0000-0000-000000000401';
 let app: FastifyInstance | undefined;
 afterEach(async () => { await app?.close(); app = undefined; });
 function booking(): PublicBookingService { return {
-  availability: vi.fn(async () => ({ date: '2030-05-10', durationMinutes: 30, slots: [{ startsAt: '2030-05-10T01:00:00.000Z', endsAt: '2030-05-10T01:30:00.000Z' }] })),
+  availability: vi.fn(async () => ({ date: '2030-05-10', durationMinutes: 30, slots: [{ startsAt: '2030-05-10T01:00:00.000Z', endsAt: '2030-05-10T01:30:00.000Z' }], closedReason: null })),
   book: vi.fn(async () => ({ appointmentId: clinicId, confirmationNumber: 'DNT-20300510-00000000', clinicName: 'Smile Bright', branchName: 'Main', serviceName: 'Cleaning', dentistName: 'Dr. Maria Reyes', startsAt: '2030-05-10T01:00:00.000Z', endsAt: '2030-05-10T01:30:00.000Z', status: 'pending' as const })),
 }; }
 async function setup(service: PublicBookingService) { app = await buildApp({ config, checkDatabase: async () => undefined, logger: false, publicBooking: service }); }

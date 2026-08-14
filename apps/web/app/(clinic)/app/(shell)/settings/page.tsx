@@ -4,7 +4,7 @@ import { Archive, BadgeCheck, BarChart3, BellRing, CreditCard, DollarSign, Globe
 import ClinicMicrositeSettings from "@/components/app/ClinicMicrositeSettings";
 import AppPageError from "@/components/app/AppPageError";
 import { getClinicSession, getClinicShellContext } from "@/lib/clinic-session";
-import { ClinicSettingsLoadError, getClinicSettings, type ClinicSettings } from "@/lib/clinic-settings";
+import { ClinicSettingsLoadError, getClinicClosures, getClinicSettings, type ClinicClosure, type ClinicSettings } from "@/lib/clinic-settings";
 import { classifyClinicSettingsError } from "@/lib/clinic-settings-error";
 
 const operationalSettings = [
@@ -95,8 +95,9 @@ export default async function ClinicSettingsPage() {
   );
 
   let settings: ClinicSettings;
+  let closures: ClinicClosure[];
   try {
-    settings = await getClinicSettings(identity.clinicId);
+    [settings, closures] = await Promise.all([getClinicSettings(identity.clinicId), getClinicClosures(identity.clinicId)]);
   } catch (caught) {
     const kind = caught instanceof ClinicSettingsLoadError
       ? classifyClinicSettingsError(caught.status)
@@ -154,7 +155,7 @@ export default async function ClinicSettingsPage() {
           ))}
         </div>
 
-        <ClinicMicrositeSettings clinicId={identity.clinicId} settings={settings} />
+        <ClinicMicrositeSettings clinicId={identity.clinicId} settings={settings} closures={closures} />
       </div>
     </div>
   );

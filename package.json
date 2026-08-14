@@ -17,7 +17,9 @@
     "db:reconcile-order": "tsx scripts/reconcile-migration-order.ts && npm run db:check",
     "db:studio": "cd packages/db && npx drizzle-kit studio --config=drizzle.config.ts",
     "db:push": "cd packages/db && npx drizzle-kit push --config=drizzle.config.ts",
-    "db:seed": "tsx scripts/seed-demo.ts"
+    "db:seed": "tsx scripts/seed-demo.ts",
+    "db:backfill-branch-hours": "tsx scripts/backfill-branch-hours.ts",
+    "db:seed-ph-holidays": "tsx scripts/seed-ph-holidays.ts"
   },
   "workspaces": [
     "apps/*",

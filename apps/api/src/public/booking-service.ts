@@ -5,9 +5,13 @@ import {
   appointments,
   appointmentStatusHistory,
   branches,
+  branchHours,
+  clinicClosures,
   clinics,
   dentistBranchAssignments,
   dentists,
+  dentistSchedules,
+  dentistTimeOff,
   services,
 } from '@dentra/db/schema';
 import { AuditAction } from '@dentra/shared';
@@ -17,7 +21,6 @@ import type { IntegrationService } from '../integrations/service.js';
 
 const MANILA_OFFSET = '+08:00';
 const activeStatuses = ['pending', 'confirmed', 'checked_in', 'in_progress'] as const;
-const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 
 export type AvailabilityInput = {
   clinicSlug: string;
@@ -47,7 +50,7 @@ export type PublicBookingResult = {
   status: 'pending';
 };
 export type PublicBookingService = {
-  availability: (input: AvailabilityInput) => Promise<{ date: string; durationMinutes: number; slots: AvailableSlot[] }>;
+  availability: (input: AvailabilityInput) => Promise<{ date: string; durationMinutes: number; slots: AvailableSlot[]; closedReason: string | null }>;
   book: (input: PublicBookingInput, request: { ipAddress?: string; userAgent?: string }) => Promise<PublicBookingResult>;
 };
 
@@ -55,31 +58,50 @@ export class PublicBookingError extends Error {
   constructor(public readonly code: string, message: string, public readonly statusCode = 400) { super(message); }
 }
 
-export function parseHours(value: string | null, date: string): [number, number] | null {
-  const day = dayNames[new Date(`${date}T12:00:00${MANILA_OFFSET}`).getUTCDay()];
-  let label: string | undefined;
-  if (value) {
-    try {
-      const parsed = JSON.parse(value) as Record<string, unknown>;
-      if (typeof parsed[day] === 'string') label = parsed[day] as string;
-    } catch { /* Invalid legacy content falls back to standard hours. */ }
-  }
-  if (!label) return day === 'sunday' ? null : [9 * 60, 17 * 60];
-  if (/closed/i.test(label)) return null;
-  const normalized = label.replace(/[–—]/g, '-').trim();
-  const parts = normalized.split(/\s*-\s*/);
-  if (parts.length !== 2) return null;
-  const parsePart = (part: string): number | null => {
-    const match = part.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);
-    if (!match) return null;
-    let hour = Number(match[1]); const minute = Number(match[2] ?? 0); const period = match[3]?.toLowerCase();
-    if (minute > 59 || hour > (period ? 12 : 23) || hour < (period ? 1 : 0)) return null;
-    if (period === 'pm' && hour !== 12) hour += 12;
-    if (period === 'am' && hour === 12) hour = 0;
-    return hour * 60 + minute;
-  };
-  const start = parsePart(parts[0]); const end = parsePart(parts[1]);
-  return start !== null && end !== null && end > start ? [start, end] : null;
+export type HourRange = [number, number];
+export type BranchHourRow = { weekday: number; opensAt: number | null; closesAt: number | null; isClosed: boolean };
+export type ClosureRow = { branchId: string | null; date: string; label: string; isEnabled: boolean };
+export type DentistScheduleRow = { dentistId: string; branchId: string; weekday: number; startsAt: number; endsAt: number };
+export type TimeOffRow = { dentistId: string; startDate: string; endDate: string };
+
+function weekdayOf(date: string): number {
+  return new Date(`${date}T12:00:00${MANILA_OFFSET}`).getUTCDay();
+}
+
+/** Resolves a branch's open range for a date from structured branch_hours rows. No row = closed. */
+export function resolveBranchRange(rows: BranchHourRow[], date: string): HourRange | null {
+  const row = rows.find((r) => r.weekday === weekdayOf(date));
+  if (!row || row.isClosed || row.opensAt == null || row.closesAt == null || row.opensAt >= row.closesAt) return null;
+  return [row.opensAt, row.closesAt];
+}
+
+/** Finds an enabled closure covering the date; a branch-specific row takes precedence over a clinic-wide one. */
+export function resolveClosure(rows: ClosureRow[], branchId: string, date: string): string | null {
+  const enabled = rows.filter((r) => r.isEnabled && r.date === date);
+  const specific = enabled.find((r) => r.branchId === branchId);
+  return specific?.label ?? enabled.find((r) => r.branchId === null)?.label ?? null;
+}
+
+/**
+ * A dentist with zero configured schedule rows at this branch is unrestricted
+ * (falls back to the branch's own range) for backward compatibility with
+ * dentists who haven't set up individual hours yet. Once at least one row is
+ * configured for that dentist/branch, every other weekday becomes "not
+ * working" by omission, and the configured range is clamped to the branch's
+ * open hours.
+ */
+export function resolveDentistRange(rows: DentistScheduleRow[], dentistId: string, branchId: string, date: string, branchRange: HourRange): HourRange | null {
+  const configured = rows.filter((r) => r.dentistId === dentistId && r.branchId === branchId);
+  if (!configured.length) return branchRange;
+  const row = configured.find((r) => r.weekday === weekdayOf(date));
+  if (!row) return null;
+  const start = Math.max(row.startsAt, branchRange[0]);
+  const end = Math.min(row.endsAt, branchRange[1]);
+  return start < end ? [start, end] : null;
+}
+
+export function isOnTimeOff(rows: TimeOffRow[], dentistId: string, date: string): boolean {
+  return rows.some((r) => r.dentistId === dentistId && r.startDate <= date && date <= r.endDate);
 }
 
 function instant(date: string, minute: number): Date {
@@ -93,7 +115,7 @@ function duration(value: string): number {
   return Number.isFinite(parsed) && parsed >= 15 && parsed <= 240 ? parsed : 30;
 }
 
-export function generatedSlots(hours: [number, number] | null, date: string, durationMinutes: number): AvailableSlot[] {
+export function generatedSlots(hours: HourRange | null, date: string, durationMinutes: number): AvailableSlot[] {
   if (!hours) return [];
   const result: AvailableSlot[] = [];
   for (let cursor = hours[0]; cursor + durationMinutes <= hours[1]; cursor += 30) {
@@ -103,49 +125,76 @@ export function generatedSlots(hours: [number, number] | null, date: string, dur
   return result;
 }
 
+/** Whether a generated slot fits entirely inside a dentist's resolved range for that date. */
+export function withinDentistRange(slot: AvailableSlot, date: string, range: HourRange | null): boolean {
+  if (!range) return false;
+  const start = new Date(slot.startsAt).getTime(); const end = new Date(slot.endsAt).getTime();
+  return instant(date, range[0]).getTime() <= start && end <= instant(date, range[1]).getTime();
+}
+
 export function overlaps(slot: AvailableSlot, busy: Array<{ startsAt: Date; endsAt: Date | null }>): boolean {
   const start = new Date(slot.startsAt).getTime(); const end = new Date(slot.endsAt).getTime();
   return busy.some((item) => item.startsAt.getTime() < end && (item.endsAt?.getTime() ?? Number.POSITIVE_INFINITY) > start);
 }
 
 export function createPublicBookingService(database: DB, notifications?: NotificationService, integrations?: IntegrationService): PublicBookingService {
-  const loadContext = async (input: AvailabilityInput) => {
-    const [context] = await database.select({ clinicId: clinics.id, clinicName: clinics.name, branchId: branches.id, branchName: branches.name, operatingHours: branches.operatingHours, serviceId: services.id, serviceName: services.name, durationMinutes: services.durationMinutes })
+  const loadContext = async (input: AvailabilityInput, transaction: DB = database) => {
+    const [context] = await transaction.select({ clinicId: clinics.id, clinicName: clinics.name, branchId: branches.id, branchName: branches.name, serviceId: services.id, serviceName: services.name, durationMinutes: services.durationMinutes })
       .from(clinics).innerJoin(branches, eq(branches.clinicId, clinics.id)).innerJoin(services, eq(services.clinicId, clinics.id))
       .where(and(eq(clinics.slug, input.clinicSlug), eq(clinics.publicationStatus, 'published'), inArray(clinics.status, ['trial', 'active']), isNull(clinics.deletedAt), eq(branches.id, input.branchId), eq(branches.isActive, true), isNull(branches.deletedAt), eq(services.id, input.serviceId), eq(services.isActive, 'true'), eq(services.isBookable, true))).limit(1);
     if (!context) throw new PublicBookingError('BOOKING_CONTEXT_UNAVAILABLE', 'The selected clinic, branch, or service is unavailable', 404);
-    const assignments = await database.select({ assignmentId: dentistBranchAssignments.id, dentistId: dentists.id, firstName: dentists.firstName, lastName: dentists.lastName })
+    const assignments = await transaction.select({ assignmentId: dentistBranchAssignments.id, dentistId: dentists.id, firstName: dentists.firstName, lastName: dentists.lastName })
       .from(dentistBranchAssignments).innerJoin(dentists, eq(dentistBranchAssignments.dentistId, dentists.id))
       .where(and(eq(dentistBranchAssignments.clinicId, context.clinicId), eq(dentistBranchAssignments.branchId, context.branchId), eq(dentistBranchAssignments.isActive, 'true'), input.dentistId ? eq(dentists.id, input.dentistId) : undefined, eq(dentists.verificationStatus, 'verified'), eq(dentists.publicationStatus, 'published'), isNull(dentists.deletedAt))).orderBy(asc(dentists.lastName), asc(dentists.firstName));
     if (!assignments.length) throw new PublicBookingError('DENTIST_UNAVAILABLE', 'No active dentist is available for this selection', 404);
     return { context, assignments };
   };
 
+  const loadSchedule = async (context: { clinicId: string; branchId: string }, dentistIds: string[], transaction: DB = database) => {
+    const [hours, closures, schedules, timeOff] = await Promise.all([
+      transaction.select({ weekday: branchHours.weekday, opensAt: branchHours.opensAt, closesAt: branchHours.closesAt, isClosed: branchHours.isClosed }).from(branchHours).where(eq(branchHours.branchId, context.branchId)),
+      transaction.select({ branchId: clinicClosures.branchId, date: clinicClosures.date, label: clinicClosures.label, isEnabled: clinicClosures.isEnabled }).from(clinicClosures).where(eq(clinicClosures.clinicId, context.clinicId)),
+      transaction.select({ dentistId: dentistSchedules.dentistId, branchId: dentistSchedules.branchId, weekday: dentistSchedules.weekday, startsAt: dentistSchedules.startsAt, endsAt: dentistSchedules.endsAt }).from(dentistSchedules).where(and(eq(dentistSchedules.branchId, context.branchId), inArray(dentistSchedules.dentistId, dentistIds))),
+      transaction.select({ dentistId: dentistTimeOff.dentistId, startDate: dentistTimeOff.startDate, endDate: dentistTimeOff.endDate }).from(dentistTimeOff).where(inArray(dentistTimeOff.dentistId, dentistIds)),
+    ]);
+    return { hours, closures, schedules, timeOff };
+  };
+
   return {
     availability: async (input) => {
       const { context, assignments } = await loadContext(input); const minutes = duration(context.durationMinutes);
-      const slots = generatedSlots(parseHours(context.operatingHours, input.date), input.date, minutes);
-      if (!slots.length) return { date: input.date, durationMinutes: minutes, slots: [] };
+      const { hours, closures, schedules, timeOff } = await loadSchedule(context, assignments.map((item) => item.dentistId));
+      const closedReason = resolveClosure(closures, context.branchId, input.date);
+      if (closedReason) return { date: input.date, durationMinutes: minutes, slots: [], closedReason };
+      const branchRange = resolveBranchRange(hours, input.date);
+      const slots = generatedSlots(branchRange, input.date, minutes);
+      if (!slots.length) return { date: input.date, durationMinutes: minutes, slots: [], closedReason: branchRange ? null : 'Clinic closed' };
+      const eligible = assignments.filter((assignment) => !isOnTimeOff(timeOff, assignment.dentistId, input.date));
+      if (!eligible.length) return { date: input.date, durationMinutes: minutes, slots: [], closedReason: 'No dentist available' };
+      const ranges = new Map(eligible.map((assignment) => [assignment.dentistId, resolveDentistRange(schedules, assignment.dentistId, context.branchId, input.date, branchRange!)]));
       const dayStart = instant(input.date, 0); const dayEnd = instant(input.date, 24 * 60);
-      const busy = await database.select({ dentistId: appointments.dentistId, startsAt: appointments.startsAt, endsAt: appointments.endsAt }).from(appointments).where(and(inArray(appointments.dentistId, assignments.map((item) => item.dentistId)), inArray(appointments.status, [...activeStatuses]), lt(appointments.startsAt, dayEnd), or(isNull(appointments.endsAt), gt(appointments.endsAt, dayStart))));
-      const available = slots.filter((slot) => assignments.some((assignment) => !overlaps(slot, busy.filter((item) => item.dentistId === assignment.dentistId))));
-      return { date: input.date, durationMinutes: minutes, slots: available };
+      const busy = await database.select({ dentistId: appointments.dentistId, startsAt: appointments.startsAt, endsAt: appointments.endsAt }).from(appointments).where(and(inArray(appointments.dentistId, eligible.map((item) => item.dentistId)), inArray(appointments.status, [...activeStatuses]), lt(appointments.startsAt, dayEnd), or(isNull(appointments.endsAt), gt(appointments.endsAt, dayStart))));
+      const available = slots.filter((slot) => eligible.some((assignment) => withinDentistRange(slot, input.date, ranges.get(assignment.dentistId) ?? null) && !overlaps(slot, busy.filter((item) => item.dentistId === assignment.dentistId))));
+      return { date: input.date, durationMinutes: minutes, slots: available, closedReason: null };
     },
     book: async (input, request) => {
       const result = await database.transaction(async (transaction) => {
-      const [context] = await transaction.select({ clinicId: clinics.id, clinicName: clinics.name, branchId: branches.id, branchName: branches.name, operatingHours: branches.operatingHours, serviceId: services.id, serviceName: services.name, durationMinutes: services.durationMinutes })
-        .from(clinics).innerJoin(branches, eq(branches.clinicId, clinics.id)).innerJoin(services, eq(services.clinicId, clinics.id))
-        .where(and(eq(clinics.slug, input.clinicSlug), eq(clinics.publicationStatus, 'published'), inArray(clinics.status, ['trial', 'active']), isNull(clinics.deletedAt), eq(branches.id, input.branchId), eq(branches.isActive, true), isNull(branches.deletedAt), eq(services.id, input.serviceId), eq(services.isActive, 'true'), eq(services.isBookable, true))).limit(1);
-      if (!context) throw new PublicBookingError('BOOKING_CONTEXT_UNAVAILABLE', 'The selected clinic, branch, or service is unavailable', 404);
-      const minutes = duration(context.durationMinutes); const validSlots = generatedSlots(parseHours(context.operatingHours, input.date), input.date, minutes);
+      const { context, assignments } = await loadContext(input, transaction as unknown as DB);
+      const { hours, closures, schedules, timeOff } = await loadSchedule(context, assignments.map((item) => item.dentistId), transaction as unknown as DB);
+      const closedReason = resolveClosure(closures, context.branchId, input.date);
+      if (closedReason) throw new PublicBookingError('CLINIC_CLOSED', `The clinic is closed on this date (${closedReason})`, 409);
+      const minutes = duration(context.durationMinutes); const branchRange = resolveBranchRange(hours, input.date); const validSlots = generatedSlots(branchRange, input.date, minutes);
       const requested = validSlots.find((slot) => slot.startsAt === new Date(input.startsAt).toISOString());
       if (!requested) throw new PublicBookingError('INVALID_SLOT', 'The selected time is outside current operating hours or is in the past');
+      const eligible = assignments.filter((assignment) => !isOnTimeOff(timeOff, assignment.dentistId, input.date));
       const candidates = await transaction.select({ assignmentId: dentistBranchAssignments.id, dentistId: dentists.id, firstName: dentists.firstName, lastName: dentists.lastName })
         .from(dentistBranchAssignments).innerJoin(dentists, eq(dentistBranchAssignments.dentistId, dentists.id))
-        .where(and(eq(dentistBranchAssignments.clinicId, context.clinicId), eq(dentistBranchAssignments.branchId, context.branchId), eq(dentistBranchAssignments.isActive, 'true'), input.dentistId ? eq(dentists.id, input.dentistId) : undefined, eq(dentists.verificationStatus, 'verified'), eq(dentists.publicationStatus, 'published'), isNull(dentists.deletedAt))).orderBy(asc(dentists.lastName), asc(dentists.firstName)).for('update');
+        .where(and(eq(dentistBranchAssignments.clinicId, context.clinicId), eq(dentistBranchAssignments.branchId, context.branchId), eq(dentistBranchAssignments.isActive, 'true'), inArray(dentists.id, eligible.map((item) => item.dentistId)), eq(dentists.verificationStatus, 'verified'), eq(dentists.publicationStatus, 'published'), isNull(dentists.deletedAt))).orderBy(asc(dentists.lastName), asc(dentists.firstName)).for('update');
       if (!candidates.length) throw new PublicBookingError('DENTIST_UNAVAILABLE', 'The selected dentist is no longer available', 409);
       let selected: typeof candidates[number] | undefined;
       for (const candidate of candidates) {
+        const range = resolveDentistRange(schedules, candidate.dentistId, context.branchId, input.date, branchRange!);
+        if (!withinDentistRange(requested, input.date, range)) continue;
         const [conflict] = await transaction.select({ id: appointments.id }).from(appointments).where(and(eq(appointments.dentistId, candidate.dentistId), inArray(appointments.status, [...activeStatuses]), lt(appointments.startsAt, new Date(requested.endsAt)), or(isNull(appointments.endsAt), gt(appointments.endsAt, new Date(requested.startsAt))))).limit(1);
         if (!conflict) { selected = candidate; break; }
       }

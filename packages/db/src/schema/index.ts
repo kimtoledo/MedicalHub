@@ -1,6 +1,7 @@
 // Re-export all schema tables and types
 export * from './clinics';
 export * from './branches';
+export * from './availability';
 export * from './dentists';
 export * from './users';
 export * from './auth';

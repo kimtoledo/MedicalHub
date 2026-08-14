@@ -27,6 +27,7 @@
 | `17-hmo-claim-workflow-ux.md` | Replace raw UUID fields with guided patient/invoice/encounter selection | ✅ Done |
 | `18-pediatric-odontogram.md` | Pediatric (primary) tooth chart, per-surface + icon visual indicators | ✅ Done |
 | `19-clinic-account-info-editing.md` | Super Admin edit form for clinic name/contact/address/web presence | ✅ Done |
+| `20-clinic-hours-holidays-dentist-availability.md` | Structured branch hours, PH holiday/custom closures, per-dentist schedule & time off | 🔵 Active |
 
 ---
 

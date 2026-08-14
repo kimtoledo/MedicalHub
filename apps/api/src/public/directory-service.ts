@@ -1,7 +1,7 @@
 import { and, count, countDistinct, desc, eq, exists, ilike, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
-import { appointments, branches, clinicGalleryItems, clinics, dentistBranchAssignments, dentists, services } from '@dentra/db/schema';
-import { generatedSlots, overlaps, parseHours } from './booking-service.js';
+import { appointments, branches, branchHours, clinicClosures, clinicGalleryItems, clinics, dentistBranchAssignments, dentists, dentistTimeOff, services } from '@dentra/db/schema';
+import { generatedSlots, isOnTimeOff, overlaps, resolveBranchRange, resolveClosure } from './booking-service.js';
 
 const OPEN_SLOT_WINDOW_DAYS = 7;
 const ACTIVE_APPOINTMENT_STATUSES = ['pending', 'confirmed', 'checked_in', 'in_progress'] as const;
@@ -18,8 +18,16 @@ async function computeOpenDentistIds(database: DB, pairs: Array<{ dentistId: str
   if (!pairs.length) return new Set();
   const branchIds = [...new Set(pairs.map((pair) => pair.branchId))];
   const dentistIds = [...new Set(pairs.map((pair) => pair.dentistId))];
-  const branchRows = await database.select({ id: branches.id, operatingHours: branches.operatingHours }).from(branches).where(inArray(branches.id, branchIds));
-  const hoursByBranch = new Map(branchRows.map((branch) => [branch.id, branch.operatingHours]));
+  const branchRows = await database.select({ id: branches.id, clinicId: branches.clinicId }).from(branches).where(inArray(branches.id, branchIds));
+  const clinicIds = [...new Set(branchRows.map((branch) => branch.clinicId))];
+  const [hourRows, closureRows, timeOffRows] = await Promise.all([
+    database.select({ branchId: branchHours.branchId, weekday: branchHours.weekday, opensAt: branchHours.opensAt, closesAt: branchHours.closesAt, isClosed: branchHours.isClosed }).from(branchHours).where(inArray(branchHours.branchId, branchIds)),
+    clinicIds.length ? database.select({ clinicId: clinicClosures.clinicId, branchId: clinicClosures.branchId, date: clinicClosures.date, label: clinicClosures.label, isEnabled: clinicClosures.isEnabled }).from(clinicClosures).where(inArray(clinicClosures.clinicId, clinicIds)) : Promise.resolve([]),
+    database.select({ dentistId: dentistTimeOff.dentistId, startDate: dentistTimeOff.startDate, endDate: dentistTimeOff.endDate }).from(dentistTimeOff).where(inArray(dentistTimeOff.dentistId, dentistIds)),
+  ]);
+  const hoursByBranch = new Map(branchIds.map((id) => [id, hourRows.filter((row) => row.branchId === id)]));
+  const clinicByBranch = new Map(branchRows.map((branch) => [branch.id, branch.clinicId]));
+  const closuresByClinic = new Map(clinicIds.map((id) => [id, closureRows.filter((row) => row.clinicId === id)]));
   const windowEnd = new Date(Date.now() + OPEN_SLOT_WINDOW_DAYS * 86_400_000);
   const busyRows = await database.select({ dentistId: appointments.dentistId, startsAt: appointments.startsAt, endsAt: appointments.endsAt }).from(appointments).where(and(inArray(appointments.dentistId, dentistIds), inArray(appointments.status, ACTIVE_APPOINTMENT_STATUSES), lt(appointments.startsAt, windowEnd)));
   const busyByDentist = new Map<string, Array<{ startsAt: Date; endsAt: Date | null }>>();
@@ -31,8 +39,13 @@ async function computeOpenDentistIds(database: DB, pairs: Array<{ dentistId: str
     let open = false;
     for (let dayOffset = 0; dayOffset < OPEN_SLOT_WINDOW_DAYS && !open; dayOffset++) {
       const date = new Date(Date.now() + dayOffset * 86_400_000).toISOString().slice(0, 10);
+      if (isOnTimeOff(timeOffRows, dentistId, date)) continue;
       for (const branchId of dentistBranchIds) {
-        const hours = parseHours(hoursByBranch.get(branchId) ?? null, date);
+        const clinicId = clinicByBranch.get(branchId);
+        if (clinicId && resolveClosure(closuresByClinic.get(clinicId) ?? [], branchId, date)) continue;
+        // Uses branch hours only (not per-dentist schedules) — this is a "likely open soon" directory
+        // hint, not a booking guarantee; actual availability is re-checked by booking-service at book time.
+        const hours = resolveBranchRange(hoursByBranch.get(branchId) ?? [], date);
         if (generatedSlots(hours, date, 30).some((slot) => !overlaps(slot, busy))) { open = true; break; }
       }
     }
