@@ -16,6 +16,24 @@ type MedicineRow = {
   specialInstructions: string;
 };
 
+// ---------------------------------------------------------------------------
+// Common medicine presets — clicking one fills the next empty row, or adds
+// a new row below, so a dentist rarely needs to type these by hand.
+// ---------------------------------------------------------------------------
+
+const MEDICINE_PRESETS: Array<Omit<MedicineRow, "id" | "specialInstructions">> = [
+  { medicineName: "Amoxicillin 500mg", dosage: "500mg", frequency: "TID", duration: "7 days" },
+  { medicineName: "Co-Amoxiclav 625mg", dosage: "625mg", frequency: "BID", duration: "7 days" },
+  { medicineName: "Mefenamic Acid 500mg", dosage: "500mg", frequency: "TID", duration: "5 days" },
+  { medicineName: "Ibuprofen 400mg", dosage: "400mg", frequency: "TID", duration: "5 days" },
+  { medicineName: "Paracetamol 500mg", dosage: "500mg", frequency: "Q4H PRN for pain", duration: "5 days" },
+  { medicineName: "Clindamycin 300mg", dosage: "300mg", frequency: "TID", duration: "7 days" },
+  { medicineName: "Metronidazole 500mg", dosage: "500mg", frequency: "TID", duration: "7 days" },
+  { medicineName: "Cefuroxime 500mg", dosage: "500mg", frequency: "BID", duration: "7 days" },
+  { medicineName: "Tranexamic Acid 500mg", dosage: "500mg", frequency: "TID", duration: "5 days" },
+  { medicineName: "Chlorhexidine Mouthwash 0.12%", dosage: "15mL rinse", frequency: "BID", duration: "7 days" },
+];
+
 export default function AmendPrescriptionClient({
   original,
   clinicId,
@@ -54,6 +72,16 @@ export default function AmendPrescriptionClient({
 
   function removeRow(id: number) {
     setRows((prev) => prev.filter((r) => r.id !== id));
+  }
+
+  function applyPreset(preset: (typeof MEDICINE_PRESETS)[number]) {
+    setRows((prev) => {
+      const emptyIndex = prev.findIndex((row) => !row.medicineName.trim());
+      if (emptyIndex !== -1) {
+        return prev.map((row, index) => (index === emptyIndex ? { ...row, ...preset } : row));
+      }
+      return [...prev, { id: Date.now(), specialInstructions: "", ...preset }];
+    });
   }
 
   function updateRow(id: number, field: keyof Omit<MedicineRow, "id">, value: string) {
@@ -179,6 +207,21 @@ export default function AmendPrescriptionClient({
         {/* Medicines */}
         <div className="bg-white rounded-2xl shadow-sm border border-violet-100 p-5 space-y-4">
           <h2 className="text-sm font-semibold text-violet-900">Medicines</h2>
+          <div>
+            <p className="text-xs font-semibold text-violet-700 mb-2">Common medicines — click to add</p>
+            <div className="flex flex-wrap gap-1.5">
+              {MEDICINE_PRESETS.map((preset) => (
+                <button
+                  key={preset.medicineName}
+                  type="button"
+                  onClick={() => applyPreset(preset)}
+                  className="rounded-full border border-violet-200 px-3 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-50"
+                >
+                  {preset.medicineName} · {preset.frequency} · {preset.duration}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="space-y-3">
             {rows.map((row, idx) => (
               <div key={row.id} className="border border-violet-100 rounded-xl p-4 space-y-3">
