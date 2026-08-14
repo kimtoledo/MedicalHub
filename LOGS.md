@@ -35,6 +35,7 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+
 ### 🔄 Branch-scoped staff assignment (enterprise multi-branch)
 - Staff can now be assigned to additional branches within the same clinic without a duplicate account, mirroring the existing `dentistBranchAssignments` pattern — a new `POST /v1/clinic/:clinicId/staff/branch-assignments` adds a second `clinicMemberships` row for the same user
 - Discovered the authorization layer already supported this (`getCallerBranchIds` aggregates across multiple membership rows per user, per its own code comment) — the actual gap was just that `invite()` blocked a second row for the same user+clinic, and there was no UI/endpoint to add one
@@ -854,7 +855,13 @@ Script: `scripts/seed-demo.ts` — run with `npm run db:seed`
 - Web: `/app/settings/hmo-payers` payer catalog; `/app/billing/hmo-claims` tracker with status tabs; claim detail with progress tracker + status action forms + printable claim document (`window.print()`); patient HMO tab with membership add/delete; HMO Claims sidebar nav item; Settings page card
 - 24 Vitest unit tests covering billing guard logic (zero/under/over/exact amount), status transitions, and concurrent payment paths
 
----
+
+### ✅ AI clinical assistance — notes, voice-to-text & suggestions (task #25)
+- Migration `0007_ai_interactions.sql`: `ai_interactions` table (prompt, response, model, tokens, latency)
+- `AiAssistanceService` with provider-agnostic interface; `AiInteractionType` enum added to `@dentra/shared`
+- Routes: `POST /v1/clinic/:clinicId/ai/suggest-notes`, `POST /v1/clinic/:clinicId/ai/suggest-recall`; encounter ownership validated against clinic/branch scope before any AI call
+- Web: AI note suggestion panel on encounter edit page; `AIRecallBanner` (labelled "Review only") on recall display; voice-to-text dictation using Web Speech API
+- Security: encounterId validated to clinic + caller branch; AI routes require clinic member auth; no PII in audit logs
 
 ## Queued (Proposed Tasks)
 
@@ -865,6 +872,16 @@ follow-ups are `tasks/mvp1/23`–`27`; MVP 2 workflow follow-ups are `16`–`17`
 MVP 3 frontend completion tasks are `14`–`23`. See `tasks/PAGE_AUDIT.md` for the
 route findings, dependencies, and recommended execution order.
 
+| # | Title | Phase | Status |
+|---|-------|-------|--------|
+| #6 | Connect Replit PostgreSQL and apply the first migration | MVP 1 | May be redundant — DB is live and all migrations are applied |
+| #22 | Billing lite — service pricing, invoices & receipts | MVP 1 Increment 5 | ✅ Merged |
+| #23 | Prescription builder / e-Rx | MVP 1 Increment 5 | ✅ Merged |
+| #24 | Clinical file uploads — X-rays & photos | MVP 1 Increment 5 | ✅ Merged |
+| #25 | AI clinical assistance — notes, voice-to-text & suggestions | MVP 2 | ✅ Merged |
+| #26 | Tele-dentistry — remote photo consultations | MVP 2 | ✅ Merged |
+| #27 | HMO / Insurance claims module | MVP 2 | ✅ Merged |
+
 ---
 
 ## Known Gaps / Tech Debt
@@ -873,10 +890,13 @@ route findings, dependencies, and recommended execution order.
 - **Multi-clinic workspace selection** — branch switching is live and all API requests remain tenant-scoped, but a user with memberships in multiple clinics still enters the first active clinic; an explicit clinic switcher is future UX work.
 - **Clinic staff/team administration** — the membership schema and authorization resolver are live, but invite, role-change, deactivate, and password-setup delivery workflows remain follow-up work.
 - **Super Admin overview metrics** — management ledgers and audit data are live, while the overview KPI/activity cards still use presentation data and should be wired in a future platform-operations task.
+- **PWA entitlement and branch context remain static** — the required entitlement and branch-listing API endpoints are not implemented yet.
+- **Patient number sequencing** — no DB-level sequence generator; race condition possible under concurrent inserts.
 - **Legacy clinic prefix default** — admin creation requires a non-empty unique prefix, but the database column retains its historical empty-string default for legacy compatibility.
 - **Dependency upgrades pending** — `npm audit` reports 2 high advisories in the existing Next.js/PostCSS stack and 4 moderate build-tool advisories through Drizzle Kit. The runtime Drizzle ORM, new Fastify API, and Vitest test runner were upgraded to patched releases; the remaining fixes require separate tested framework/tooling upgrades.
 
 ---
+
 
 ## Reference
 
@@ -907,3 +927,23 @@ npm run db:migrate   # Apply pending migrations
 npm run db:seed      # Load demo data (idempotent)
 npm run db:studio    # Open Drizzle Studio (requires DATABASE_URL)
 ```
+
+### ✅ Tele-dentistry — remote photo consultations (task #26)
+- Migration `0008_remote_assessments.sql`: `remote_assessments` + `remote_assessment_photos` tables; status: `pending → reviewed | closed`
+- Public submission endpoint `POST /v1/public/consult/:clinicId` — no auth required; up to 5 photos per consult
+- Photos stored in Replit Object Storage at `teledentistry/{clinicId}/{assessmentId}/{index}`; 15-minute HMAC-SHA256 signed download tokens (same pattern as clinical files)
+- Clinic routes: list, get, review, close assessments; `closeAssessment` has duplicate-close guard; `reviewAssessment` blocks already-reviewed/closed assessments
+- Web: `/app/remote-consults` list with status tabs; detail page with signed photo gallery + assessment form + close action; public `/consult/[clinicId]` submission page
+- `@fastify/multipart` limit raised to `files: 5` globally
+
+
+### ✅ HMO / Insurance claims module (task #27)
+- Migration `0009_hmo_claims.sql`: `hmo_payers`, `patient_hmo_memberships`, `hmo_claims`; `is_hmo_covered` + `hmo_standard_rate_php` columns on `services`
+- `HmoService` with full payer/membership/claim CRUD; `assertTransition()` enforces status matrix: `prepared → submitted → approved | rejected → paid`
+- Paid transition: locks claim + invoice with `FOR UPDATE`; requires approved amount = invoice total (prevents partial/overpayment); rejects if invoice already paid/voided or if another paid claim exists for same invoice; marks invoice paid atomically
+- Cross-tenant validation on every FK: patient, payer, membership, invoice, encounter all scoped to clinic + patient
+- Claim status PATCH restricted to clinic admin/owner; claim number globally unique (`HMOCLM` + 8-digit global count + 4-digit random suffix)
+- Web: `/app/settings/hmo-payers` payer catalog; `/app/billing/hmo-claims` tracker with status tabs; claim detail with progress tracker + status action forms + printable claim document (`window.print()`); patient HMO tab with membership add/delete; HMO Claims sidebar nav item; Settings page card
+- 24 Vitest unit tests covering billing guard logic (zero/under/over/exact amount), status transitions, and concurrent payment paths
+
+---
