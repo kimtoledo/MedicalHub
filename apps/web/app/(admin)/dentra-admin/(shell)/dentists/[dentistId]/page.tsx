@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import {
   ArrowLeft,
+  CheckCircle2,
   FileText,
   Mail,
   Phone,
@@ -12,9 +13,13 @@ import { getAdminDentistDetail } from '@/lib/admin-dentists';
 import DentistAffiliationManager from '@/components/admin/DentistAffiliationManager';
 import DentistProfileActions from '@/components/admin/DentistProfileActions';
 
-type DentistDetailPageProps = { params: { dentistId: string } };
+type DentistDetailPageProps = {
+  params: { dentistId: string };
+  searchParams?: { created?: string };
+};
 
-export default async function DentistDetailPage({ params }: DentistDetailPageProps) {
+export default async function DentistDetailPage({ params, searchParams }: DentistDetailPageProps) {
+  const wasCreated = searchParams?.created === '1';
   let dentist;
   try {
     dentist = await getAdminDentistDetail(params.dentistId);
@@ -36,6 +41,13 @@ export default async function DentistDetailPage({ params }: DentistDetailPagePro
         <Link href="/dentra-admin/dentists" className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-violet-700">
           <ArrowLeft size={16} /> Back to dentists
         </Link>
+
+        {wasCreated && (
+          <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            <CheckCircle2 size={18} className="shrink-0" />
+            Dentist profile created as an unverified private draft.
+          </div>
+        )}
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">

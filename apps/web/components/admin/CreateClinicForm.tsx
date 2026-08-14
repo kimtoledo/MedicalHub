@@ -16,6 +16,11 @@ type ErrorResponse = {
   };
 };
 
+type CreateClinicResponse = {
+  success: boolean;
+  data?: { id: string };
+};
+
 const inputClassName =
   'mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-400 focus:ring-2 focus:ring-violet-100';
 
@@ -71,7 +76,12 @@ export default function CreateClinicForm({ packages }: CreateClinicFormProps) {
       return;
     }
 
-    router.push('/dentra-admin/clinics?created=1');
+    const payload = (await response.json().catch(() => ({}))) as CreateClinicResponse;
+    if (payload.data?.id) {
+      router.push(`/dentra-admin/clinics/${payload.data.id}?created=1`);
+    } else {
+      router.push('/dentra-admin/clinics?created=1');
+    }
     router.refresh();
   }
 

@@ -4,6 +4,7 @@ import {
   Building2,
   CalendarDays,
   Check,
+  CheckCircle2,
   CircleSlash2,
   ExternalLink,
   Mail,
@@ -28,6 +29,7 @@ import FeatureOverrideManager from '@/components/admin/FeatureOverrideManager';
 
 type ClinicDetailPageProps = {
   params: { clinicId: string };
+  searchParams?: { created?: string };
 };
 
 const statusStyles: Record<ClinicStatus, string> = {
@@ -57,7 +59,8 @@ function joinAddress(parts: Array<string | null>): string {
   return parts.filter(Boolean).join(', ') || 'Not provided';
 }
 
-export default async function ClinicDetailPage({ params }: ClinicDetailPageProps) {
+export default async function ClinicDetailPage({ params, searchParams }: ClinicDetailPageProps) {
+  const wasCreated = searchParams?.created === '1';
   let clinic;
   let packageOptions: AdminClinicPackageOption[] = [];
   try {
@@ -101,6 +104,12 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
+        {wasCreated && (
+          <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            <CheckCircle2 size={18} className="shrink-0" />
+            Clinic created successfully with its owner and initial package.
+          </div>
+        )}
         <div>
           <Link
             href="/dentra-admin/clinics"

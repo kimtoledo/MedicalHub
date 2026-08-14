@@ -18,6 +18,11 @@ type ErrorResponse = {
   };
 };
 
+type CreateDentistResponse = {
+  success: boolean;
+  data?: { id: string };
+};
+
 const inputClassName =
   'mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-400 focus:ring-2 focus:ring-violet-100';
 
@@ -101,8 +106,13 @@ export default function CreateDentistDrawer() {
       return;
     }
 
+    const payload = (await response.json().catch(() => ({}))) as CreateDentistResponse;
     setIsOpen(false);
-    router.push('/dentra-admin/dentists?created=1');
+    if (payload.data?.id) {
+      router.push(`/dentra-admin/dentists/${payload.data.id}?created=1`);
+    } else {
+      router.push('/dentra-admin/dentists?created=1');
+    }
     router.refresh();
   }
 
