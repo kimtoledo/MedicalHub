@@ -12,6 +12,8 @@ import {
 import type { PatientDetail } from "@/lib/clinic-patients";
 import type { TreatmentRecord } from "@/lib/clinic-treatments";
 import HistoryEditor from "./HistoryEditor";
+import AppointmentActions from "@/components/app/dashboard/AppointmentActions";
+import { canDentistManageAppointment } from "@/lib/dentist-schedule-navigation";
 const show = (value: string | null | undefined) => value || "—";
 const when = (value: string) =>
   new Intl.DateTimeFormat("en-PH", {
@@ -25,12 +27,14 @@ export default function PatientProfile({
   basePath,
   sort,
   treatments,
+  appointmentDentistId,
 }: {
   clinicId: string;
   data: PatientDetail;
   basePath: string;
   sort: "asc" | "desc";
   treatments: TreatmentRecord[];
+  appointmentDentistId?: string | null;
 }) {
   const patient = data.patient;
   const name = [patient.firstName, patient.middleName, patient.lastName]
@@ -237,7 +241,7 @@ export default function PatientProfile({
             {data.appointments.map((item) => (
               <article
                 key={item.id}
-                className="grid gap-2 py-4 text-sm sm:grid-cols-4"
+                className="grid gap-2 py-4 text-sm sm:grid-cols-5 sm:items-center"
               >
                 <div>
                   <p className="font-semibold text-slate-900">
@@ -256,7 +260,10 @@ export default function PatientProfile({
                 <span className="justify-self-start rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold capitalize text-violet-700">
                   {item.status.replace("_", " ")}
                 </span>
-                {item.encounterId && <Link href={`/app/dentist/encounters/${item.encounterId}`} className="text-xs font-semibold text-violet-600 sm:col-start-4">Open encounter →</Link>}
+                <div className="space-y-2">
+                  {canDentistManageAppointment(item.dentistId, appointmentDentistId) && <AppointmentActions clinicId={clinicId} appointmentId={item.id} status={item.status} />}
+                  {item.encounterId && <Link href={`/app/dentist/encounters/${item.encounterId}`} className="block text-xs font-semibold text-violet-600">Open encounter →</Link>}
+                </div>
               </article>
             ))}
           </div>

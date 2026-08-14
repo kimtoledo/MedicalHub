@@ -47,6 +47,7 @@
 | `25-super-admin-settings.md` | Replace platform settings placeholder with safe controls | ✅ Done |
 | `26-clinic-staff-management.md` | Staff invitations, roles, branches, activation, permissions | ✅ Done |
 | `27-dentist-self-service-profile.md` | Dentist-owned professional profile editor and preview | ✅ Done |
+| `28-dentist-schedule-patient-navigation.md` | Linked schedule-to-patient navigation and dentist-owned appointment updates | ✅ Done |
 
 ---
 

@@ -46,6 +46,12 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Dentist schedule-to-patient workflow
+- Registered patient names are now accessible links from the dentist dashboard’s Next Up/Today’s Schedule sections and from `/app/dentist/schedule`; unlinked public bookings remain non-clickable
+- Dentist patient profiles now show legal appointment status actions only for appointments assigned to the signed-in dentist
+- Status changes reuse the existing tenant-scoped, row-locked, transition-validated, audited endpoint; server authorization remains authoritative even if the UI is manipulated
+- Added focused navigation/ownership tests and verified 449 passing API tests, 8 passing web tests, repository-wide TypeScript checks, and production web/API builds
+
 
 ### 🔄 Branch-scoped staff assignment (enterprise multi-branch)
 - Staff can now be assigned to additional branches within the same clinic without a duplicate account, mirroring the existing `dentistBranchAssignments` pattern — a new `POST /v1/clinic/:clinicId/staff/branch-assignments` adds a second `clinicMemberships` row for the same user

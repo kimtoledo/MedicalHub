@@ -29,6 +29,7 @@ export default async function DentistPatientPage({
         basePath="/app/dentist/patients"
         sort={sort}
         treatments={treatments}
+        appointmentDentistId={identity.dentistId}
       />
       <PatientRecordExtensions
         clinicId={identity.clinicId}

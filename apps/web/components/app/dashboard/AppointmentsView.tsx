@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useAppBranch } from "../AppBranchContext";
 import AppointmentActions from "./AppointmentActions";
 import {
@@ -8,6 +9,7 @@ import {
   todayManila,
   type DashboardAppointment,
 } from "./types";
+import { patientProfileHref } from "@/lib/dentist-schedule-navigation";
 export default function AppointmentsView({ dentist = false }: { dentist?: boolean }) {
   const { clinicId, branchId, branchName } = useAppBranch();
   const [date, setDate] = useState(todayManila());
@@ -110,9 +112,7 @@ export default function AppointmentsView({ dentist = false }: { dentist?: boolea
                   {time(item.startsAt)}
                 </p>
                 <div>
-                  <p className="font-semibold text-slate-900">
-                    {item.patientLastName}, {item.patientFirstName}
-                  </p>
+                  {patientProfileHref(item.patientId, dentist) ? <Link href={patientProfileHref(item.patientId, dentist)!} className="rounded font-semibold text-violet-700 hover:text-violet-900 hover:underline focus:outline-none focus:ring-2 focus:ring-violet-500">{item.patientLastName}, {item.patientFirstName}</Link> : <p className="font-semibold text-slate-900">{item.patientLastName}, {item.patientFirstName}</p>}
                   <p className="text-xs text-slate-500">
                     {item.patientNumber ?? "Public booking"}
                   </p>

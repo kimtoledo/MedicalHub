@@ -11,6 +11,7 @@ import {
   type DashboardAppointment,
   type RecentPatient,
 } from "./types";
+import { patientProfileHref } from "@/lib/dentist-schedule-navigation";
 export default function DentistDashboard({ userName }: { userName: string }) {
   const { clinicId, branchId, branchName } = useAppBranch();
   const [schedule, setSchedule] = useState<DashboardAppointment[]>([]);
@@ -136,7 +137,7 @@ export default function DentistDashboard({ userName }: { userName: string }) {
             Next up
           </p>
           <h2 className="mt-2 text-2xl font-bold">
-            {next.patientFirstName} {next.patientLastName}
+            {patientProfileHref(next.patientId, true) ? <Link href={patientProfileHref(next.patientId, true)!} className="rounded underline decoration-violet-300 underline-offset-4 hover:text-violet-100 focus:outline-none focus:ring-2 focus:ring-white">{next.patientFirstName} {next.patientLastName}</Link> : <>{next.patientFirstName} {next.patientLastName}</>}
           </h2>
           <p className="mt-1 text-violet-200">
             {next.serviceName ?? "Dental visit"} · {time(next.startsAt)} ·{" "}
@@ -166,9 +167,7 @@ export default function DentistDashboard({ userName }: { userName: string }) {
                     {time(item.startsAt)}
                   </p>
                   <div>
-                    <p className="font-semibold text-slate-900">
-                      {item.patientFirstName} {item.patientLastName}
-                    </p>
+                    {patientProfileHref(item.patientId, true) ? <Link href={patientProfileHref(item.patientId, true)!} className="rounded font-semibold text-violet-700 hover:text-violet-900 hover:underline focus:outline-none focus:ring-2 focus:ring-violet-500">{item.patientFirstName} {item.patientLastName}</Link> : <p className="font-semibold text-slate-900">{item.patientFirstName} {item.patientLastName}</p>}
                     <p className="text-xs text-slate-500">
                       {item.serviceName ?? "Dental visit"}
                     </p>

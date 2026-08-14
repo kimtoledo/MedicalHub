@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 const actions: Record<string, Array<{ label: string; status: string }>> = {
   pending: [
     { label: "Confirm", status: "confirmed" },
@@ -29,8 +30,9 @@ export default function AppointmentActions({
   clinicId: string;
   appointmentId: string;
   status: string;
-  onUpdated: () => void;
+  onUpdated?: () => void;
 }) {
+  const router = useRouter();
   const [saving, setSaving] = useState("");
   const [error, setError] = useState("");
   async function update(next: string) {
@@ -55,7 +57,9 @@ export default function AppointmentActions({
       };
       if (!response.ok)
         throw new Error(result.error?.message ?? "Status could not be updated");
-      onUpdated();
+      setSaving("");
+      onUpdated?.();
+      router.refresh();
     } catch (caught) {
       setError(
         caught instanceof Error

@@ -17,7 +17,7 @@ export type ClinicPatientsService = {
 };
 export class ClinicPatientError extends Error { constructor(public code: string, message: string, public statusCode = 400) { super(message); } }
 
-const appointmentSelection = { id: appointments.id, status: appointments.status, startsAt: appointments.startsAt, endsAt: appointments.endsAt, dentistFirstName: dentists.firstName, dentistLastName: dentists.lastName, serviceName: services.name, branchName: branches.name, encounterId: encounters.id };
+const appointmentSelection = { id: appointments.id, status: appointments.status, startsAt: appointments.startsAt, endsAt: appointments.endsAt, dentistId: appointments.dentistId, dentistFirstName: dentists.firstName, dentistLastName: dentists.lastName, serviceName: services.name, branchName: branches.name, encounterId: encounters.id };
 
 export function createClinicPatientsService(database: DB): ClinicPatientsService {
   const ensurePatient = async (clinicId: string, patientId: string) => { const [patient] = await database.select({ id: patients.id }).from(patients).where(and(eq(patients.id, patientId), eq(patients.clinicId, clinicId), isNull(patients.deletedAt))).limit(1); if (!patient) throw new ClinicPatientError('PATIENT_NOT_FOUND', 'Patient not found', 404); };
