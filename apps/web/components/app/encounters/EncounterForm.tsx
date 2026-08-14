@@ -8,6 +8,180 @@ import type { ClinicDentistOption } from "@/lib/clinic-dentists";
 import { useConfirm } from "@/components/ConfirmDialogProvider";
 const field =
   "mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm disabled:bg-slate-100";
+
+type NoteFieldName =
+  | "chiefComplaint"
+  | "examination"
+  | "assessment"
+  | "procedures"
+  | "recommendations"
+  | "notes";
+
+const NOTE_FIELDS: Array<{ name: NoteFieldName; label: string; rows: number; presets: string[] }> = [
+  {
+    name: "chiefComplaint",
+    label: "Chief complaint",
+    rows: 4,
+    presets: [
+      "Chipped front tooth",
+      "Toothache",
+      "Sensitivity to hot/cold",
+      "Bleeding gums",
+      "Swollen gums",
+      "Loose tooth",
+      "Broken filling",
+      "Jaw pain",
+      "Bad breath",
+      "Routine checkup",
+      "Braces adjustment",
+      "Wisdom tooth pain",
+    ],
+  },
+  {
+    name: "examination",
+    label: "Examination / findings",
+    rows: 4,
+    presets: [
+      "Dental caries noted",
+      "Gingival inflammation",
+      "Plaque buildup",
+      "Calculus deposits",
+      "Fractured tooth",
+      "Missing tooth",
+      "Impacted wisdom tooth",
+      "Normal oral findings",
+      "Periodontal pocket depth increased",
+      "Tooth mobility noted",
+    ],
+  },
+  {
+    name: "assessment",
+    label: "Assessment / diagnosis",
+    rows: 4,
+    presets: [
+      "Dental caries",
+      "Gingivitis",
+      "Periodontitis",
+      "Pulpitis",
+      "Dental abscess",
+      "Malocclusion",
+      "Tooth fracture",
+      "Impacted tooth",
+      "Healthy dentition",
+    ],
+  },
+  {
+    name: "procedures",
+    label: "Procedures / treatments",
+    rows: 4,
+    presets: [
+      "Oral prophylaxis (cleaning)",
+      "Composite filling",
+      "Amalgam filling",
+      "Tooth extraction",
+      "Root canal treatment",
+      "Crown placement",
+      "Scaling and polishing",
+      "Fluoride treatment",
+      "X-ray taken",
+      "Local anesthesia administered",
+    ],
+  },
+  {
+    name: "recommendations",
+    label: "Recommendations",
+    rows: 4,
+    presets: [
+      "Follow-up in 1 week",
+      "Follow-up in 1 month",
+      "Follow-up in 6 months",
+      "Refer to specialist",
+      "Maintain oral hygiene",
+      "Avoid hard foods",
+      "Take prescribed medication as directed",
+      "Schedule next cleaning",
+    ],
+  },
+  {
+    name: "notes",
+    label: "Clinical notes",
+    rows: 3,
+    presets: [
+      "Patient tolerated procedure well",
+      "No complications",
+      "Patient advised on home care",
+      "Follow-up needed",
+    ],
+  },
+];
+
+function toggleTerm(current: string, term: string) {
+  const parts = current
+    .split(";")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const next = parts.includes(term)
+    ? parts.filter((item) => item !== term)
+    : [...parts, term];
+  return next.join("; ");
+}
+
+function NoteField({
+  label,
+  name,
+  rows,
+  presets,
+  value,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  name: string;
+  rows: number;
+  presets: string[];
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+}) {
+  const active = new Set(
+    value
+      .split(";")
+      .map((item) => item.trim())
+      .filter(Boolean),
+  );
+  return (
+    <label className="block text-sm font-semibold text-slate-700">
+      {label}
+      <div className="mt-1.5 flex flex-wrap gap-1.5">
+        {presets.map((term) => (
+          <button
+            key={term}
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange(toggleTerm(value, term))}
+            className={`rounded-full border px-2.5 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
+              active.has(term)
+                ? "border-violet-600 bg-violet-600 text-white"
+                : "border-slate-300 text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {term}
+          </button>
+        ))}
+      </div>
+      <textarea
+        disabled={disabled}
+        name={name}
+        rows={rows}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder="Pumili sa itaas, o mag-type ng iyo mismong sagot"
+        className={field}
+      />
+    </label>
+  );
+}
+
 export default function EncounterForm({
   clinicId,
   branches,
@@ -28,7 +202,18 @@ export default function EncounterForm({
   const confirmDialog = useConfirm();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [noteValues, setNoteValues] = useState<Record<NoteFieldName, string>>({
+    chiefComplaint: encounter?.chiefComplaint ?? "",
+    examination: encounter?.examination ?? "",
+    assessment: encounter?.assessment ?? "",
+    procedures: encounter?.procedures ?? "",
+    recommendations: encounter?.recommendations ?? "",
+    notes: encounter?.notes ?? "",
+  });
   const readOnly = encounter?.status === "final";
+  function setNoteValue(name: NoteFieldName, value: string) {
+    setNoteValues((current) => ({ ...current, [name]: value }));
+  }
   async function submit(form: HTMLFormElement, status: "draft" | "final") {
     if (!form.reportValidity()) return;
     if (
@@ -168,29 +353,17 @@ export default function EncounterForm({
           </label>
         )}
       </div>
-      {[
-        ["chiefComplaint", "Chief complaint"],
-        ["examination", "Examination / findings"],
-        ["assessment", "Assessment / diagnosis"],
-        ["procedures", "Procedures / treatments"],
-        ["recommendations", "Recommendations"],
-        ["notes", "Clinical notes"],
-      ].map(([name, label]) => (
-        <label
-          key={name}
-          className="block text-sm font-semibold text-slate-700"
-        >
-          {label}
-          <textarea
-            disabled={readOnly}
-            name={name}
-            rows={name === "notes" ? 3 : 4}
-            defaultValue={
-              (encounter?.[name as keyof EncounterRecord] as string) ?? ""
-            }
-            className={field}
-          />
-        </label>
+      {NOTE_FIELDS.map((item) => (
+        <NoteField
+          key={item.name}
+          label={item.label}
+          name={item.name}
+          rows={item.rows}
+          presets={item.presets}
+          value={noteValues[item.name]}
+          onChange={(value) => setNoteValue(item.name, value)}
+          disabled={readOnly}
+        />
       ))}
       {error && (
         <p
