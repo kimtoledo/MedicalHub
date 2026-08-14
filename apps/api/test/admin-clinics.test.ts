@@ -9,8 +9,11 @@ import {
   type AdminClinicAccountUpdateService,
   type AdminClinicBranchCreationService,
   type AdminClinicCreationService,
+  type AdminClinicDentistsListService,
   type AdminClinicDetailService,
   type AdminClinicListService,
+  type AdminClinicMembersListService,
+  type AdminClinicPatientsListService,
   type AdminClinicStatusService,
 } from '../src/admin/clinics-service.js';
 import type { AuthServices, AuthorizationContext } from '../src/auth/types.js';
@@ -220,6 +223,9 @@ function createClinicDetailService(): AdminClinicDetailService {
         'reports.advanced' as const,
         'microsite.publish' as const,
       ],
+      dentistCount: 2,
+      staffCount: 4,
+      patientCount: 128,
     })),
   };
 }
@@ -291,6 +297,9 @@ async function createApp(
   branchCreation?: AdminClinicBranchCreationService,
   settings?: AdminClinicSettingsService,
   accountUpdate?: AdminClinicAccountUpdateService,
+  dentistsList?: AdminClinicDentistsListService,
+  membersList?: AdminClinicMembersListService,
+  patientsList?: AdminClinicPatientsListService,
 ) {
   app = await buildApp({
     config,
@@ -304,6 +313,9 @@ async function createApp(
     adminClinicBranchCreation: branchCreation,
     adminClinicSettings: settings,
     adminClinicAccountUpdate: accountUpdate,
+    adminClinicDentistsList: dentistsList,
+    adminClinicMembersList: membersList,
+    adminClinicPatientsList: patientsList,
   });
 }
 
@@ -322,6 +334,59 @@ function createClinicAccountUpdateService(): AdminClinicAccountUpdateService {
       description: input.description ?? null,
       logoUrl: input.logoUrl ?? null,
       updatedAt: new Date('2026-08-11T00:00:00.000Z'),
+    })),
+  };
+}
+
+function createClinicDentistsListService(): AdminClinicDentistsListService {
+  return {
+    listDentists: vi.fn(async () => [
+      {
+        id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+        firstName: 'Maria',
+        lastName: 'Reyes',
+        slug: 'dr-maria-reyes',
+        verificationStatus: 'verified' as const,
+        publicationStatus: 'published',
+        branchNames: ['Main Branch'],
+      },
+    ]),
+  };
+}
+
+function createClinicMembersListService(): AdminClinicMembersListService {
+  return {
+    listMembers: vi.fn(async () => [
+      {
+        id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+        userId: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+        name: 'Demo Owner',
+        email: 'owner@example.com',
+        role: 'clinic_owner' as const,
+        branchId: null,
+        branchName: null,
+        isActive: true,
+        joinedAt: '2026-01-02T00:00:00.000Z',
+      },
+    ]),
+  };
+}
+
+function createClinicPatientsListService(): AdminClinicPatientsListService {
+  return {
+    listPatients: vi.fn(async (clinicId, input) => ({
+      items: [
+        {
+          id: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+          patientNumber: 'SBD000001',
+          firstName: 'Ana',
+          lastName: 'Cruz',
+          phone: '+63 917 000 0000',
+          email: null,
+          createdAt: new Date('2026-08-01T00:00:00.000Z'),
+        },
+      ],
+      pagination: { page: input.page, pageSize: input.pageSize, total: 1, totalPages: 1 },
     })),
   };
 }
@@ -1179,5 +1244,97 @@ describe('PATCH /v1/admin/clinics/:clinicId', () => {
     });
     expect(response.statusCode).toBe(404);
     expect(response.json().error.code).toBe('CLINIC_NOT_FOUND');
+  });
+});
+
+describe('GET /v1/admin/clinics/:clinicId/dentists', () => {
+  const clinicId = '00000000-0001-0000-0000-000000000001';
+
+  it('lets a super_admin list dentists affiliated with a clinic', async () => {
+    const dentistsList = createClinicDentistsListService();
+    await createApp(
+      superAdminContext,
+      createClinicService(),
+      undefined, undefined, undefined, undefined, undefined, undefined,
+      dentistsList,
+    );
+    const response = await app!.inject({ method: 'GET', url: `/v1/admin/clinics/${clinicId}/dentists` });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().data).toHaveLength(1);
+    expect(dentistsList.listDentists).toHaveBeenCalledWith(clinicId);
+  });
+
+  it('rejects a platform_support account', async () => {
+    const dentistsList = createClinicDentistsListService();
+    await createApp(
+      platformSupportContext,
+      createClinicService(),
+      undefined, undefined, undefined, undefined, undefined, undefined,
+      dentistsList,
+    );
+    const response = await app!.inject({ method: 'GET', url: `/v1/admin/clinics/${clinicId}/dentists` });
+    expect(response.statusCode).toBe(403);
+    expect(dentistsList.listDentists).not.toHaveBeenCalled();
+  });
+});
+
+describe('GET /v1/admin/clinics/:clinicId/members', () => {
+  const clinicId = '00000000-0001-0000-0000-000000000001';
+
+  it('lets a super_admin list clinic staff', async () => {
+    const membersList = createClinicMembersListService();
+    await createApp(
+      superAdminContext,
+      createClinicService(),
+      undefined, undefined, undefined, undefined, undefined, undefined, undefined,
+      membersList,
+    );
+    const response = await app!.inject({ method: 'GET', url: `/v1/admin/clinics/${clinicId}/members` });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().data).toHaveLength(1);
+    expect(membersList.listMembers).toHaveBeenCalledWith(clinicId);
+  });
+
+  it('rejects a platform_support account', async () => {
+    const membersList = createClinicMembersListService();
+    await createApp(
+      platformSupportContext,
+      createClinicService(),
+      undefined, undefined, undefined, undefined, undefined, undefined, undefined,
+      membersList,
+    );
+    const response = await app!.inject({ method: 'GET', url: `/v1/admin/clinics/${clinicId}/members` });
+    expect(response.statusCode).toBe(403);
+    expect(membersList.listMembers).not.toHaveBeenCalled();
+  });
+});
+
+describe('GET /v1/admin/clinics/:clinicId/patients', () => {
+  const clinicId = '00000000-0001-0000-0000-000000000001';
+
+  it('lets a super_admin list patients with pagination forwarded to the service', async () => {
+    const patientsList = createClinicPatientsListService();
+    await createApp(
+      superAdminContext,
+      createClinicService(),
+      undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined,
+      patientsList,
+    );
+    const response = await app!.inject({ method: 'GET', url: `/v1/admin/clinics/${clinicId}/patients?page=2&pageSize=50` });
+    expect(response.statusCode).toBe(200);
+    expect(patientsList.listPatients).toHaveBeenCalledWith(clinicId, { page: 2, pageSize: 50 });
+  });
+
+  it('rejects a platform_support account', async () => {
+    const patientsList = createClinicPatientsListService();
+    await createApp(
+      platformSupportContext,
+      createClinicService(),
+      undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined,
+      patientsList,
+    );
+    const response = await app!.inject({ method: 'GET', url: `/v1/admin/clinics/${clinicId}/patients` });
+    expect(response.statusCode).toBe(403);
+    expect(patientsList.listPatients).not.toHaveBeenCalled();
   });
 });

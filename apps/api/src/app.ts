@@ -13,8 +13,11 @@ import type {
   AdminClinicAccountUpdateService,
   AdminClinicCreationService,
   AdminClinicBranchCreationService,
+  AdminClinicDentistsListService,
   AdminClinicDetailService,
   AdminClinicListService,
+  AdminClinicMembersListService,
+  AdminClinicPatientsListService,
   AdminClinicStatusService,
 } from './admin/clinics-service.js';
 import type {
@@ -134,6 +137,9 @@ export type BuildAppOptions = {
   adminClinicDetails?: AdminClinicDetailService;
   adminClinicStatus?: AdminClinicStatusService;
   adminClinicAccountUpdate?: AdminClinicAccountUpdateService;
+  adminClinicDentistsList?: AdminClinicDentistsListService;
+  adminClinicMembersList?: AdminClinicMembersListService;
+  adminClinicPatientsList?: AdminClinicPatientsListService;
   adminClinicSettings?: AdminClinicSettingsService;
   clinicBilling?: ClinicBillingService;
   clinicServiceList?: ClinicServiceListService;
@@ -266,6 +272,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         details: options.adminClinicDetails,
         status: options.adminClinicStatus,
         accountUpdate: options.adminClinicAccountUpdate,
+        dentistsList: options.adminClinicDentistsList,
+        membersList: options.adminClinicMembersList,
+        patientsList: options.adminClinicPatientsList,
         settings: options.adminClinicSettings,
       });
     }

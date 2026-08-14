@@ -1,6 +1,7 @@
 import {
   and,
   count,
+  countDistinct,
   desc,
   eq,
   gt,
@@ -18,8 +19,11 @@ import {
   clinicMemberships,
   clinics,
   clinicSubscriptions,
+  dentistBranchAssignments,
+  dentists,
   packageFeatures,
   packages,
+  patients,
   users,
 } from '@dentra/db/schema';
 import { AuditAction, FeatureKey } from '@dentra/shared';
@@ -176,6 +180,9 @@ export type AdminClinicDetail = {
     expiresAt: Date | null;
   }>;
   availableFeatureKeys: FeatureKey[];
+  dentistCount: number;
+  staffCount: number;
+  patientCount: number;
 };
 
 export type AdminClinicDetailService = {
@@ -411,7 +418,7 @@ export function createAdminClinicDetailService(
       }
 
       const now = new Date();
-      const [ownerRows, branchRows, subscriptionRows, overrideRows] =
+      const [ownerRows, branchRows, subscriptionRows, overrideRows, dentistCountRows, staffCountRows, patientCountRows] =
         await Promise.all([
           database
             .select({
@@ -498,6 +505,28 @@ export function createAdminClinicDetailService(
               ),
             )
             .orderBy(desc(clinicFeatureOverrides.createdAt)),
+          database
+            .select({ count: countDistinct(dentistBranchAssignments.dentistId) })
+            .from(dentistBranchAssignments)
+            .where(
+              and(
+                eq(dentistBranchAssignments.clinicId, clinicId),
+                eq(dentistBranchAssignments.isActive, 'true'),
+              ),
+            ),
+          database
+            .select({ count: count(clinicMemberships.id) })
+            .from(clinicMemberships)
+            .where(
+              and(
+                eq(clinicMemberships.clinicId, clinicId),
+                eq(clinicMemberships.isActive, 'true'),
+              ),
+            ),
+          database
+            .select({ count: count(patients.id) })
+            .from(patients)
+            .where(and(eq(patients.clinicId, clinicId), isNull(patients.deletedAt))),
         ]);
 
       const subscriptionRow = subscriptionRows[0];
@@ -572,6 +601,199 @@ export function createAdminClinicDetailService(
         featureOverrides: [...latestOverrides.values()],
         effectiveEntitlements,
         availableFeatureKeys: Object.values(FeatureKey),
+        dentistCount: dentistCountRows[0]?.count ?? 0,
+        staffCount: staffCountRows[0]?.count ?? 0,
+        patientCount: patientCountRows[0]?.count ?? 0,
+      };
+    },
+  };
+}
+
+// A safety cap for the Dentists/Users list tabs — these are expected to be
+// small per clinic (unlike Patients, which is properly paginated).
+const RELATED_LIST_LIMIT = 200;
+
+export type AdminClinicDentistListItem = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  slug: string;
+  verificationStatus: typeof dentists.$inferSelect.verificationStatus;
+  publicationStatus: typeof dentists.$inferSelect.publicationStatus;
+  branchNames: string[];
+};
+
+export type AdminClinicDentistsListService = {
+  listDentists: (clinicId: string) => Promise<AdminClinicDentistListItem[]>;
+};
+
+export function createAdminClinicDentistsListService(
+  database: DB,
+): AdminClinicDentistsListService {
+  return {
+    listDentists: async (clinicId) => {
+      const rows = await database
+        .select({
+          id: dentists.id,
+          firstName: dentists.firstName,
+          lastName: dentists.lastName,
+          slug: dentists.slug,
+          verificationStatus: dentists.verificationStatus,
+          publicationStatus: dentists.publicationStatus,
+          branchName: branches.name,
+        })
+        .from(dentistBranchAssignments)
+        .innerJoin(dentists, eq(dentistBranchAssignments.dentistId, dentists.id))
+        .innerJoin(branches, eq(dentistBranchAssignments.branchId, branches.id))
+        .where(
+          and(
+            eq(dentistBranchAssignments.clinicId, clinicId),
+            eq(dentistBranchAssignments.isActive, 'true'),
+            isNull(dentists.deletedAt),
+          ),
+        )
+        .orderBy(dentists.lastName, dentists.firstName)
+        .limit(RELATED_LIST_LIMIT);
+
+      const byDentist = new Map<string, AdminClinicDentistListItem>();
+      for (const row of rows) {
+        const existing = byDentist.get(row.id);
+        if (existing) {
+          if (!existing.branchNames.includes(row.branchName)) existing.branchNames.push(row.branchName);
+          continue;
+        }
+        byDentist.set(row.id, {
+          id: row.id,
+          firstName: row.firstName,
+          lastName: row.lastName,
+          slug: row.slug,
+          verificationStatus: row.verificationStatus,
+          publicationStatus: row.publicationStatus,
+          branchNames: [row.branchName],
+        });
+      }
+      return [...byDentist.values()];
+    },
+  };
+}
+
+export type AdminClinicMemberListItem = {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  role: typeof clinicMemberships.$inferSelect.role;
+  branchId: string | null;
+  branchName: string | null;
+  isActive: boolean;
+  joinedAt: string | null;
+};
+
+export type AdminClinicMembersListService = {
+  listMembers: (clinicId: string) => Promise<AdminClinicMemberListItem[]>;
+};
+
+export function createAdminClinicMembersListService(
+  database: DB,
+): AdminClinicMembersListService {
+  return {
+    listMembers: async (clinicId) => {
+      const rows = await database
+        .select({
+          id: clinicMemberships.id,
+          userId: users.id,
+          name: users.name,
+          email: users.email,
+          role: clinicMemberships.role,
+          branchId: clinicMemberships.branchId,
+          branchName: branches.name,
+          isActive: clinicMemberships.isActive,
+          joinedAt: clinicMemberships.joinedAt,
+        })
+        .from(clinicMemberships)
+        .innerJoin(users, eq(clinicMemberships.userId, users.id))
+        .leftJoin(branches, eq(clinicMemberships.branchId, branches.id))
+        .where(
+          and(
+            eq(clinicMemberships.clinicId, clinicId),
+            eq(clinicMemberships.isActive, 'true'),
+            isNull(users.deletedAt),
+          ),
+        )
+        .orderBy(clinicMemberships.role, users.name)
+        .limit(RELATED_LIST_LIMIT);
+
+      return rows.map((row) => ({ ...row, branchName: row.branchName ?? null, isActive: row.isActive === 'true' }));
+    },
+  };
+}
+
+export type AdminClinicPatientListItem = {
+  id: string;
+  patientNumber: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  email: string | null;
+  createdAt: Date;
+};
+
+export type ListAdminClinicPatientsInput = {
+  page: number;
+  pageSize: number;
+};
+
+export type AdminClinicPatientsListResult = {
+  items: AdminClinicPatientListItem[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
+export type AdminClinicPatientsListService = {
+  listPatients: (
+    clinicId: string,
+    input: ListAdminClinicPatientsInput,
+  ) => Promise<AdminClinicPatientsListResult>;
+};
+
+export function createAdminClinicPatientsListService(
+  database: DB,
+): AdminClinicPatientsListService {
+  return {
+    listPatients: async (clinicId, input) => {
+      const where = and(eq(patients.clinicId, clinicId), isNull(patients.deletedAt));
+
+      const [totalRow] = await database
+        .select({ total: count(patients.id) })
+        .from(patients)
+        .where(where);
+      const total = totalRow?.total ?? 0;
+      const totalPages = Math.max(1, Math.ceil(total / input.pageSize));
+      const page = Math.min(input.page, totalPages);
+
+      const items = await database
+        .select({
+          id: patients.id,
+          patientNumber: patients.patientNumber,
+          firstName: patients.firstName,
+          lastName: patients.lastName,
+          phone: patients.phone,
+          email: patients.email,
+          createdAt: patients.createdAt,
+        })
+        .from(patients)
+        .where(where)
+        .orderBy(desc(patients.createdAt))
+        .limit(input.pageSize)
+        .offset((page - 1) * input.pageSize);
+
+      return {
+        items,
+        pagination: { page, pageSize: input.pageSize, total, totalPages },
       };
     },
   };

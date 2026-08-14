@@ -100,6 +100,9 @@ export type AdminClinicDetail = {
     expiresAt: string | null;
   }>;
   availableFeatureKeys: string[];
+  dentistCount: number;
+  staffCount: number;
+  patientCount: number;
 };
 
 type AdminClinicPackageOptionsResponse = {
