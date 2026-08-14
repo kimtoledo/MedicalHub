@@ -404,6 +404,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         entitlements: options.entitlements,
         db: options.db,
         prescriptionService: options.clinicPrescription,
+        notifications: options.notifications,
       });
     }
     if (options.clinicFiles && options.entitlements) {

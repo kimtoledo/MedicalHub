@@ -32,6 +32,18 @@ export const dentists = pgTable(
     phone: varchar('phone', { length: 20 }),
     email: varchar('email', { length: 255 }),
 
+    /**
+     * Base64 data-URL of the dentist's drawn or uploaded signature image.
+     * Stored as text since base64 signatures can exceed 500 chars.
+     */
+    signatureUrl: text('signature_url'),
+
+    /**
+     * Preferred prescription template: 'classic' | 'modern' | 'minimal'.
+     * Defaults to 'classic'.
+     */
+    templateId: varchar('template_id', { length: 20 }).notNull().default('classic'),
+
     verificationStatus: verificationStatusEnum('verification_status')
       .notNull()
       .default('unverified'),

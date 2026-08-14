@@ -12,10 +12,13 @@
   },
   "dependencies": {
     "@dentra/shared": "*",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
+    "lucide-react": "^0.400.0",
     "next": "14.2.29",
     "react": "^18",
     "react-dom": "^18",
-    "lucide-react": "^0.400.0"
+    "signature_pad": "^5.1.4"
   },
   "devDependencies": {
     "@types/node": "^20",

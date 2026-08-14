@@ -112,6 +112,7 @@ scripts/      # Migration helpers and post-merge automation
 | `0012_remote_assessments` | `remote_assessments` with private photo metadata |
 | `0013_hmo_claims` | `hmo_payers`, `patient_hmo_memberships`, `hmo_claims`; HMO columns on `services` |
 | `0014_merge_history_reconciliation` | Idempotent reconciliation for both merged migration histories |
+| `0045_glamorous_toad` | `signature_url` + `template_id` on `dentists`; `clinic_logo_url` + `template_id` + `signature_url` on `prescriptions`; `prescription_share` added to `notification_type` enum |
 
 ### Workflow — for every schema change
 ```
@@ -168,6 +169,12 @@ npm run db:studio     # open Drizzle Studio UI
 | `POST /v1/clinic/:id/invoices/:iid/payments` | `routes/clinic-billing.ts` | Clinic member |
 | `GET /v1/clinic/:id/earnings/today` | `routes/clinic-billing.ts` | Clinic member |
 | `GET/POST /v1/clinic/:id/prescriptions` | `routes/clinic-prescriptions.ts` | Clinic member |
+| `GET /v1/clinic/:id/prescriptions/encounters` | `routes/clinic-prescriptions.ts` | Clinic member (dentist) |
+| `GET /v1/clinic/:id/prescriptions/:pid` | `routes/clinic-prescriptions.ts` | Clinic member |
+| `POST /v1/clinic/:id/prescriptions/:pid/amend` | `routes/clinic-prescriptions.ts` | Clinic member |
+| `PUT /v1/clinic/:id/prescriptions/signature` | `routes/clinic-prescriptions.ts` | Dentist only |
+| `PATCH /v1/clinic/:id/prescriptions/template` | `routes/clinic-prescriptions.ts` | Dentist only |
+| `POST /v1/clinic/:id/prescriptions/:pid/share-email` | `routes/clinic-prescriptions.ts` | Dentist only |
 | `GET/POST /v1/clinic/:id/files/*` | `routes/clinic-files.ts` | Clinic member |
 | `GET/POST /v1/clinic/:id/encounters/*` | `routes/clinic-encounters.ts` | Clinic member |
 | `GET/POST /v1/clinic/:id/patients/*` | `routes/clinic-patients.ts` | Clinic member |

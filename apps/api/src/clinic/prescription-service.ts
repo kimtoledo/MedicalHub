@@ -10,6 +10,7 @@ import {
   clinics,
   encounters,
 } from '@dentra/db/schema';
+import type { NotificationService } from '../notifications/service.js';
 
 // ---------------------------------------------------------------------------
 // Error
@@ -89,6 +90,12 @@ export interface PrescriptionDetail {
   issuedAt: Date | null;
   issuedBy: string | null;
   createdAt: Date;
+  /** Template ID snapshotted at issuance: 'classic' | 'modern' | 'minimal'. */
+  templateId: string;
+  /** Clinic logo URL snapshotted at issuance. */
+  clinicLogoUrl: string | null;
+  /** Dentist signature (base64 data-URL) snapshotted at issuance. */
+  signatureUrl: string | null;
   patient: {
     id: string;
     firstName: string;
@@ -138,7 +145,7 @@ export interface ClinicPrescriptionService {
   /** Defaults derived from the authenticated dentist profile. */
   getPrescriberDefaults(
     dentistId: string,
-  ): Promise<{ prcLicenseNumber: string | null }>;
+  ): Promise<{ prcLicenseNumber: string | null; signatureUrl: string | null; templateId: string }>;
   /**
    * List finalized encounters that a caller can write prescriptions for.
    * Used to populate the encounter-selector on the new-prescription form.
@@ -185,6 +192,25 @@ export interface ClinicPrescriptionService {
     prescriptionId: string,
     input: IssuePrescriptionInput,
   ): Promise<{ prescriptionId: string }>;
+
+  /** Save the dentist's signature (base64 data-URL) to their profile. */
+  updateDentistSignature(dentistId: string, signatureData: string): Promise<void>;
+
+  /** Save the dentist's preferred template ID ('classic' | 'modern' | 'minimal') to their profile. */
+  updateDentistTemplate(dentistId: string, templateId: string): Promise<void>;
+
+  /**
+   * Enqueue a notification email that includes the full prescription content
+   * (medicines, dosage, notes, prescriber) as plain text — no staff-only link
+   * is included so patient recipients can read it without a clinic account.
+   * Returns the notification outbox ID.
+   */
+  sharePrescriptionByEmail(
+    clinicId: string,
+    prescriptionId: string,
+    patientEmail: string,
+    notifications: NotificationService,
+  ): Promise<{ notificationId: string }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -195,11 +221,19 @@ export function createClinicPrescriptionService(db: DB): ClinicPrescriptionServi
   return {
     async getPrescriberDefaults(dentistId) {
       const [dentist] = await db
-        .select({ prcLicenseNumber: dentists.licenseNumber })
+        .select({
+          prcLicenseNumber: dentists.licenseNumber,
+          signatureUrl: dentists.signatureUrl,
+          templateId: dentists.templateId,
+        })
         .from(dentists)
         .where(eq(dentists.id, dentistId))
         .limit(1);
-      return { prcLicenseNumber: dentist?.prcLicenseNumber ?? null };
+      return {
+        prcLicenseNumber: dentist?.prcLicenseNumber ?? null,
+        signatureUrl: dentist?.signatureUrl ?? null,
+        templateId: dentist?.templateId ?? 'classic',
+      };
     },
 
     // ──────────────────────────────────────────────────────────────────────
@@ -270,13 +304,19 @@ export function createClinicPrescriptionService(db: DB): ClinicPrescriptionServi
           .limit(1)
           .then((r) => r[0] ?? null),
         db
-          .select({ firstName: dentists.firstName, lastName: dentists.lastName, licenseNumber: dentists.licenseNumber })
+          .select({
+            firstName: dentists.firstName,
+            lastName: dentists.lastName,
+            licenseNumber: dentists.licenseNumber,
+            signatureUrl: dentists.signatureUrl,
+            templateId: dentists.templateId,
+          })
           .from(dentists)
           .where(eq(dentists.id, callerDentistId))
           .limit(1)
           .then((r) => r[0] ?? null),
         db
-          .select({ name: clinics.name, address: clinics.address, city: clinics.city })
+          .select({ name: clinics.name, address: clinics.address, city: clinics.city, logoUrl: clinics.logoUrl })
           .from(clinics)
           .where(eq(clinics.id, clinicId))
           .limit(1)
@@ -308,6 +348,9 @@ export function createClinicPrescriptionService(db: DB): ClinicPrescriptionServi
             patientNameSnapshot: patientRow ? `${patientRow.firstName} ${patientRow.lastName}` : null,
             dentistNameSnapshot: dentistName,
             notes: notes ?? null,
+            clinicLogoUrl: clinicRow?.logoUrl ?? null,
+            templateId: callerDentistRow?.templateId ?? 'classic',
+            signatureUrl: callerDentistRow?.signatureUrl ?? null,
             issuedAt: now,
             issuedBy,
           })
@@ -435,6 +478,10 @@ export function createClinicPrescriptionService(db: DB): ClinicPrescriptionServi
           issuedAt: prescriptions.issuedAt,
           issuedBy: prescriptions.issuedBy,
           createdAt: prescriptions.createdAt,
+          // snapshot fields
+          rxTemplateId: prescriptions.templateId,
+          rxClinicLogoUrl: prescriptions.clinicLogoUrl,
+          rxSignatureUrl: prescriptions.signatureUrl,
           // patient
           patientId: patients.id,
           patientFirstName: patients.firstName,
@@ -490,6 +537,9 @@ export function createClinicPrescriptionService(db: DB): ClinicPrescriptionServi
         issuedAt: row.issuedAt,
         issuedBy: row.issuedBy,
         createdAt: row.createdAt,
+        templateId: row.rxTemplateId ?? 'classic',
+        clinicLogoUrl: row.rxClinicLogoUrl ?? null,
+        signatureUrl: row.rxSignatureUrl ?? null,
         patient: {
           id: row.patientId,
           firstName: row.patientFirstName,
@@ -548,9 +598,30 @@ export function createClinicPrescriptionService(db: DB): ClinicPrescriptionServi
 
       // Fetch snapshots using the CALLER's dentist profile
       const [patientRow, callerDentistRow, clinicRow] = await Promise.all([
-        db.select({ firstName: patients.firstName, lastName: patients.lastName }).from(patients).where(eq(patients.id, original.patientId)).limit(1).then((r) => r[0] ?? null),
-        db.select({ firstName: dentists.firstName, lastName: dentists.lastName, licenseNumber: dentists.licenseNumber }).from(dentists).where(eq(dentists.id, input.callerDentistId)).limit(1).then((r) => r[0] ?? null),
-        db.select({ name: clinics.name, address: clinics.address, city: clinics.city }).from(clinics).where(eq(clinics.id, clinicId)).limit(1).then((r) => r[0] ?? null),
+        db
+          .select({ firstName: patients.firstName, lastName: patients.lastName })
+          .from(patients)
+          .where(eq(patients.id, original.patientId))
+          .limit(1)
+          .then((r) => r[0] ?? null),
+        db
+          .select({
+            firstName: dentists.firstName,
+            lastName: dentists.lastName,
+            licenseNumber: dentists.licenseNumber,
+            signatureUrl: dentists.signatureUrl,
+            templateId: dentists.templateId,
+          })
+          .from(dentists)
+          .where(eq(dentists.id, input.callerDentistId))
+          .limit(1)
+          .then((r) => r[0] ?? null),
+        db
+          .select({ name: clinics.name, address: clinics.address, city: clinics.city, logoUrl: clinics.logoUrl })
+          .from(clinics)
+          .where(eq(clinics.id, clinicId))
+          .limit(1)
+          .then((r) => r[0] ?? null),
       ]);
 
       const dentistName = callerDentistRow
@@ -576,6 +647,9 @@ export function createClinicPrescriptionService(db: DB): ClinicPrescriptionServi
             patientNameSnapshot: patientRow ? `${patientRow.firstName} ${patientRow.lastName}` : null,
             dentistNameSnapshot: dentistName,
             notes: input.notes ?? null,
+            clinicLogoUrl: clinicRow?.logoUrl ?? null,
+            templateId: callerDentistRow?.templateId ?? 'classic',
+            signatureUrl: callerDentistRow?.signatureUrl ?? null,
             issuedAt: now,
             issuedBy: input.issuedBy,
           })
@@ -605,6 +679,120 @@ export function createClinicPrescriptionService(db: DB): ClinicPrescriptionServi
 
         return { prescriptionId: rx.id };
       });
+    },
+
+    // ──────────────────────────────────────────────────────────────────────
+    // updateDentistSignature
+    // Empty string means "clear / remove signature" → stored as null.
+    // ──────────────────────────────────────────────────────────────────────
+    async updateDentistSignature(dentistId, signatureData) {
+      await db
+        .update(dentists)
+        .set({ signatureUrl: signatureData === '' ? null : signatureData })
+        .where(eq(dentists.id, dentistId));
+    },
+
+    // ──────────────────────────────────────────────────────────────────────
+    // updateDentistTemplate
+    // ──────────────────────────────────────────────────────────────────────
+    async updateDentistTemplate(dentistId, templateId) {
+      await db
+        .update(dentists)
+        .set({ templateId })
+        .where(eq(dentists.id, dentistId));
+    },
+
+    // ──────────────────────────────────────────────────────────────────────
+    // sharePrescriptionByEmail
+    // The email body contains the full prescription content as plain text so
+    // the patient can read and bring it to a pharmacy without a clinic login.
+    // ──────────────────────────────────────────────────────────────────────
+    async sharePrescriptionByEmail(clinicId, prescriptionId, patientEmail, notifications) {
+      // Fetch prescription header and items in parallel
+      const [rxRows, items] = await Promise.all([
+        db
+          .select({
+            id: prescriptions.id,
+            clinicNameSnapshot: prescriptions.clinicNameSnapshot,
+            clinicAddressSnapshot: prescriptions.clinicAddressSnapshot,
+            dentistNameSnapshot: prescriptions.dentistNameSnapshot,
+            patientNameSnapshot: prescriptions.patientNameSnapshot,
+            prcLicenseNumber: prescriptions.prcLicenseNumber,
+            notes: prescriptions.notes,
+            issuedAt: prescriptions.issuedAt,
+          })
+          .from(prescriptions)
+          .where(and(eq(prescriptions.id, prescriptionId), eq(prescriptions.clinicId, clinicId)))
+          .limit(1),
+        db
+          .select({
+            medicineName: prescriptionItems.medicineName,
+            dosage: prescriptionItems.dosage,
+            frequency: prescriptionItems.frequency,
+            duration: prescriptionItems.duration,
+            specialInstructions: prescriptionItems.specialInstructions,
+            sortOrder: prescriptionItems.sortOrder,
+          })
+          .from(prescriptionItems)
+          .where(eq(prescriptionItems.prescriptionId, prescriptionId))
+          .orderBy(prescriptionItems.sortOrder),
+      ]);
+
+      const rx = rxRows[0];
+      if (!rx) throw new PrescriptionError('NOT_FOUND', 'Prescription not found');
+
+      const dentistName = rx.dentistNameSnapshot ?? 'Your dentist';
+      const clinicName = rx.clinicNameSnapshot ?? 'The clinic';
+      const clinicAddress = rx.clinicAddressSnapshot ?? null;
+      const patientName = rx.patientNameSnapshot ?? 'Patient';
+      const issuedDate = rx.issuedAt
+        ? new Intl.DateTimeFormat('en-PH', { dateStyle: 'long', timeZone: 'Asia/Manila' }).format(rx.issuedAt)
+        : 'N/A';
+
+      // Build plain-text prescription body — readable without a clinic login
+      const itemLines = items
+        .map((item, idx) => {
+          const parts = [item.dosage, item.frequency, item.duration].filter(Boolean).join(' · ');
+          let line = `${idx + 1}. ${item.medicineName}${parts ? ` — ${parts}` : ''}`;
+          if (item.specialInstructions) line += `\n   Note: ${item.specialInstructions}`;
+          return line;
+        })
+        .join('\n');
+
+      const notesSection = rx.notes ? `\nNotes / Instructions:\n${rx.notes}\n` : '';
+      const prcLine = rx.prcLicenseNumber ? `PRC Lic. No.: ${rx.prcLicenseNumber}\n` : '';
+      const addressLine = clinicAddress ? `${clinicAddress}\n` : '';
+
+      const body = [
+        `Dear ${patientName},`,
+        '',
+        `${dentistName} from ${clinicName} has issued a prescription for you on ${issuedDate}.`,
+        '',
+        '─── PRESCRIPTION ───',
+        '',
+        itemLines || '(no items)',
+        '',
+        notesSection,
+        '─────────────────────',
+        `Prescribed by: ${dentistName}`,
+        prcLine + `Clinic: ${clinicName}`,
+        addressLine,
+        'Please bring this email or a printed copy to your pharmacy.',
+        'For questions about this prescription, contact the clinic directly.',
+      ].join('\n').slice(0, 2000); // notification outbox body limit
+
+      const { id } = await notifications.enqueue(db, {
+        clinicId,
+        channel: 'email',
+        type: 'prescription_share',
+        recipient: patientEmail,
+        subject: `Prescription from ${clinicName} — ${issuedDate}`,
+        body,
+        dedupeKey: `prescription.share.${prescriptionId}.${patientEmail}.${Date.now()}`,
+      });
+
+      void notifications.attemptDelivery(id);
+      return { notificationId: id };
     },
   };
 }

@@ -4,7 +4,7 @@ import { id, timestamps } from './helpers';
 
 export const notificationChannelEnum = pgEnum('notification_channel', ['email', 'sms']);
 export const notificationStatusEnum = pgEnum('notification_status', ['queued', 'processing', 'sent', 'failed', 'cancelled']);
-export const notificationTypeEnum = pgEnum('notification_type', ['booking_confirmation', 'appointment_reminder', 'appointment_cancelled', 'appointment_rescheduled', 'recall_reminder']);
+export const notificationTypeEnum = pgEnum('notification_type', ['booking_confirmation', 'appointment_reminder', 'appointment_cancelled', 'appointment_rescheduled', 'recall_reminder', 'prescription_share']);
 
 export const notificationOutbox = pgTable('notification_outbox', {
   id: id(),

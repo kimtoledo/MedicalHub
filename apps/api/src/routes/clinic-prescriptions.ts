@@ -9,6 +9,7 @@ import {
   PrescriptionError,
   type ClinicPrescriptionService,
 } from '../clinic/prescription-service.js';
+import type { NotificationService } from '../notifications/service.js';
 
 // ---------------------------------------------------------------------------
 // Validation schemas
@@ -50,6 +51,29 @@ const listPrescriptionsQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
 
+const signatureBodySchema = z.object({
+  /**
+   * Base64 data-URL of the dentist's signature image (drawn or uploaded).
+   * An empty string clears / removes the saved signature.
+   * Max ~500 KB when set.
+   */
+  signatureData: z
+    .string()
+    .max(700_000)
+    .refine((v) => v === '' || v.startsWith('data:image/'), {
+      message: 'signatureData must be a base64 image data-URL (data:image/...) or an empty string to clear',
+    }),
+});
+
+const templateBodySchema = z.object({
+  templateId: z.enum(['classic', 'modern', 'minimal']),
+});
+
+const shareEmailBodySchema = z.object({
+  /** Email address to send the prescription link to. */
+  patientEmail: z.string().trim().email().max(320),
+});
+
 // ---------------------------------------------------------------------------
 // Auth helpers (same pattern as billing routes)
 // ---------------------------------------------------------------------------
@@ -80,6 +104,7 @@ export type ClinicPrescriptionRoutesOptions = {
   entitlements: EntitlementService;
   db?: import('@dentra/db').DB;
   prescriptionService: ClinicPrescriptionService;
+  notifications?: NotificationService;
 };
 
 const clinicalRoles = ['clinic_owner', 'clinic_admin', 'dentist', 'dental_assistant'] as const;
@@ -92,7 +117,7 @@ export async function registerClinicPrescriptionRoutes(
   app: FastifyInstance,
   options: ClinicPrescriptionRoutesOptions,
 ): Promise<void> {
-  const { auth, entitlements, prescriptionService } = options;
+  const { auth, entitlements, prescriptionService, notifications } = options;
 
   // ─── helpers ─────────────────────────────────────────────────────────────
   function prescriptionErrorStatus(err: PrescriptionError): number {
@@ -126,6 +151,58 @@ export async function registerClinicPrescriptionRoutes(
       prescriptionService.getPrescriberDefaults(callerDentistId),
     ]);
     return reply.send({ success: true, data: { encounters, ...defaults } });
+  });
+
+  // -----------------------------------------------------------------------
+  // PUT /v1/clinic/:clinicId/prescriptions/signature
+  // Save the caller's dentist signature (base64 data-URL).
+  // MUST be registered before /:prescriptionId to avoid route ambiguity.
+  // -----------------------------------------------------------------------
+  app.put('/v1/clinic/:clinicId/prescriptions/signature', async (request, reply) => {
+    const params = clinicParamsSchema.safeParse(request.params);
+    if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid clinic ID' } });
+
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.PRESCRIPTIONS, ['dentist']);
+    if (!authorization) return;
+
+    const callerDentistId = getCallerDentistId(authorization, params.data.clinicId);
+    if (!callerDentistId) {
+      return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Your account is not linked to a dentist profile' } });
+    }
+
+    const body = signatureBodySchema.safeParse(request.body);
+    if (!body.success) {
+      return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: body.error.issues.map((i) => i.message).join(', ') } });
+    }
+
+    await prescriptionService.updateDentistSignature(callerDentistId, body.data.signatureData);
+    return reply.send({ success: true });
+  });
+
+  // -----------------------------------------------------------------------
+  // PATCH /v1/clinic/:clinicId/prescriptions/template
+  // Save the caller's preferred prescription template ID.
+  // MUST be registered before /:prescriptionId to avoid route ambiguity.
+  // -----------------------------------------------------------------------
+  app.patch('/v1/clinic/:clinicId/prescriptions/template', async (request, reply) => {
+    const params = clinicParamsSchema.safeParse(request.params);
+    if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid clinic ID' } });
+
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.PRESCRIPTIONS, ['dentist']);
+    if (!authorization) return;
+
+    const callerDentistId = getCallerDentistId(authorization, params.data.clinicId);
+    if (!callerDentistId) {
+      return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Your account is not linked to a dentist profile' } });
+    }
+
+    const body = templateBodySchema.safeParse(request.body);
+    if (!body.success) {
+      return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'templateId must be one of: classic, modern, minimal' } });
+    }
+
+    await prescriptionService.updateDentistTemplate(callerDentistId, body.data.templateId);
+    return reply.send({ success: true });
   });
 
   // -----------------------------------------------------------------------
@@ -206,6 +283,42 @@ export async function registerClinicPrescriptionRoutes(
     if (!rx) return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'Prescription not found' } });
 
     return reply.send({ success: true, data: rx });
+  });
+
+  // -----------------------------------------------------------------------
+  // POST /v1/clinic/:clinicId/prescriptions/:prescriptionId/share-email
+  // Enqueue an email notification with a link to the prescription.
+  // -----------------------------------------------------------------------
+  app.post('/v1/clinic/:clinicId/prescriptions/:prescriptionId/share-email', async (request, reply) => {
+    const params = prescriptionParamsSchema.safeParse(request.params);
+    if (!params.success) return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid params' } });
+
+    const authorization = await requireClinicFeature(request, reply, { auth, entitlements }, params.data.clinicId, FeatureKey.PRESCRIPTIONS, [...clinicalRoles]);
+    if (!authorization) return;
+
+    const body = shareEmailBodySchema.safeParse(request.body);
+    if (!body.success) {
+      return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'A valid patient email address is required' } });
+    }
+
+    if (!notifications) {
+      return reply.status(503).send({ success: false, error: { code: 'SERVICE_UNAVAILABLE', message: 'Notification service is not configured' } });
+    }
+
+    try {
+      const result = await prescriptionService.sharePrescriptionByEmail(
+        params.data.clinicId,
+        params.data.prescriptionId,
+        body.data.patientEmail,
+        notifications,
+      );
+      return reply.send({ success: true, data: result });
+    } catch (err) {
+      if (err instanceof PrescriptionError) {
+        return reply.status(prescriptionErrorStatus(err)).send({ success: false, error: { code: err.code, message: err.message } });
+      }
+      throw err;
+    }
   });
 
   // -----------------------------------------------------------------------

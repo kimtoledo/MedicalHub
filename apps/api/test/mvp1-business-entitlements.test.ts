@@ -79,7 +79,7 @@ function createEntitlements(disabled: FeatureKey[] = []): EntitlementService {
 
 function createPrescriptionService(): ClinicPrescriptionService {
   return {
-    getPrescriberDefaults: vi.fn(async () => ({ prcLicenseNumber: 'PRC-12345' })),
+    getPrescriberDefaults: vi.fn(async () => ({ prcLicenseNumber: 'PRC-12345', signatureUrl: null, templateId: 'classic' })),
     listFinalizedEncounters: vi.fn(async () => [{
       id: ENCOUNTER_ID,
       date: '2026-08-12',
@@ -94,6 +94,9 @@ function createPrescriptionService(): ClinicPrescriptionService {
     listPrescriptions: vi.fn(async () => ({ data: [], total: 0, page: 1, pageSize: 20 })),
     getPrescription: vi.fn(async () => null),
     amendPrescription: vi.fn(async () => ({ prescriptionId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' })),
+    updateDentistSignature: vi.fn(async () => undefined),
+    updateDentistTemplate: vi.fn(async () => undefined),
+    sharePrescriptionByEmail: vi.fn(async () => ({ notificationId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' })),
   };
 }
 

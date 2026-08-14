@@ -16,6 +16,12 @@ export type PrescriptionDetail = {
   dentistNameSnapshot: string | null;
   notes: string | null;
   issuedAt: string | null;
+  /** Template ID used when this Rx was issued. */
+  templateId: string;
+  /** Clinic logo URL snapshotted at issuance. */
+  clinicLogoUrl: string | null;
+  /** Dentist signature (base64 data-URL) snapshotted at issuance. */
+  signatureUrl: string | null;
   patient: { id: string; firstName: string; lastName: string; patientNumber: string };
   dentist: { id: string; firstName: string; lastName: string; licenseNumber: string | null } | null;
   clinic: { name: string; address: string | null; city: string | null; phone: string | null; logoUrl: string | null };

@@ -18,6 +18,17 @@ Updated manually after each session or merged task.
 
 ## In Progress
 
+### ✅ e-Rx templates, dentist signature, PDF download & email share (task #48)
+- Migration `0045_glamorous_toad`: added `signature_url` + `template_id` on `dentists`; `clinic_logo_url` + `template_id` + `signature_url` on `prescriptions`; `prescription_share` added to `notification_type` enum
+- `prescription-service.ts`: `issuePrescription` and `amendPrescription` now snapshot `signatureUrl`, `templateId`, and `clinicLogoUrl` at issuance so the printed Rx is a durable snapshot even if the dentist later changes their settings
+- New service methods: `updateDentistSignature` (empty string → clears to null), `updateDentistTemplate`, `sharePrescriptionByEmail` (sends full prescription content as plain text in the email body — no staff-only link, patient-readable without a clinic account)
+- New API routes: `PUT /prescriptions/signature`, `PATCH /prescriptions/template`, `POST /prescriptions/:id/share-email` — all dentist-role gated; share-email URL is never derived from request `Origin`/`Host` headers
+- Three prescription template components: `RxTemplateClassic` (traditional B&W A4), `RxTemplateModern` (violet gradient header A4), `RxTemplateMinimal` (compact A5)
+- Prescription detail page (`PrescriptionDetailClient.tsx`): renders the snapshotted template; paginated multi-page PDF download via `html2canvas` + `jsPDF` (canvas sliced into A4/A5 pages — no content clipping); share panel with email form and Messenger link
+- Template settings page (`/app/settings/prescription-template`): visual template selector with miniature previews + signature pad (draw tab via `signature_pad`, upload tab via `FileReader`); dentist-only guard; linked from prescription detail action bar
+- Installed `html2canvas`, `jspdf`, `signature_pad` in `apps/web`
+- API and web TypeScript checks pass; existing entitlement test suite updated for new service interface
+
 ### 🔄 MVP 2 notifications
 - Added a tenant-aware notification outbox with email/SMS channel and delivery status tracking, deduplication keys, retry metadata, and provider adapter boundaries.
 - Public booking creation now queues non-sensitive email confirmation content when a patient email is provided.

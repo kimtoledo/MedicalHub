@@ -8,6 +8,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+
 import { branches } from './branches';
 import { clinics } from './clinics';
 import { dentists } from './dentists';
@@ -73,6 +74,24 @@ export const prescriptions = pgTable(
 
     /** General notes / sig instructions that apply to the whole Rx */
     notes: text('notes'),
+
+    /**
+     * Clinic logo URL snapshotted at issuance so the Rx remains
+     * accurate even if the clinic later changes its logo.
+     */
+    clinicLogoUrl: varchar('clinic_logo_url', { length: 500 }),
+
+    /**
+     * Template ID snapshotted at issuance: 'classic' | 'modern' | 'minimal'.
+     * Determines which layout is rendered when printing / downloading.
+     */
+    templateId: varchar('template_id', { length: 20 }).notNull().default('classic'),
+
+    /**
+     * Dentist signature image (base64 data-URL) snapshotted at issuance.
+     * Stored as text because base64 images exceed varchar limits.
+     */
+    signatureUrl: text('signature_url'),
 
     /** Timestamp of issuance (immutable after set) */
     issuedAt: timestamp('issued_at', { withTimezone: true }),

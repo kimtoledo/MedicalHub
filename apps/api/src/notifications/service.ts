@@ -3,7 +3,7 @@ import type { DB } from '@dentra/db';
 import { notificationOutbox } from '@dentra/db/schema';
 import type { NotificationProvidersService } from './providers-service.js';
 
-export type NotificationInput = { clinicId?: string | null; channel: 'email' | 'sms'; type: 'booking_confirmation' | 'appointment_reminder' | 'appointment_cancelled' | 'appointment_rescheduled' | 'recall_reminder'; recipient: string; subject: string; body: string; dedupeKey: string; nextAttemptAt?: Date };
+export type NotificationInput = { clinicId?: string | null; channel: 'email' | 'sms'; type: 'booking_confirmation' | 'appointment_reminder' | 'appointment_cancelled' | 'appointment_rescheduled' | 'recall_reminder' | 'prescription_share'; recipient: string; subject: string; body: string; dedupeKey: string; nextAttemptAt?: Date };
 
 const safeContent = (input: NotificationInput) => ({ ...input, subject: input.subject.slice(0, 300), body: input.body.slice(0, 2000) });
 const MAX_ATTEMPTS = 5;
