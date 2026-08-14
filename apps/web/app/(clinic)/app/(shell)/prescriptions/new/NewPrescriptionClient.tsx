@@ -47,6 +47,28 @@ const MEDICINE_PRESETS: Array<Omit<MedicineRow, "id" | "specialInstructions">> =
 ];
 
 // ---------------------------------------------------------------------------
+// Common note presets — clicking one toggles it in/out of the notes field,
+// joined by "; ". Free typing still works alongside these.
+// ---------------------------------------------------------------------------
+
+const NOTES_PRESETS = [
+  "Take with food",
+  "Avoid alcohol while taking this medication",
+  "Complete the full course even if symptoms improve",
+  "Discontinue and consult clinic if allergic reaction occurs",
+  "Drink plenty of water",
+  "Do not exceed recommended dosage",
+  "Patient advised of possible side effects",
+  "Follow-up if symptoms persist after treatment",
+];
+
+function toggleTerm(current: string, term: string) {
+  const parts = current.split(";").map((item) => item.trim()).filter(Boolean);
+  const next = parts.includes(term) ? parts.filter((item) => item !== term) : [...parts, term];
+  return next.join("; ");
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -413,11 +435,30 @@ export default function NewPrescriptionClient({
           <label className="block text-xs font-semibold text-violet-700 mb-2">
             Additional notes
           </label>
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {NOTES_PRESETS.map((term) => {
+              const active = notes.split(";").map((item) => item.trim()).includes(term);
+              return (
+                <button
+                  key={term}
+                  type="button"
+                  onClick={() => setNotes(toggleTerm(notes, term))}
+                  className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                    active
+                      ? "border-violet-600 bg-violet-600 text-white"
+                      : "border-violet-200 text-violet-700 hover:bg-violet-50"
+                  }`}
+                >
+                  {term}
+                </button>
+              );
+            })}
+          </div>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            placeholder="General prescription notes (optional)"
+            placeholder="Pumili sa itaas, o mag-type ng sarili — general prescription notes (optional)"
             className="w-full px-3 py-2 rounded-xl border border-violet-200 text-sm text-violet-900 placeholder-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none"
           />
         </div>
