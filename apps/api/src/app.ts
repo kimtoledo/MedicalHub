@@ -61,6 +61,8 @@ import { registerAdminSubscriptionRoutes } from './routes/admin-subscriptions.js
 import { registerAdminAuditRoutes } from './routes/admin-audit.js';
 import { registerAdminDashboardRoutes } from './routes/admin-dashboard.js';
 import type { AdminDashboardService } from './admin/dashboard-service.js';
+import { registerAdminSettingsRoutes } from './routes/admin-settings.js';
+import type { PlatformSettingsService } from './admin/platform-settings-service.js';
 import { registerEntitlementRoutes } from './routes/entitlements.js';
 import { registerPublicDirectoryRoutes } from './routes/public-directory.js';
 import { registerPublicBookingRoutes } from './routes/public-booking.js';
@@ -145,6 +147,7 @@ export type BuildAppOptions = {
   adminSubscriptions?: AdminSubscriptionListService;
   adminAudit?: AdminAuditService;
   adminDashboard?: AdminDashboardService;
+  adminSettings?: PlatformSettingsService;
   entitlements?: EntitlementService;
   publicDirectory?: PublicDirectoryService;
   publicBooking?: PublicBookingService;
@@ -273,6 +276,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (options.adminDashboard) {
       await registerAdminDashboardRoutes(app, { auth: options.auth, dashboard: options.adminDashboard });
+    }
+    if (options.adminSettings) {
+      await registerAdminSettingsRoutes(app, { auth: options.auth, settings: options.adminSettings });
     }
     if (options.entitlements) {
       await registerEntitlementRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db });

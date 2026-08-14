@@ -10,7 +10,7 @@
 |---|---|---|
 | Complete | Runtime readiness, ordered migration reconciliation, and truthful settings errors | [`mvp1/23-runtime-readiness-and-page-errors.md`](mvp1/23-runtime-readiness-and-page-errors.md) |
 | Complete | Super Admin dashboard uses protected live aggregates and audit activity | [`mvp1/24-super-admin-dashboard-live.md`](mvp1/24-super-admin-dashboard-live.md) |
-| P2 | Super Admin Settings is a placeholder | [`mvp1/25-super-admin-settings.md`](mvp1/25-super-admin-settings.md) |
+| Complete | Super Admin Settings — runtime summary, platform defaults, session security | [`mvp1/25-super-admin-settings.md`](mvp1/25-super-admin-settings.md) |
 | Complete | Clinic staff membership, roles, branch access, and permissions workspace | [`mvp1/26-clinic-staff-management.md`](mvp1/26-clinic-staff-management.md) |
 | Complete | Dentist-owned professional profile editor and public preview | [`mvp1/27-dentist-self-service-profile.md`](mvp1/27-dentist-self-service-profile.md) |
 | Complete | Reports workspace has date/filter controls, detail tables, and CSV exports | [`mvp2/16-reports-workspace-completion.md`](mvp2/16-reports-workspace-completion.md) |
@@ -45,8 +45,8 @@
 
 - Live: clinic, dentist, package, subscription, and audit management.
 - Live: `/dentra-admin` dashboard metrics and recent immutable audit activity.
-- Placeholder: `/dentra-admin/settings`.
-- Missing operational pages: review moderation and platform support/export operations; verification moderation is complete.
+- Live: `/dentra-admin/settings` (runtime summary, platform defaults, session security).
+- Live: review moderation, platform support/export operations, and verification moderation.
 
 ## Existing active tasks retained
 

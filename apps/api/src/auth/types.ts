@@ -34,8 +34,13 @@ export type BetterAuthSession = {
   };
 };
 
+export type SessionSummary = { id: string; token: string; createdAt: Date; expiresAt: Date; ipAddress: string | null; userAgent: string | null };
+
 export type AuthServices = {
   handler: (request: Request) => Promise<Response>;
   getSession: (headers: Headers) => Promise<BetterAuthSession | null>;
   resolveAuthorization: (userId: string) => Promise<AuthorizationContext | null>;
+  listSessions?: (headers: Headers) => Promise<SessionSummary[]>;
+  revokeSession?: (headers: Headers, token: string) => Promise<void>;
+  revokeOtherSessions?: (headers: Headers) => Promise<void>;
 };

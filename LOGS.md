@@ -86,6 +86,12 @@ Updated manually after each session or merged task.
 - Verified 408 passing API tests, repository-wide TypeScript checks, and production web/API builds
 - This was the last open item in `mvp3/05-enterprise-multibranch.md` — every "Done looks like" bullet is now delivered and the task is marked ✅ Done
 
+### ✅ Super Admin platform settings (mvp1/25)
+- Replaced the long-standing `/dentra-admin/settings` placeholder — the last remaining stub flagged in `tasks/PAGE_AUDIT.md` — with a real, deliberately narrow workspace: read-only runtime summary (env, app version, uptime, live DB connectivity probe — no secrets), a singleton `platform_settings` row for support email/phone and a maintenance-banner toggle (each field independently validated, diffed against current values so no-op saves don't spam the audit trail), and session security (list/revoke your own Super Admin sessions, sign out other devices) built as thin wrappers around better-auth's own built-in session API rather than new auth logic
+- Caught a real bundling bug before it shipped: the app-version lookup (`createRequire(import.meta.url)('../../package.json')`) resolves correctly in dev (tsx, unbundled `src/admin/`) but tsup bundles everything into a single `dist/server.js`, which sits one directory shallower — the same relative path silently returned `'unknown'` in production. Fixed by trying both candidate depths; verified against the actual built `dist/server.js` output, not just dev
+- Made the three new session-management methods optional on `AuthServices` rather than required, since ~37 existing test files construct `AuthServices` mocks and none of them exercise session management
+- Verified 418 passing API tests, repository-wide TypeScript checks, and production web/API builds
+
 ### ✅ Search and Discovery — fully done
 - Added the final "Remaining" item: a "Near me" geolocation button on `/clinics` that requests `navigator.geolocation` and round-trips through the existing `latitude`/`longitude`/`maxDistanceKm` query params the backend already validated and consumed — no backend change needed, just the missing browser-side control, plus a "Clear location" toggle and persistence across pagination/filters
 - Verified end-to-end against a running dev server (toggled button state, "within X km of you" copy) rather than just typechecking

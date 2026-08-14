@@ -302,6 +302,13 @@
       "when": 1786624326508,
       "tag": "0042_handy_rocket_racer",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1786675835496,
+      "tag": "0043_cool_reavers",
+      "breakpoints": true
     }
   ]
 }

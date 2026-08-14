@@ -65,5 +65,11 @@ export function createAuthServices(config: ApiConfig, database: DB): AuthService
     getSession: async (headers) =>
       (await auth.api.getSession({ headers })) as BetterAuthSession | null,
     resolveAuthorization: createAuthorizationResolver(database),
+    listSessions: async (headers) => {
+      const sessions = await auth.api.listSessions({ headers });
+      return (sessions ?? []).map((session) => ({ id: session.id, token: session.token, createdAt: session.createdAt, expiresAt: session.expiresAt, ipAddress: session.ipAddress ?? null, userAgent: session.userAgent ?? null }));
+    },
+    revokeSession: async (headers, token) => { await auth.api.revokeSession({ headers, body: { token } }); },
+    revokeOtherSessions: async (headers) => { await auth.api.revokeOtherSessions({ headers }); },
   };
 }

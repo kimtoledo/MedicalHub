@@ -44,7 +44,7 @@
 | `22-self-service-account-profile.md` | Secure `/app/profile` account details and clinic access summary | ✅ Done |
 | `23-runtime-readiness-and-page-errors.md` | Migration readiness, dev/build isolation, truthful error states | ✅ Done |
 | `24-super-admin-dashboard-live.md` | Replace presentation KPIs/activity with live platform aggregates | ✅ Done |
-| `25-super-admin-settings.md` | Replace platform settings placeholder with safe controls | 🔲 Queued |
+| `25-super-admin-settings.md` | Replace platform settings placeholder with safe controls | ✅ Done |
 | `26-clinic-staff-management.md` | Staff invitations, roles, branches, activation, permissions | ✅ Done |
 | `27-dentist-self-service-profile.md` | Dentist-owned professional profile editor and preview | ✅ Done |
 
