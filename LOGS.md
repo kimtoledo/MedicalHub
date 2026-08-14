@@ -21,7 +21,9 @@ Updated manually after each session or merged task.
 ### 🔄 MVP 2 notifications
 - Added a tenant-aware notification outbox with email/SMS channel and delivery status tracking, deduplication keys, retry metadata, and provider adapter boundaries.
 - Public booking creation now queues non-sensitive email confirmation content when a patient email is provided.
-- Remaining: appointment reminder scheduling, cancellation/reschedule event wiring, and production provider credentials.
+- **Reminder scheduling + cancellation wiring (this update):** `enqueue()` now accepts an optional `nextAttemptAt`, reusing the outbox's own due-time filter rather than a new column; a reminder enqueues automatically at booking time (`startsAt - 24h`) with an in-process `setTimeout` for the common case, self-healing via the existing boot-time sweep if the process restarts first. Cancelling an appointment now enqueues a cancellation notification. Reschedule notifications are built and exported but not wired — this codebase has no code path that actually moves an appointment's time yet (only an unactioned patient portal request), so wiring it now would mean building a different, larger feature
+- Verified both flows end-to-end against the real dev database and 428 passing API tests, repository-wide TypeScript checks, and production web/API builds
+- Remaining: production provider credentials (SendGrid/Twilio API keys) — an external setup step, not a code task
 
 ### 📋 Page completion backlog
 - Audited all 59 Next.js page routes across public/patient, Clinic PWA/dentist, and Super Admin surfaces

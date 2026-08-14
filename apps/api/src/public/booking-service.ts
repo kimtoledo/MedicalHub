@@ -12,7 +12,7 @@ import {
 } from '@dentra/db/schema';
 import { AuditAction } from '@dentra/shared';
 import type { NotificationService } from '../notifications/service.js';
-import { bookingConfirmationNotification } from '../notifications/service.js';
+import { appointmentReminderNotification, bookingConfirmationNotification } from '../notifications/service.js';
 import type { IntegrationService } from '../integrations/service.js';
 
 const MANILA_OFFSET = '+08:00';
@@ -156,12 +156,21 @@ export function createPublicBookingService(database: DB, notifications?: Notific
       const notification = notifications && input.patientEmail
         ? await notifications.enqueue(transaction as unknown as DB, bookingConfirmationNotification({ clinicId: context.clinicId, patientEmail: input.patientEmail, appointmentId: created.id, clinicName: context.clinicName, branchName: context.branchName, startsAt: requested.startsAt, dedupeKey: `booking-confirmation:${created.id}` }))
         : null;
+      const remindsInMs = new Date(requested.startsAt).getTime() - Date.now() - 24 * 60 * 60 * 1000;
+      const reminder = notifications && input.patientEmail && remindsInMs > 0
+        ? await notifications.enqueue(transaction as unknown as DB, appointmentReminderNotification({ clinicId: context.clinicId, patientEmail: input.patientEmail, appointmentId: created.id, clinicName: context.clinicName, branchName: context.branchName, startsAt: requested.startsAt, dedupeKey: `appointment-reminder:${created.id}` }))
+        : null;
       const stamp = input.date.replaceAll('-', '');
-      return { appointmentId: created.id, clinicId: context.clinicId, notificationId: notification?.id ?? null, confirmationNumber: `DNT-${stamp}-${created.id.slice(0, 8).toUpperCase()}`, clinicName: context.clinicName, branchName: context.branchName, serviceName: context.serviceName, dentistName: `Dr. ${selected.firstName} ${selected.lastName}`, startsAt: requested.startsAt, endsAt: requested.endsAt, status: 'pending' as const };
+      return { appointmentId: created.id, clinicId: context.clinicId, notificationId: notification?.id ?? null, reminderId: reminder?.id ?? null, reminderDelayMs: remindsInMs, confirmationNumber: `DNT-${stamp}-${created.id.slice(0, 8).toUpperCase()}`, clinicName: context.clinicName, branchName: context.branchName, serviceName: context.serviceName, dentistName: `Dr. ${selected.firstName} ${selected.lastName}`, startsAt: requested.startsAt, endsAt: requested.endsAt, status: 'pending' as const };
       });
       integrations?.dispatchEvent(result.clinicId, 'appointment.created', { appointmentId: result.appointmentId, startsAt: result.startsAt });
       if (result.notificationId) notifications?.attemptDelivery(result.notificationId);
-      const { clinicId: _clinicId, notificationId: _notificationId, ...publicResult } = result;
+      // Best-effort in-process timer for the common case (long-lived server);
+      // processDue()'s boot-time sweep recovers it if the process restarts
+      // before the timer fires. setTimeout's ~24.8-day max delay is not a
+      // concern for a 24h-ahead reminder.
+      if (result.reminderId && notifications) setTimeout(() => { void notifications.attemptDelivery(result.reminderId!); }, result.reminderDelayMs);
+      const { clinicId: _clinicId, notificationId: _notificationId, reminderId: _reminderId, reminderDelayMs: _reminderDelayMs, ...publicResult } = result;
       return publicResult;
     },
   };

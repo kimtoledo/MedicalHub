@@ -15,6 +15,7 @@ import {
   appointments,
   appointmentStatusHistory,
   branches,
+  clinics,
   dentists,
   patients,
   services,
@@ -22,6 +23,7 @@ import {
 import { AuditAction, type AppointmentStatus } from "@dentra/shared";
 import type { PatientActor } from "./patients-service.js";
 import type { IntegrationService } from "../integrations/service.js";
+import { appointmentCancelledNotification, type NotificationService } from "../notifications/service.js";
 
 const activePatientStatus = ["active"];
 const transitions: Record<string, AppointmentStatus[]> = {
@@ -149,6 +151,7 @@ function normalize(
 export function createClinicDashboardService(
   database: DB,
   integrations?: IntegrationService,
+  notifications?: NotificationService,
 ): ClinicDashboardService {
   const list = async (
     clinicId: string,
@@ -233,6 +236,9 @@ export function createClinicDashboardService(
             id: appointments.id,
             status: appointments.status,
             dentistId: appointments.dentistId,
+            branchId: appointments.branchId,
+            patientEmail: appointments.patientEmail,
+            startsAt: appointments.startsAt,
           })
           .from(appointments)
           .where(
@@ -312,13 +318,36 @@ export function createClinicDashboardService(
             ipAddress: actor.ipAddress,
             userAgent: actor.userAgent,
         });
-        return { updated, fromStatus: current.status };
+        return { updated, fromStatus: current.status, patientEmail: current.patientEmail, startsAt: current.startsAt, branchId: current.branchId };
       });
       integrations?.dispatchEvent(clinicId, "appointment.updated", {
         appointmentId,
         fromStatus: result.fromStatus,
         toStatus: result.updated.status,
       });
+      if (nextStatus === "cancelled" && notifications && result.patientEmail) {
+        const [names] = await database
+          .select({ clinicName: clinics.name, branchName: branches.name })
+          .from(clinics)
+          .innerJoin(branches, eq(branches.id, result.branchId))
+          .where(eq(clinics.id, clinicId))
+          .limit(1);
+        if (names) {
+          const cancellation = await notifications.enqueue(
+            database,
+            appointmentCancelledNotification({
+              clinicId,
+              patientEmail: result.patientEmail,
+              appointmentId,
+              clinicName: names.clinicName,
+              branchName: names.branchName,
+              startsAt: result.startsAt.toISOString(),
+              dedupeKey: `appointment-cancelled:${appointmentId}`,
+            }),
+          );
+          notifications.attemptDelivery(cancellation.id);
+        }
+      }
       return result.updated;
     },
     recentPatients: async (clinicId, dentistId, branchId) => {

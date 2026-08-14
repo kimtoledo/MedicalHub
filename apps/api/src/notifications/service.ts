@@ -3,7 +3,7 @@ import type { DB } from '@dentra/db';
 import { notificationOutbox } from '@dentra/db/schema';
 import type { NotificationProvidersService } from './providers-service.js';
 
-export type NotificationInput = { clinicId?: string | null; channel: 'email' | 'sms'; type: 'booking_confirmation' | 'appointment_reminder' | 'appointment_cancelled' | 'appointment_rescheduled' | 'recall_reminder'; recipient: string; subject: string; body: string; dedupeKey: string };
+export type NotificationInput = { clinicId?: string | null; channel: 'email' | 'sms'; type: 'booking_confirmation' | 'appointment_reminder' | 'appointment_cancelled' | 'appointment_rescheduled' | 'recall_reminder'; recipient: string; subject: string; body: string; dedupeKey: string; nextAttemptAt?: Date };
 
 const safeContent = (input: NotificationInput) => ({ ...input, subject: input.subject.slice(0, 300), body: input.body.slice(0, 2000) });
 const MAX_ATTEMPTS = 5;
@@ -47,7 +47,7 @@ export function createNotificationService(database: DB, providers?: Notification
       const value = safeContent(input);
       const [existing] = await db.select({ id: notificationOutbox.id }).from(notificationOutbox).where(eq(notificationOutbox.dedupeKey, value.dedupeKey)).limit(1);
       if (existing) return { id: existing.id, duplicate: true };
-      const [created] = await db.insert(notificationOutbox).values({ ...value, clinicId: value.clinicId ?? null }).returning({ id: notificationOutbox.id });
+      const [created] = await db.insert(notificationOutbox).values({ ...value, clinicId: value.clinicId ?? null, ...(value.nextAttemptAt ? { nextAttemptAt: value.nextAttemptAt } : {}) }).returning({ id: notificationOutbox.id });
       return { id: created.id, duplicate: false };
     },
     attemptDelivery,
@@ -63,4 +63,34 @@ export function createNotificationService(database: DB, providers?: Notification
 export function bookingConfirmationNotification(input: { clinicId: string; patientEmail: string; appointmentId: string; clinicName: string; branchName: string; startsAt: string; dedupeKey: string }): NotificationInput {
   const date = new Intl.DateTimeFormat('en-PH', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Asia/Manila' }).format(new Date(input.startsAt));
   return { clinicId: input.clinicId, channel: 'email', type: 'booking_confirmation', recipient: input.patientEmail, subject: `Appointment request received — ${input.clinicName}`, body: `Your appointment request with ${input.clinicName} has been received. Location: ${input.branchName}. Date and time: ${date}. Please contact the clinic if you need to make changes.`, dedupeKey: input.dedupeKey };
+}
+
+/**
+ * Scheduled 24h before the appointment via `nextAttemptAt` — reuses the
+ * SAME `nextAttemptAt <= now()` filter processDue() already applies, no
+ * new scheduling column needed. Callers should also arrange an in-process
+ * setTimeout for the common case (long-lived process); processDue()'s
+ * boot-time sweep is the fallback if the process restarts before then.
+ */
+export function appointmentReminderNotification(input: { clinicId: string; patientEmail: string; appointmentId: string; clinicName: string; branchName: string; startsAt: string; dedupeKey: string }): NotificationInput {
+  const date = new Intl.DateTimeFormat('en-PH', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Asia/Manila' }).format(new Date(input.startsAt));
+  const remindAt = new Date(new Date(input.startsAt).getTime() - 24 * 60 * 60 * 1000);
+  return { clinicId: input.clinicId, channel: 'email', type: 'appointment_reminder', recipient: input.patientEmail, subject: `Reminder: upcoming appointment — ${input.clinicName}`, body: `This is a reminder of your upcoming appointment with ${input.clinicName} at ${input.branchName} on ${date}. Please contact the clinic if you need to reschedule.`, dedupeKey: input.dedupeKey, nextAttemptAt: remindAt };
+}
+
+export function appointmentCancelledNotification(input: { clinicId: string; patientEmail: string; appointmentId: string; clinicName: string; branchName: string; startsAt: string; dedupeKey: string }): NotificationInput {
+  const date = new Intl.DateTimeFormat('en-PH', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Asia/Manila' }).format(new Date(input.startsAt));
+  return { clinicId: input.clinicId, channel: 'email', type: 'appointment_cancelled', recipient: input.patientEmail, subject: `Appointment cancelled — ${input.clinicName}`, body: `Your appointment with ${input.clinicName} at ${input.branchName} on ${date} has been cancelled. Please contact the clinic if you'd like to reschedule.`, dedupeKey: input.dedupeKey };
+}
+
+/**
+ * Not yet wired to any actual "move this appointment" action — this
+ * codebase currently only lets a patient submit an appointment_reschedule
+ * REQUEST for clinic staff to review manually; there is no automated flow
+ * that changes an appointment's startsAt/endsAt yet. Exported ready for
+ * whichever future code path actually performs that move.
+ */
+export function appointmentRescheduledNotification(input: { clinicId: string; patientEmail: string; appointmentId: string; clinicName: string; branchName: string; startsAt: string; dedupeKey: string }): NotificationInput {
+  const date = new Intl.DateTimeFormat('en-PH', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Asia/Manila' }).format(new Date(input.startsAt));
+  return { clinicId: input.clinicId, channel: 'email', type: 'appointment_rescheduled', recipient: input.patientEmail, subject: `Appointment rescheduled — ${input.clinicName}`, body: `Your appointment with ${input.clinicName} at ${input.branchName} has been rescheduled to ${date}. Please contact the clinic if this doesn't work for you.`, dedupeKey: input.dedupeKey };
 }
