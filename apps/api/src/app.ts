@@ -108,6 +108,8 @@ import type { CustomDomainService } from './domains/service.js';
 import { registerIntegrationRoutes } from './routes/integrations.js';
 import type { IntegrationService } from './integrations/service.js';
 import { registerPlatformOperationsRoutes } from './routes/platform-operations.js';
+import type { RetentionService } from './platform/retention-service.js';
+import type { SecurityAlertService } from './platform/security-alerts-service.js';
 import type { PlatformOperationsService } from './platform/operations-service.js';
 import { registerAiImagingRoutes } from './routes/ai-imaging.js';
 import type { AiImagingService } from './clinic/ai-imaging-service.js';
@@ -177,6 +179,8 @@ export type BuildAppOptions = {
   integrations?: IntegrationService;
   notificationProviders?: NotificationProvidersService;
   platformOperations?: PlatformOperationsService;
+  retention?: RetentionService;
+  securityAlerts?: SecurityAlertService;
   aiImaging?: AiImagingService;
   kiosk?: KioskService;
   profiles?: AccountProfileService;
@@ -367,7 +371,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       await registerNotificationProviderRoutes(app, { auth: options.auth, providers: options.notificationProviders });
     }
     if (options.platformOperations) {
-      await registerPlatformOperationsRoutes(app, { auth: options.auth, operations: options.platformOperations });
+      await registerPlatformOperationsRoutes(app, { auth: options.auth, operations: options.platformOperations, retention: options.retention, securityAlerts: options.securityAlerts });
     }
     if (options.aiImaging && options.entitlements) {
       await registerAiImagingRoutes(app, { auth: options.auth, entitlements: options.entitlements, db: options.db, imaging: options.aiImaging });

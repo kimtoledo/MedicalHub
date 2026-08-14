@@ -65,7 +65,7 @@ describe('createAdminClinicStatusService', () => {
         actor,
       );
 
-      expect(updateSet).toHaveBeenCalledWith({ status: nextStatus });
+      expect(updateSet).toHaveBeenCalledWith({ status: nextStatus, archivedAt: nextStatus === 'archived' ? expect.any(Date) : null });
       expect(insertValues).toHaveBeenCalledWith(
         expect.objectContaining({
           actorId: actor.id,

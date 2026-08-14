@@ -328,6 +328,10 @@ export const AuditAction = {
   PATIENT_REFERRAL_DECLINED: 'patient_referral.declined',
   PLATFORM_SETTINGS_UPDATED: 'platform_settings.updated',
   PLATFORM_SESSION_REVOKED: 'platform_session.revoked',
+  DATA_RETENTION_FLAGGED: 'data_retention.flagged',
+  DATA_RETENTION_RESOLVED: 'data_retention.resolved',
+  SECURITY_ALERT_RAISED: 'security_alert.raised',
+  SECURITY_ALERT_RESOLVED: 'security_alert.resolved',
 
   RECALL_RULE_CREATED: 'recall_rule.created',
   RECALL_RULE_UPDATED: 'recall_rule.updated',

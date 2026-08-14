@@ -61,6 +61,8 @@ import { createPaymentService } from './payments/service.js';
 import { createCustomDomainService } from './domains/service.js';
 import { createIntegrationService } from './integrations/service.js';
 import { createPlatformOperationsService } from './platform/operations-service.js';
+import { createRetentionService } from './platform/retention-service.js';
+import { createSecurityAlertService } from './platform/security-alerts-service.js';
 import { createAiImagingService } from './clinic/ai-imaging-service.js';
 import { createKioskService } from './kiosk/service.js';
 import { createAccountProfileService } from './profile/service.js';
@@ -111,6 +113,8 @@ const clinicAnalytics = createClinicAnalyticsService(database.db);
 const payments = createPaymentService(database.db, undefined, integrations);
 const customDomains = createCustomDomainService(database.db);
 const platformOperations = createPlatformOperationsService(database.db);
+const retention = createRetentionService(database.db);
+const securityAlerts = createSecurityAlertService(database.db);
 const aiImaging = createAiImagingService(database.db);
 const kiosk = createKioskService(database.db, entitlements, integrations);
 const profiles = createAccountProfileService(database.db);
@@ -179,6 +183,8 @@ const app = await buildApp({
   integrations,
   notificationProviders,
   platformOperations,
+  retention,
+  securityAlerts,
   aiImaging,
   kiosk,
   profiles,
@@ -222,6 +228,8 @@ try {
   // earlier process restart — in-process retry timers don't survive a restart.
   integrations.processDueDeliveries().catch((error: unknown) => app.log.error({ err: error }, 'Webhook delivery sweep failed'));
   notifications.processDue().catch((error: unknown) => app.log.error({ err: error }, 'Notification delivery sweep failed'));
+  retention.scan().catch((error: unknown) => app.log.error({ err: error }, 'Data retention review scan failed'));
+  securityAlerts.scan().catch((error: unknown) => app.log.error({ err: error }, 'Security alert scan failed'));
 } catch (error) {
   app.log.error({ err: error }, 'API failed to start');
   await app.close();

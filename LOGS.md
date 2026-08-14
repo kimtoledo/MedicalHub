@@ -92,6 +92,15 @@ Updated manually after each session or merged task.
 - Made the three new session-management methods optional on `AuthServices` rather than required, since ~37 existing test files construct `AuthServices` mocks and none of them exercise session management
 - Verified 418 passing API tests, repository-wide TypeScript checks, and production web/API builds
 
+### ✅ Retention review flagging + security-alert detection (platform operations)
+- User decisions: no auto-deletion/auto-anonymization (flag-only review queue), and no speculative backup/restore tooling without a real backup-infra decision first
+- Added `clinics.archivedAt` (set on archive, cleared on reactivation) and `data_retention_flags` — a scan finds archived clinics past a 90-day review window with no existing pending flag and creates one; a Super Admin resolves it with a required note (keep / anonymize-requested / delete-requested) — no code path here performs the actual data action
+- Added `security_alerts` with one real detector derived entirely from the existing immutable audit trail (no new instrumentation): flags an actor whose mutation events touch >50 distinct entities within a rolling hour
+- Both run via this codebase's only existing recurring-job pattern (boot-time sweep) plus an on-demand "Scan now" in the console, since no cron infrastructure exists here
+- Caught and fixed a real dedup bug during verification: the security-alert scan's "already alerted" check compared window-start timestamps, which — since a fresh scan's window is always later than an older one's — never actually matched, letting a duplicate alert through on every rescan; fixed by checking alert status alone
+- Verified end-to-end against real seeded data for both features (including the dedup fix) and 428 passing API tests, repository-wide TypeScript checks, and production web/API builds
+- Remaining in `mvp3/11-platform-operations.md`: backup/restore drills (blocked on a backup-infra decision) and operational dashboards for error rates/slow queries/storage (new observability work, not started)
+
 ### ✅ Search and Discovery — fully done
 - Added the final "Remaining" item: a "Near me" geolocation button on `/clinics` that requests `navigator.geolocation` and round-trips through the existing `latitude`/`longitude`/`maxDistanceKm` query params the backend already validated and consumed — no backend change needed, just the missing browser-side control, plus a "Clear location" toggle and persistence across pagination/filters
 - Verified end-to-end against a running dev server (toggled button state, "within X km of you" copy) rather than just typechecking

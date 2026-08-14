@@ -624,7 +624,7 @@ export function createAdminClinicStatusService(
 
         const [updatedClinic] = await transaction
           .update(clinics)
-          .set({ status })
+          .set({ status, archivedAt: status === 'archived' ? new Date() : null })
           .where(
             and(
               eq(clinics.id, clinicId),

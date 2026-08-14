@@ -1,4 +1,4 @@
-import { boolean, index, pgEnum, pgTable, text, unique, varchar } from 'drizzle-orm/pg-core';
+import { boolean, index, pgEnum, pgTable, text, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
 import { id, timestamps, deletedAt } from './helpers';
 
 export const clinicStatusEnum = pgEnum('clinic_status', [
@@ -36,6 +36,8 @@ export const clinics = pgTable(
      */
     prefix: varchar('prefix', { length: 8 }).notNull().default(''),
     status: clinicStatusEnum('status').notNull().default('trial'),
+    /** Set when `status` transitions to 'archived'; cleared on reactivation. Drives retention-review flagging — see platform/retention-service.ts. */
+    archivedAt: timestamp('archived_at', { withTimezone: true }),
     /**
      * Orthogonal to `status` — a temporary, Super-Admin-toggled lock during
      * a maintenance window. Blocks writes only; reads still work, and

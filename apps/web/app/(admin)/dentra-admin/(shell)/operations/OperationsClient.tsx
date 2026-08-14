@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from 'react';
 import {
   ShieldAlert, DatabaseBackup, Building2, AlertCircle, Loader2,
   Check, X, Clock3, Play, Download, Flag, Plus, Trash2,
+  Archive, RefreshCw, Siren,
 } from 'lucide-react';
 
 type SupportAccessRequest = {
@@ -347,6 +348,149 @@ function FeatureFlagsSection() {
   );
 }
 
+type RetentionFlag = { id: string; clinicId: string; clinicName: string; clinicArchivedAt: string; status: 'pending' | 'dismissed' | 'anonymize_requested' | 'delete_requested'; resolvedAt: string | null; resolutionNotes: string | null; createdAt: string };
+
+function RetentionReviewSection() {
+  const [flags, setFlags] = useState<RetentionFlag[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [scanning, setScanning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [notesById, setNotesById] = useState<Record<string, string>>({});
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const response = await fetch('/api/admin/operations/retention?status=pending', { cache: 'no-store' });
+    setLoading(false);
+    if (!response.ok) { setError('Unable to load the retention review queue.'); return; }
+    setError(null);
+    setFlags((await response.json()).data);
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  async function scanNow() {
+    setScanning(true); setError(null);
+    const response = await fetch('/api/admin/operations/retention/scan', { method: 'POST' });
+    setScanning(false);
+    if (!response.ok) { setError('Unable to run the retention scan.'); return; }
+    await load();
+  }
+
+  async function resolve(flagId: string, resolution: 'dismissed' | 'anonymize_requested' | 'delete_requested') {
+    const notes = notesById[flagId]?.trim();
+    if (!notes || notes.length < 5) { setError('A short note is required before resolving a flag.'); return; }
+    setBusyId(flagId); setError(null);
+    const response = await fetch(`/api/admin/operations/retention/${flagId}/resolve`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ resolution, notes }) });
+    setBusyId(null);
+    if (!response.ok) { setError('Unable to resolve this flag.'); return; }
+    await load();
+  }
+
+  return (
+    <section className="rounded-2xl border border-violet-100 bg-white p-5">
+      <div className="mb-1 flex items-center justify-between">
+        <h2 className="flex items-center gap-2 text-sm font-bold text-violet-900"><Archive size={15} /> Data retention review</h2>
+        <button onClick={() => void scanNow()} disabled={scanning} className="flex items-center gap-1 rounded-lg border border-violet-200 px-2 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-50 disabled:opacity-60">{scanning ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />} Scan now</button>
+      </div>
+      <p className="mb-3 text-xs text-slate-500">Archived clinics past the 90-day review window are flagged here — nothing is ever auto-deleted or auto-anonymized. Resolving a flag only records a decision; any actual data action happens separately.</p>
+      {loading ? (
+        <p className="text-xs text-slate-400">Loading…</p>
+      ) : flags.length === 0 ? (
+        <p className="text-xs text-slate-400">No clinics currently flagged for review.</p>
+      ) : (
+        <ul className="space-y-2">
+          {flags.map((flag) => (
+            <li key={flag.id} className="rounded-xl border border-violet-50 px-3 py-2.5">
+              <p className="text-sm font-semibold text-violet-900">{flag.clinicName}</p>
+              <p className="text-xs text-slate-500">Archived since {formatManila(flag.clinicArchivedAt)}</p>
+              <textarea value={notesById[flag.id] ?? ''} onChange={(event) => setNotesById((current) => ({ ...current, [flag.id]: event.target.value }))} placeholder="Note for this decision (required)" rows={1} className="mt-2 w-full rounded-lg border border-violet-100 px-2 py-1 text-xs" />
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button onClick={() => void resolve(flag.id, 'dismissed')} disabled={busyId === flag.id} className="rounded-lg border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-60">Keep clinic</button>
+                <button onClick={() => void resolve(flag.id, 'anonymize_requested')} disabled={busyId === flag.id} className="rounded-lg border border-amber-200 px-2 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-50 disabled:opacity-60">Request anonymization</button>
+                <button onClick={() => void resolve(flag.id, 'delete_requested')} disabled={busyId === flag.id} className="rounded-lg border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60">Request deletion</button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {error && <p role="alert" className="mt-3 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+    </section>
+  );
+}
+
+type SecurityAlert = { id: string; alertType: string; actorEmail: string | null; actorName: string | null; clinicId: string | null; severity: string; details: string; windowStart: string; windowEnd: string; status: 'open' | 'acknowledged' | 'dismissed'; createdAt: string };
+
+function SecurityAlertsSection() {
+  const [alerts, setAlerts] = useState<SecurityAlert[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [scanning, setScanning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const response = await fetch('/api/admin/operations/security-alerts?status=open', { cache: 'no-store' });
+    setLoading(false);
+    if (!response.ok) { setError('Unable to load security alerts.'); return; }
+    setError(null);
+    setAlerts((await response.json()).data);
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  async function scanNow() {
+    setScanning(true); setError(null);
+    const response = await fetch('/api/admin/operations/security-alerts/scan', { method: 'POST' });
+    setScanning(false);
+    if (!response.ok) { setError('Unable to run the security-alert scan.'); return; }
+    await load();
+  }
+
+  async function resolve(alertId: string, resolution: 'acknowledged' | 'dismissed') {
+    setBusyId(alertId); setError(null);
+    const response = await fetch(`/api/admin/operations/security-alerts/${alertId}/resolve`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ resolution }) });
+    setBusyId(null);
+    if (!response.ok) { setError('Unable to resolve this alert.'); return; }
+    await load();
+  }
+
+  return (
+    <section className="rounded-2xl border border-violet-100 bg-white p-5">
+      <div className="mb-1 flex items-center justify-between">
+        <h2 className="flex items-center gap-2 text-sm font-bold text-violet-900"><Siren size={15} /> Security alerts</h2>
+        <button onClick={() => void scanNow()} disabled={scanning} className="flex items-center gap-1 rounded-lg border border-violet-200 px-2 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-50 disabled:opacity-60">{scanning ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />} Scan now</button>
+      </div>
+      <p className="mb-3 text-xs text-slate-500">Flags a single actor mutating an unusually large number of distinct records within an hour — derived from the existing audit trail, not new tracking.</p>
+      {loading ? (
+        <p className="text-xs text-slate-400">Loading…</p>
+      ) : alerts.length === 0 ? (
+        <p className="text-xs text-slate-400">No open security alerts.</p>
+      ) : (
+        <ul className="space-y-2">
+          {alerts.map((alert) => (
+            <li key={alert.id} className="rounded-xl border border-violet-50 px-3 py-2.5">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold text-violet-900">{alert.actorName ?? alert.actorEmail ?? 'Unknown actor'}</p>
+                  <p className="text-xs text-slate-500">{alert.details}</p>
+                  <p className="text-xs text-slate-400">{formatManila(alert.windowStart)} – {formatManila(alert.windowEnd)}</p>
+                </div>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${alert.severity === 'critical' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>{alert.severity}</span>
+              </div>
+              <div className="mt-2 flex gap-2">
+                <button onClick={() => void resolve(alert.id, 'acknowledged')} disabled={busyId === alert.id} className="rounded-lg bg-violet-600 px-2 py-1 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">Acknowledge</button>
+                <button onClick={() => void resolve(alert.id, 'dismissed')} disabled={busyId === alert.id} className="rounded-lg border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-60">Dismiss</button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {error && <p role="alert" className="mt-3 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+    </section>
+  );
+}
+
 function PlatformInventorySection() {
   const [clinics, setClinics] = useState<ClinicSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -433,6 +577,8 @@ export default function OperationsClient() {
         <SupportAccessSection />
         <TenantExportSection />
         <FeatureFlagsSection />
+        <RetentionReviewSection />
+        <SecurityAlertsSection />
         <PlatformInventorySection />
       </div>
     </main>

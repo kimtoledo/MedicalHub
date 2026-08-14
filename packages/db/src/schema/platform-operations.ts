@@ -53,7 +53,60 @@ export const featureFlagClinics = pgTable('feature_flag_clinics', {
   clinicIdx: index('feature_flag_clinics_clinic_idx').on(t.clinicId),
 }));
 
+export const retentionFlagStatusEnum = pgEnum('retention_flag_status', ['pending', 'dismissed', 'anonymize_requested', 'delete_requested']);
+
+/**
+ * data_retention_flags — a NON-DESTRUCTIVE review queue. Flags an
+ * archived clinic past the retention review window for a Super Admin
+ * to look at; never auto-deletes or auto-anonymizes anything. The
+ * *_requested statuses record intent for a human to action manually
+ * elsewhere — no code path here performs the deletion/anonymization
+ * itself. See platform/retention-service.ts.
+ */
+export const dataRetentionFlags = pgTable('data_retention_flags', {
+  id: id(),
+  clinicId: uuid('clinic_id').notNull().references(() => clinics.id, { onDelete: 'cascade' }),
+  clinicArchivedAt: timestamp('clinic_archived_at', { withTimezone: true }).notNull(),
+  status: retentionFlagStatusEnum('status').notNull().default('pending'),
+  resolvedBy: uuid('resolved_by'),
+  resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+  resolutionNotes: text('resolution_notes'),
+  ...timestamps,
+}, (t) => ({
+  clinicIdx: index('data_retention_flags_clinic_idx').on(t.clinicId, t.status),
+  statusIdx: index('data_retention_flags_status_idx').on(t.status),
+}));
+
+export const securityAlertStatusEnum = pgEnum('security_alert_status', ['open', 'acknowledged', 'dismissed']);
+
+/**
+ * security_alerts — anomaly signals detected from EXISTING audit data
+ * (no new read/access instrumentation). Currently one detector: an
+ * actor mutating an unusually large number of distinct entities within
+ * a short window. See platform/security-alerts-service.ts.
+ */
+export const securityAlerts = pgTable('security_alerts', {
+  id: id(),
+  alertType: varchar('alert_type', { length: 100 }).notNull(),
+  actorId: uuid('actor_id'),
+  actorEmail: varchar('actor_email', { length: 255 }),
+  clinicId: uuid('clinic_id').references(() => clinics.id, { onDelete: 'set null' }),
+  severity: varchar('severity', { length: 20 }).notNull().default('warning'),
+  details: text('details').notNull(),
+  windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
+  windowEnd: timestamp('window_end', { withTimezone: true }).notNull(),
+  status: securityAlertStatusEnum('status').notNull().default('open'),
+  acknowledgedBy: uuid('acknowledged_by'),
+  acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
+  ...timestamps,
+}, (t) => ({
+  statusIdx: index('security_alerts_status_idx').on(t.status),
+  actorWindowIdx: index('security_alerts_actor_window_idx').on(t.actorId, t.windowStart),
+}));
+
 export type SupportAccessRequest = typeof supportAccessRequests.$inferSelect;
 export type TenantExportRequest = typeof tenantExportRequests.$inferSelect;
 export type FeatureFlag = typeof featureFlags.$inferSelect;
 export type FeatureFlagClinic = typeof featureFlagClinics.$inferSelect;
+export type DataRetentionFlag = typeof dataRetentionFlags.$inferSelect;
+export type SecurityAlert = typeof securityAlerts.$inferSelect;
