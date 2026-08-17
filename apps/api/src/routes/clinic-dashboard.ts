@@ -27,8 +27,20 @@ const clinicQuery = z.object({
   status: z
     .enum(Object.values(AppointmentStatus) as [string, ...string[]])
     .optional(),
+  search: z.string().trim().max(100).optional(),
+  dentistId: postgresUuidSchema.optional(),
+  serviceId: postgresUuidSchema.optional(),
 });
 const params = z.object({ appointmentId: postgresUuidSchema });
+const createBody = z.object({
+  branchId: postgresUuidSchema,
+  patientId: postgresUuidSchema,
+  dentistId: postgresUuidSchema,
+  serviceId: postgresUuidSchema,
+  startsAt: z.string().datetime({ offset: true }),
+  notes: z.string().trim().max(5000).optional(),
+}).strict();
+const availabilityQuery = z.object({ clinicId: postgresUuidSchema, branchId: postgresUuidSchema, dentistId: postgresUuidSchema, serviceId: postgresUuidSchema, date: dateOnly });
 const statusBody = z
   .object({
     status: z.enum([
@@ -41,6 +53,11 @@ const statusBody = z
     ]),
   })
   .strict();
+const quickCompletionBody = z.object({
+  toothRef: z.string().trim().max(50).optional(),
+  notes: z.string().trim().max(5000).optional(),
+  performedAt: z.string().datetime({ offset: true }).optional(),
+}).strict();
 const clinicReadRoles = [
   "clinic_owner",
   "clinic_admin",
@@ -117,6 +134,37 @@ export async function registerClinicDashboardRoutes(
     dashboard: ClinicDashboardService;
   },
 ) {
+  app.get("/v1/clinic/appointment-availability", async (request, reply) => {
+    const query = availabilityQuery.safeParse(request.query);
+    if (!query.success) return reply.status(400).send({ success: false, error: { code: "VALIDATION_ERROR", message: "Invalid availability request" } });
+    const auth = await requireClinicFeature(request, reply, options, query.data.clinicId, FeatureKey.APPOINTMENTS_MANAGE, [...manageRoles]);
+    if (!auth) return;
+    try { const branchId = scopedBranch(auth, query.data.clinicId, query.data.branchId); const restriction = getClinicAccess(auth, query.data.clinicId).some((item) => item.role !== "dentist") ? undefined : (dentistId(auth, query.data.clinicId) ?? undefined); return reply.send({ success: true, data: await options.dashboard.appointmentAvailability(query.data.clinicId, { ...query.data, branchId: branchId! }, restriction) }); }
+    catch (caught) { return error(reply, caught); }
+  });
+  app.get("/v1/clinic/appointment-options", async (request, reply) => {
+    const query = clinicQuery.pick({ clinicId: true, branchId: true }).safeParse(request.query);
+    if (!query.success) return reply.status(400).send({ success: false, error: { code: "VALIDATION_ERROR", message: "Invalid appointment options request" } });
+    const auth = await requireClinicFeature(request, reply, options, query.data.clinicId, FeatureKey.APPOINTMENTS_MANAGE, [...manageRoles]);
+    if (!auth) return;
+    try {
+      const branchId = scopedBranch(auth, query.data.clinicId, query.data.branchId);
+      const restriction = getClinicAccess(auth, query.data.clinicId).some((item) => item.role !== "dentist") ? undefined : (dentistId(auth, query.data.clinicId) ?? undefined);
+      return reply.send({ success: true, data: await options.dashboard.appointmentOptions(query.data.clinicId, branchId, restriction) });
+    } catch (caught) { return error(reply, caught); }
+  });
+  app.post("/v1/clinic/appointments", async (request, reply) => {
+    const query = clinicQuery.pick({ clinicId: true }).safeParse(request.query);
+    const body = createBody.safeParse(request.body);
+    if (!query.success || !body.success) return reply.status(400).send({ success: false, error: { code: "VALIDATION_ERROR", message: "Please check the appointment details" } });
+    const auth = await requireClinicFeature(request, reply, options, query.data.clinicId, FeatureKey.APPOINTMENTS_MANAGE, [...manageRoles]);
+    if (!auth) return;
+    try {
+      const branchId = scopedBranch(auth, query.data.clinicId, body.data.branchId);
+      const restriction = getClinicAccess(auth, query.data.clinicId).some((item) => item.role !== "dentist") ? undefined : (dentistId(auth, query.data.clinicId) ?? undefined);
+      return reply.status(201).send({ success: true, data: await options.dashboard.createAppointment(query.data.clinicId, { ...body.data, branchId: branchId! }, actor(request, auth), restriction) });
+    } catch (caught) { return error(reply, caught); }
+  });
   app.get("/v1/clinic/dashboard/summary", async (request, reply) => {
     const query = clinicQuery.safeParse(request.query);
     if (!query.success)
@@ -185,8 +233,10 @@ export async function registerClinicDashboardRoutes(
           scopedBranch(auth, query.data.clinicId, query.data.branchId),
           query.data.date,
           query.data.status,
-          restriction,
+          restriction ?? query.data.dentistId,
           query.data.endDate,
+          query.data.search,
+          query.data.serviceId,
         ),
       });
     } catch (caught) {
@@ -286,6 +336,17 @@ export async function registerClinicDashboardRoutes(
       }
     },
   );
+  app.post("/v1/clinic/appointments/:appointmentId/quick-complete", async (request, reply) => {
+    const query = clinicQuery.pick({ clinicId: true }).safeParse(request.query);
+    const parsedParams = params.safeParse(request.params);
+    const body = quickCompletionBody.safeParse(request.body ?? {});
+    if (!query.success || !parsedParams.success || !body.success) return reply.status(400).send({ success: false, error: { code: "VALIDATION_ERROR", message: "Please check the quick-service details" } });
+    const auth = await requireClinicFeature(request, reply, options, query.data.clinicId, FeatureKey.TREATMENT_RECORDS, ["clinic_owner", "clinic_admin", "dentist"]);
+    if (!auth) return;
+    const restriction = getClinicAccess(auth, query.data.clinicId).some((item) => item.role !== "dentist") ? undefined : (dentistId(auth, query.data.clinicId) ?? undefined);
+    try { return reply.status(201).send({ success: true, data: await options.dashboard.completeQuickService(query.data.clinicId, parsedParams.data.appointmentId, body.data, actor(request, auth), restriction) }); }
+    catch (caught) { return error(reply, caught); }
+  });
   app.get("/v1/clinic/dentist/schedule", async (request, reply) => {
     const query = clinicQuery.safeParse(request.query);
     if (!query.success)
@@ -328,6 +389,8 @@ export async function registerClinicDashboardRoutes(
           query.data.status,
           dentist,
           query.data.endDate,
+          query.data.search,
+          query.data.serviceId,
         ),
       });
     } catch (caught) {

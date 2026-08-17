@@ -29,6 +29,7 @@
 | `19-clinic-account-info-editing.md` | Super Admin edit form for clinic name/contact/address/web presence | ✅ Done |
 | `20-clinic-hours-holidays-dentist-availability.md` | Structured branch hours, PH holiday/custom closures, per-dentist schedule & time off | 🔵 Active |
 | `21-microsite-branding-uploads.md` | Standalone microsite header/footer ("Powered by Dentra.ph" link), logo/cover image upload with a color/gradient background alternative | ✅ Done |
+| `22-quick-services-clinic-appointments-record-search.md` | Quick routine-service documentation, internal appointment creation, and searchable service records | ✅ Done |
 
 ---
 

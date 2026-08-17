@@ -337,6 +337,13 @@
       "when": 1786719657087,
       "tag": "0047_mean_raider",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1786977202403,
+      "tag": "0048_chilly_red_ghost",
+      "breakpoints": true
     }
   ]
 }

@@ -20,6 +20,7 @@ const createBody = z.object({
   description: z.string().trim().max(5000).optional(),
   pricePhp: priceSchema.optional(),
   durationMinutes: z.number().int().min(15).max(240),
+  workflowMode: z.enum(['quick', 'standard']).default('standard'),
   isBookable: z.boolean().default(true),
   isActive: z.boolean().default(true),
 }).strict();
@@ -29,6 +30,7 @@ const updateBody = z.object({
   description: z.string().trim().max(5000).nullable().optional(),
   pricePhp: priceSchema.optional(),
   durationMinutes: z.number().int().min(15).max(240).optional(),
+  workflowMode: z.enum(['quick', 'standard']).optional(),
   isBookable: z.boolean().optional(),
   isActive: z.boolean().optional(),
 }).strict().refine((value) => Object.keys(value).length > 0);

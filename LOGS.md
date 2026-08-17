@@ -46,6 +46,16 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Quick services, clinic appointment creation, and service-record search
+- Added service workflow classification (`quick` or `standard`) with generated migration `0048_chilly_red_ghost`; existing services remain `standard` until a clinic administrator explicitly changes them
+- Added protected clinic appointment options, availability, and creation endpoints: options respect role/branch scope, availability applies structured clinic hours, closures, dentist schedules/time off, and busy slots, while creation revalidates inside a row-locked transaction before creating a confirmed appointment and immutable audit/status history
+- Added a responsive **New appointment** drawer to `/app/appointments` with tenant-scoped patient search, active service/dentist selection, and server-provided available times; appointment lists now include patient search plus service and dentist filters
+- Added transactional **Complete quick service** from eligible appointment details; it requires a linked patient and assigned dentist, then atomically creates/finalizes the encounter, records the treatment, completes the appointment, writes status history/audits, and dispatches the appointment update event without auto-creating an invoice
+- Added `/app/treatments`, a clinic-wide service-record list defaulting to the last 30 days and active branch, with URL-backed patient/service search, date, branch, dentist, service, workflow, pagination, and branch/dentist authorization enforcement
+- Service Catalog now supports workflow selection, search, workflow/status filters, and per-service workflow updates
+- Updated the clinic manual and MVP 2 task index; the Replit task reference could not be confirmed because that panel was unavailable in the Codex session
+- Verified 518 passing API tests, 9 passing web tests, repository-wide TypeScript checks, production web/API builds, and `git diff --check`; migration is generated and intentionally not applied directly to the potentially shared development database
+
 ### ✅ Dentist schedule-to-patient workflow
 - Registered patient names are now accessible links from the dentist dashboard’s Next Up/Today’s Schedule sections and from `/app/dentist/schedule`; unlinked public bookings remain non-clickable
 - Dentist patient profiles now show legal appointment status actions only for appointments assigned to the signed-in dentist

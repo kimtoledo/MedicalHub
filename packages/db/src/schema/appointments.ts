@@ -17,6 +17,11 @@ export const appointmentStatusEnum = pgEnum('appointment_status', [
   'rescheduled',
 ]);
 
+export const serviceWorkflowModeEnum = pgEnum('service_workflow_mode', [
+  'quick',
+  'standard',
+]);
+
 /**
  * services — bookable dental services per clinic.
  */
@@ -38,6 +43,8 @@ export const services = pgTable(
     pricePhp: numeric('price_php', { precision: 10, scale: 2 }),
     /** Whether this service is visible in public booking flows. */
     isBookable: boolean('is_bookable').notNull().default(true),
+    /** Controls whether the clinic may use the reduced quick-completion workflow. */
+    workflowMode: serviceWorkflowModeEnum('workflow_mode').notNull().default('standard'),
     /** Whether this service is reimbursable by HMO providers */
     isHmoCovered: varchar('is_hmo_covered', { length: 5 }).notNull().default('false'),
     /** Standard HMO reimbursement rate in PHP (may differ from clinic price) */

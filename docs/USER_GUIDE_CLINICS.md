@@ -9,7 +9,7 @@ Clinic Owner/Admin should complete these steps before accepting public bookings:
 1. Sign in at `/cl-login`.
 2. Open **Profile/Settings** and verify clinic name, contact details, address, city/province, website, map link, social links, and public description.
 3. Confirm every branch is active, has the correct address, contact information, operating hours, and coordinates when discovery is enabled.
-4. Add or confirm services, duration, active state, public-booking visibility, and prices.
+4. Add or confirm services, duration, workflow mode (quick or standard), active state, public-booking visibility, and prices.
 5. Review dentists, branch affiliations, publication state, and verification state.
 6. Configure the public microsite theme, sections, SEO fields, and gallery where available.
 7. Add staff memberships and review role/branch scope.
@@ -20,6 +20,8 @@ Do not publish a clinic until phone, address, hours, services, and booking expec
 ## 2. Daily dashboard and appointments
 
 Use `/app` for the daily summary and `/app/appointments` for the schedule.
+
+Clinic staff can use **New appointment** on `/app/appointments` to select an existing patient, service, branch, dentist, date, and available time. The available-time list already accounts for clinic hours, closures, dentist schedules, time off, and existing appointments. Register a missing patient first rather than entering disconnected contact details into an internal appointment.
 
 ### Appointment lifecycle
 
@@ -75,6 +77,14 @@ Use `/app/dentist/odontogram` or the patient’s odontogram view to record tooth
 ### Treatment records
 
 Treatment records validate the encounter, patient, service, dentist, and clinic server-side. Inactive services and finalized encounters cannot accept new treatment records. Complete treatment records can feed recall and treatment-plan progress.
+
+Use `/app/treatments` for the clinic-wide service-record list. It defaults to the last 30 days and the active branch, and supports patient/service search plus branch, dentist, service, and workflow filters.
+
+### Quick services
+
+Clinic Owner/Admin can mark routine services such as cleaning, braces adjustment, fluoride application, or a simple consultation as **Quick service** from `/app/settings/services`. Standard remains the safe default for existing and clinically complex services.
+
+For a linked patient appointment using a quick service, an authorized dentist or clinic administrator can choose **Complete quick service** from the appointment detail. Patient, service, branch, dentist, and time are prefilled; tooth/area and a short note are optional. Confirmation atomically creates and finalizes the encounter, records the treatment, and completes the appointment. Use the full encounter workflow whenever detailed findings, assessment, recommendations, prescriptions, files, or odontogram work are needed. Generate an invoice separately after reviewing price, HMO, and discount requirements.
 
 ## 5. Treatment plans
 

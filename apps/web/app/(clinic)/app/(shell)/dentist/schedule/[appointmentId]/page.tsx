@@ -22,6 +22,7 @@ export default async function DentistAppointmentPage({ params }: { params: { app
       linkedEncounter={linkedEncounter}
       dentist
       appointmentDentistId={identity.dentistId}
+      canCompleteQuickService={data.dentistId === identity.dentistId}
     />
   );
 }

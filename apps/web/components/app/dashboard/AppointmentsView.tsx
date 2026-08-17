@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarRange, ChevronLeft, ChevronRight, Rows3 } from "lucide-react";
+import { CalendarRange, ChevronLeft, ChevronRight, Rows3, Search } from "lucide-react";
 import { useAppBranch } from "../AppBranchContext";
 import AppointmentActions from "./AppointmentActions";
 import WeekCalendar from "./WeekCalendar";
@@ -15,11 +15,16 @@ import {
   type DashboardAppointment,
 } from "./types";
 import { appointmentDetailHref, patientProfileHref } from "@/lib/dentist-schedule-navigation";
+import NewAppointmentDrawer from "../appointments/NewAppointmentDrawer";
 export default function AppointmentsView({ dentist = false }: { dentist?: boolean }) {
   const { clinicId, branchId, branchName } = useAppBranch();
   const [mode, setMode] = useState<"list" | "calendar">("list");
   const [date, setDate] = useState(todayManila());
   const [status, setStatus] = useState("");
+  const [search, setSearch] = useState("");
+  const [serviceId, setServiceId] = useState("");
+  const [dentistId, setDentistId] = useState("");
+  const [options, setOptions] = useState<{ services: Array<{ id: string; name: string }>; dentists: Array<{ id: string; firstName: string; lastName: string }> }>({ services: [], dentists: [] });
   const [rows, setRows] = useState<DashboardAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -31,6 +36,9 @@ export default function AppointmentsView({ dentist = false }: { dentist?: boolea
       if (mode === "calendar") query.set("endDate", addDays(weekStart, 6));
       if (branchId) query.set("branchId", branchId);
       if (status) query.set("status", status);
+      if (search.trim()) query.set("search", search.trim());
+      if (serviceId) query.set("serviceId", serviceId);
+      if (dentistId && !dentist) query.set("dentistId", dentistId);
       const response = await fetch(`${dentist ? "/api/clinic/dentist/schedule" : "/api/clinic/appointments"}?${query}`, {
         cache: "no-store",
       });
@@ -48,7 +56,8 @@ export default function AppointmentsView({ dentist = false }: { dentist?: boolea
     } finally {
       setLoading(false);
     }
-  }, [clinicId, branchId, date, status, dentist, mode, weekStart]);
+  }, [clinicId, branchId, date, status, search, serviceId, dentistId, dentist, mode, weekStart]);
+  useEffect(() => { const query = new URLSearchParams({ clinicId }); if (branchId) query.set("branchId", branchId); fetch(`/api/clinic/appointment-options?${query}`, { cache: "no-store" }).then((response) => response.json()).then((payload) => { if (payload.data) setOptions(payload.data); }).catch(() => undefined); }, [clinicId, branchId]);
   useEffect(() => {
     setLoading(true);
     void load();
@@ -71,6 +80,8 @@ export default function AppointmentsView({ dentist = false }: { dentist?: boolea
             Appointments
           </h1>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+        {!dentist && <NewAppointmentDrawer clinicId={clinicId} branchId={branchId} onCreated={() => void load()} />}
         <div className="flex rounded-xl border border-violet-200 bg-white p-1 text-sm font-semibold">
           <button
             onClick={() => setMode("list")}
@@ -85,8 +96,10 @@ export default function AppointmentsView({ dentist = false }: { dentist?: boolea
             <CalendarRange size={15} />Calendar
           </button>
         </div>
+        </div>
       </div>
       <div className="mt-6 flex flex-wrap items-center gap-3">
+        <label className="relative min-w-[240px] flex-1 sm:max-w-sm"><span className="sr-only">Search appointments</span><Search size={16} className="absolute left-3 top-3 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search patient or patient number" className="h-10 w-full rounded-xl border border-slate-300 bg-white pl-9 pr-3 text-sm" /></label>
         {mode === "list" ? (
           <input
             type="date"
@@ -128,6 +141,8 @@ export default function AppointmentsView({ dentist = false }: { dentist?: boolea
             </option>
           ))}
         </select>
+        <select value={serviceId} onChange={(event) => setServiceId(event.target.value)} className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm"><option value="">All services</option>{options.services.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+        {!dentist && <select value={dentistId} onChange={(event) => setDentistId(event.target.value)} className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm"><option value="">All dentists</option>{options.dentists.map((item) => <option key={item.id} value={item.id}>Dr. {item.firstName} {item.lastName}</option>)}</select>}
       </div>
       {error && (
         <p

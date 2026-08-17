@@ -16,6 +16,7 @@ import type { EncounterRecord } from "@/lib/clinic-encounters";
 import AppointmentActions from "@/components/app/dashboard/AppointmentActions";
 import { statusStyle } from "@/components/app/dashboard/types";
 import { canDentistManageAppointment, patientProfileHref } from "@/lib/dentist-schedule-navigation";
+import QuickServiceCompletion from "./QuickServiceCompletion";
 
 const show = (value: string | null | undefined) => value || "—";
 const when = (value: string) =>
@@ -29,6 +30,7 @@ export default function AppointmentDetail({
   linkedEncounter = null,
   dentist = false,
   appointmentDentistId,
+  canCompleteQuickService = false,
 }: {
   clinicId: string;
   data: AppointmentDetailData;
@@ -37,6 +39,7 @@ export default function AppointmentDetail({
   linkedEncounter?: Pick<EncounterRecord, "id" | "status"> | null;
   dentist?: boolean;
   appointmentDentistId?: string | null;
+  canCompleteQuickService?: boolean;
 }) {
   const canManage = !dentist || canDentistManageAppointment(data.dentistId, appointmentDentistId);
   const canDocument = dentist && canManage;
@@ -176,6 +179,8 @@ export default function AppointmentDetail({
                 </Link>
               )}
             </div>
+          ) : canCompleteQuickService && data.serviceWorkflowMode === "quick" && ["confirmed", "checked_in", "in_progress"].includes(data.status) ? (
+            <div className="mt-3"><p className="text-sm text-slate-500">This service is configured for streamlined documentation.</p><QuickServiceCompletion clinicId={clinicId} appointmentId={data.id} serviceName={data.serviceName ?? "quick service"} />{canDocument && <Link href={`${encounterBasePath}/new?patientId=${data.patientId}&appointmentId=${data.id}`} className="ml-3 inline-flex items-center gap-1.5 rounded-xl border border-violet-200 px-4 py-2.5 text-sm font-bold text-violet-700 hover:bg-violet-50">Use full encounter instead</Link>}</div>
           ) : canDocument ? (
             <div className="mt-3">
               <p className="text-sm text-slate-500">No encounter has been documented for this visit yet.</p>

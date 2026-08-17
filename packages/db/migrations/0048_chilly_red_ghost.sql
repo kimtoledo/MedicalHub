@@ -1,0 +1,2 @@
+CREATE TYPE "public"."service_workflow_mode" AS ENUM('quick', 'standard');--> statement-breakpoint
+ALTER TABLE "services" ADD COLUMN "workflow_mode" "service_workflow_mode" DEFAULT 'standard' NOT NULL;

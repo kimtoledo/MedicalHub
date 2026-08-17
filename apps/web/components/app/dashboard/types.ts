@@ -11,6 +11,7 @@ export type DashboardAppointment = {
   dentistLastName: string | null;
   serviceId: string | null;
   serviceName: string | null;
+  serviceWorkflowMode: "quick" | "standard" | null;
   status: string;
   startsAt: string;
   endsAt: string | null;

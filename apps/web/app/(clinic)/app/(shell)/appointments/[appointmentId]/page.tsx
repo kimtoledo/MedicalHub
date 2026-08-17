@@ -20,6 +20,7 @@ export default async function AppointmentPage({ params }: { params: { appointmen
       basePath="/app/appointments"
       encounterBasePath="/app/encounters"
       linkedEncounter={linkedEncounter}
+      canCompleteQuickService={identity.isAdmin}
     />
   );
 }

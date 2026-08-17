@@ -50,6 +50,7 @@ const entitlements: EntitlementService = {
       FeatureKey.APPOINTMENTS_CALENDAR,
       FeatureKey.APPOINTMENTS_MANAGE,
       FeatureKey.PATIENTS_MANAGE,
+      FeatureKey.TREATMENT_RECORDS,
     ].map((featureKey) => ({
       featureKey,
       isEnabled: true,
@@ -60,6 +61,10 @@ const entitlements: EntitlementService = {
 };
 function service(): ClinicDashboardService {
   return {
+    appointmentAvailability: vi.fn(async () => ({ durationMinutes: 30, slots: [], closedReason: null })),
+    appointmentOptions: vi.fn(async () => ({ branches: [], dentists: [], services: [] })),
+    createAppointment: vi.fn(async () => ({ id: appointmentId, status: "confirmed" as const, startsAt: new Date("2030-01-10T01:00:00.000Z"), endsAt: new Date("2030-01-10T01:30:00.000Z") })),
+    completeQuickService: vi.fn(async () => ({ appointmentId, encounterId: "00000000-0000-0000-0000-000000000801", treatmentRecordId: "00000000-0000-0000-0000-000000000901" })),
     summary: vi.fn(async () => ({
       todayAppointmentCount: 1,
       checkedInCount: 0,
@@ -92,6 +97,27 @@ async function setup(context: AuthorizationContext, s: ClinicDashboardService) {
   });
 }
 describe("clinic dashboard routes", () => {
+  it("creates an internal appointment through the protected clinic workflow", async () => {
+    const s = service();
+    await setup(member, s);
+    const response = await app!.inject({ method: "POST", url: `/v1/clinic/appointments?clinicId=${clinicId}`, payload: { branchId, patientId: "00000000-0000-0000-0000-000000000601", dentistId, serviceId: "00000000-0000-0000-0000-000000000701", startsAt: "2030-01-10T09:00:00+08:00" } });
+    expect(response.statusCode).toBe(201);
+    expect(s.createAppointment).toHaveBeenCalledWith(clinicId, expect.objectContaining({ branchId, dentistId }), expect.anything(), undefined);
+  });
+  it("returns clinic-scoped internal availability", async () => {
+    const s = service();
+    await setup(member, s);
+    const response = await app!.inject({ method: "GET", url: `/v1/clinic/appointment-availability?clinicId=${clinicId}&branchId=${branchId}&dentistId=${dentistId}&serviceId=00000000-0000-0000-0000-000000000701&date=2030-01-10` });
+    expect(response.statusCode).toBe(200);
+    expect(s.appointmentAvailability).toHaveBeenCalledWith(clinicId, expect.objectContaining({ branchId, dentistId, date: "2030-01-10" }), undefined);
+  });
+  it("completes a quick service through the clinical entitlement", async () => {
+    const s = service();
+    await setup(member, s);
+    const response = await app!.inject({ method: "POST", url: `/v1/clinic/appointments/${appointmentId}/quick-complete?clinicId=${clinicId}`, payload: { toothRef: "General" } });
+    expect(response.statusCode).toBe(201);
+    expect(s.completeQuickService).toHaveBeenCalledWith(clinicId, appointmentId, { toothRef: "General" }, expect.anything(), undefined);
+  });
   it("scopes summary and appointments to the membership branch", async () => {
     const s = service();
     await setup(member, s);
@@ -142,6 +168,8 @@ describe("clinic dashboard routes", () => {
       "2030-01-10",
       undefined,
       dentistId,
+      undefined,
+      undefined,
       undefined,
     );
     expect(s.updateStatus).toHaveBeenCalledWith(

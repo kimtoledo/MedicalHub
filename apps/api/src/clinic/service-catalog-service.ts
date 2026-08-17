@@ -15,6 +15,7 @@ export type ServiceCatalogInput = {
   description?: string | null;
   pricePhp?: string | null;
   durationMinutes: number;
+  workflowMode: 'quick' | 'standard';
   isBookable: boolean;
   isActive: boolean;
 };
@@ -31,6 +32,7 @@ export type ServiceCatalogItem = {
   category: string;
   description: string | null;
   durationMinutes: string;
+  workflowMode: 'quick' | 'standard';
   basePricePhp: string | null;
   pricePhp: string | null;
   priceSource: 'base' | 'branch' | 'organization';
@@ -160,6 +162,7 @@ export function createClinicServiceCatalogService(database: DB): ClinicServiceCa
           category: services.category,
           description: services.description,
           durationMinutes: services.durationMinutes,
+          workflowMode: services.workflowMode,
           basePricePhp: services.pricePhp,
           isBookable: services.isBookable,
           isActive: services.isActive,
@@ -196,6 +199,7 @@ export function createClinicServiceCatalogService(database: DB): ClinicServiceCa
           description: input.description || null,
           pricePhp: input.pricePhp ?? null,
           durationMinutes: String(input.durationMinutes),
+          workflowMode: input.workflowMode,
           isBookable: input.isBookable,
           isActive: input.isActive ? 'true' : 'false',
         }).returning({ id: services.id });
@@ -211,7 +215,7 @@ export function createClinicServiceCatalogService(database: DB): ClinicServiceCa
         await writeAudit(transaction, {
           actorId: actor.id, actorEmail: actor.email, clinicId, entityType: 'service', entityId: created.id,
           action: AuditAction.SERVICE_CREATED,
-          metadata: JSON.stringify({ fields: ['name', 'category', 'description', 'durationMinutes', 'isBookable', 'isActive', 'pricePhp'] }),
+          metadata: JSON.stringify({ fields: ['name', 'category', 'description', 'durationMinutes', 'workflowMode', 'isBookable', 'isActive', 'pricePhp'] }),
           ipAddress: actor.ipAddress, userAgent: actor.userAgent,
         });
         return created;
@@ -229,6 +233,7 @@ export function createClinicServiceCatalogService(database: DB): ClinicServiceCa
           ...(fields.category !== undefined ? { category: fields.category } : {}),
           ...(fields.description !== undefined ? { description: fields.description || null } : {}),
           ...(fields.durationMinutes !== undefined ? { durationMinutes: String(fields.durationMinutes) } : {}),
+          ...(fields.workflowMode !== undefined ? { workflowMode: fields.workflowMode } : {}),
           ...(fields.isBookable !== undefined ? { isBookable: fields.isBookable } : {}),
           ...(fields.isActive !== undefined ? { isActive: fields.isActive ? 'true' : 'false' } : {}),
           ...(pricePhp !== undefined ? { pricePhp } : {}),
