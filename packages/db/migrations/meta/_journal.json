@@ -344,6 +344,13 @@
       "when": 1786977202403,
       "tag": "0048_chilly_red_ghost",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1787063475177,
+      "tag": "0049_volatile_jack_power",
+      "breakpoints": true
     }
   ]
 }

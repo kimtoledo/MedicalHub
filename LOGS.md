@@ -50,6 +50,14 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Dentist PRC linking, verification, and email preview
+- Added one global professional dentist identity per normalized PRC license number; PRC remains a matching identifier while normal credentials remain the login mechanism
+- Dentist-role clinic access now requires selecting an actively clinic/branch-affiliated profile and persists `clinic_memberships.dentist_id`, allowing one professional profile to work across multiple clinics without duplicate records
+- Added Super Admin verify/revoke controls with mandatory reasons and audit metadata; verification-submission approve/reject/revoke decisions use the same held email snapshot workflow
+- Added `/dentra-admin/email-logs` with recipient/subject/type/source/status/date filters and exact saved email content preview; platform verification messages remain `held` and are not delivered before the platform email provider is integrated
+- Generated and applied migration `0049_volatile_jack_power` for unique PRC licenses and verification notification types/status; database readiness passed
+- Verified 526 API tests, 18 web tests, repository-wide typechecks, production API/web builds, protected-route/runtime smoke checks, and clean diff validation
+
 ### ✅ Lean clinic Today workspace
 - Reframed `/app` and clinic navigation as **Today**, a low-click daily desk for small teams
 - Added Register Patient, New Appointment, Add Walk-in, Billing, and tenant-scoped patient search at the top of the workspace

@@ -22,7 +22,7 @@ function createDatabaseDouble(options?: { duplicate?: boolean }) {
     firstName: 'Paolo',
     lastName: 'Santos',
     slug: 'dr-paolo-santos',
-    licenseNumber: null,
+    licenseNumber: 'PRC2026123',
     specialty: 'Prosthodontics',
     verificationStatus: 'unverified',
     publicationStatus: 'draft',
@@ -56,7 +56,7 @@ const input = {
   firstName: 'Paolo',
   lastName: 'Santos',
   slug: 'dr-paolo-santos',
-  licenseNumber: null,
+  licenseNumber: ' prc-2026-123 ',
   specialty: 'Prosthodontics',
 };
 
@@ -69,6 +69,7 @@ describe('createAdminDentistCreationService', () => {
 
     expect(dentistValues).toHaveBeenCalledWith({
       ...input,
+      licenseNumber: 'PRC2026123',
       verificationStatus: 'unverified',
       publicationStatus: 'draft',
     });

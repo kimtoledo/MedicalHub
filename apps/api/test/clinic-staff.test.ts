@@ -29,7 +29,7 @@ function entitlements(): EntitlementService {
 }
 function staff(overrides: Partial<ClinicStaffService> = {}): ClinicStaffService {
   return {
-    list: vi.fn(async () => ({ branches: [], permissionKeys: [], members: [] })),
+    list: vi.fn(async () => ({ branches: [], dentists: [], permissionKeys: [], members: [] })),
     invite: vi.fn(async () => ({ membershipId: MEMBERSHIP_ID, delivery: 'pending_provider' as const })),
     resendInvite: vi.fn(async () => ({ membershipId: MEMBERSHIP_ID, delivery: 'pending_provider' as const })),
     update: vi.fn(async () => ({ membershipId: MEMBERSHIP_ID })),

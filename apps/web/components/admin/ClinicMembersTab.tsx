@@ -32,6 +32,7 @@ type ClinicMember = {
   name: string;
   email: string;
   role: ClinicRole;
+  dentistId: string | null;
   branchId: string | null;
   isActive: boolean;
   invitedAt: string | null;
@@ -40,8 +41,9 @@ type ClinicMember = {
 };
 
 type ClinicBranch = { id: string; name: string; isMain: boolean };
+type DentistOption = { id: string; firstName: string; lastName: string; licenseNumber: string | null; verificationStatus: 'unverified' | 'pending' | 'verified' };
 
-type StaffListResult = { branches: ClinicBranch[]; members: ClinicMember[] };
+type StaffListResult = { branches: ClinicBranch[]; dentists: DentistOption[]; members: ClinicMember[] };
 
 type ErrorResponse = { error?: { message?: string } };
 
@@ -62,6 +64,7 @@ export default function ClinicMembersTab({ clinicId, branches: clinicBranches }:
   const router = useRouter();
   const [members, setMembers] = useState<ClinicMember[]>([]);
   const [branches, setBranches] = useState<ClinicBranch[]>(clinicBranches);
+  const [dentists, setDentists] = useState<DentistOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -70,6 +73,8 @@ export default function ClinicMembersTab({ clinicId, branches: clinicBranches }:
   const [confirmRemove, setConfirmRemove] = useState<ClinicMember | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [addRole, setAddRole] = useState<ClinicRole>('receptionist');
+  const [editRole, setEditRole] = useState<ClinicRole>('receptionist');
 
   async function load() {
     setLoading(true);
@@ -81,6 +86,7 @@ export default function ClinicMembersTab({ clinicId, branches: clinicBranches }:
         throw new Error(payload.error?.message ?? 'Staff list is unavailable');
       }
       setMembers(payload.data.members);
+      setDentists(payload.data.dentists);
       if (payload.data.branches.length) setBranches(payload.data.branches);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Staff list is unavailable');
@@ -105,6 +111,7 @@ export default function ClinicMembersTab({ clinicId, branches: clinicBranches }:
       email: String(form.get('email') || ''),
       role: String(form.get('role') || ''),
       branchId: branchId || null,
+      dentistId: addRole === 'dentist' ? String(form.get('dentistId') || '') || null : null,
     };
     const response = await fetch(`/api/admin/clinics/${clinicId}/staff`, {
       method: 'POST',
@@ -135,7 +142,11 @@ export default function ClinicMembersTab({ clinicId, branches: clinicBranches }:
     setActionError('');
     const form = new FormData(event.currentTarget);
     const branchId = String(form.get('branchId') || '');
-    const payload = { role: String(form.get('role') || ''), branchId: branchId || null };
+    const payload = {
+      role: String(form.get('role') || ''),
+      branchId: branchId || null,
+      dentistId: editRole === 'dentist' ? String(form.get('dentistId') || '') || null : null,
+    };
     const response = await fetch(`/api/admin/clinics/${clinicId}/staff/${editing.membershipId}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
@@ -238,11 +249,13 @@ export default function ClinicMembersTab({ clinicId, branches: clinicBranches }:
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{formatRole(member.role)}</span>
+                  {member.role === 'dentist' && <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${member.dentistId ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{member.dentistId ? 'Profile linked' : 'Profile missing'}</span>}
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${statusStyles[member.status]}`}>{member.status}</span>
                   <button
                     type="button"
                     onClick={() => {
                       setActionError('');
+                      setEditRole(member.role);
                       setEditing(member);
                     }}
                     aria-label={`Edit ${member.name || member.email}`}
@@ -297,12 +310,20 @@ export default function ClinicMembersTab({ clinicId, branches: clinicBranches }:
               </label>
               <label className={label}>
                 Role
-                <select name="role" defaultValue="receptionist" className={field}>
+                <select name="role" value={addRole} onChange={(event) => setAddRole(event.target.value as ClinicRole)} className={field}>
                   {CLINIC_ROLES.map((role) => (
                     <option key={role} value={role}>{formatRole(role)}</option>
                   ))}
                 </select>
               </label>
+              {addRole === 'dentist' && <label className={label}>
+                PRC dentist profile
+                <select name="dentistId" required className={field} defaultValue="">
+                  <option value="" disabled>Select affiliated dentist</option>
+                  {dentists.filter((dentist) => dentist.licenseNumber).map((dentist) => <option key={dentist.id} value={dentist.id}>Dr. {dentist.firstName} {dentist.lastName} · PRC {dentist.licenseNumber} · {dentist.verificationStatus}</option>)}
+                </select>
+                {!dentists.some((dentist) => dentist.licenseNumber) && <span className="mt-1.5 block text-xs font-normal text-amber-700">Create or update a dentist profile with a PRC number, then affiliate it to this clinic first.</span>}
+              </label>}
               <label className={label}>
                 Branch
                 <select name="branchId" defaultValue="" className={field}>
@@ -342,12 +363,19 @@ export default function ClinicMembersTab({ clinicId, branches: clinicBranches }:
             <form onSubmit={saveEdit} className="mt-5 space-y-4">
               <label className={label}>
                 Role
-                <select name="role" defaultValue={editing.role} className={field}>
+                <select name="role" value={editRole} onChange={(event) => setEditRole(event.target.value as ClinicRole)} className={field}>
                   {CLINIC_ROLES.map((role) => (
                     <option key={role} value={role}>{formatRole(role)}</option>
                   ))}
                 </select>
               </label>
+              {editRole === 'dentist' && <label className={label}>
+                PRC dentist profile
+                <select name="dentistId" required className={field} defaultValue={editing.dentistId ?? ''}>
+                  <option value="" disabled>Select affiliated dentist</option>
+                  {dentists.filter((dentist) => dentist.licenseNumber).map((dentist) => <option key={dentist.id} value={dentist.id}>Dr. {dentist.firstName} {dentist.lastName} · PRC {dentist.licenseNumber} · {dentist.verificationStatus}</option>)}
+                </select>
+              </label>}
               <label className={label}>
                 Branch
                 <select name="branchId" defaultValue={editing.branchId ?? ''} className={field}>

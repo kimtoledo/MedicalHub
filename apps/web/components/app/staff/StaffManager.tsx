@@ -11,6 +11,7 @@ type StaffMember = {
   name: string;
   email: string;
   role: ClinicRole;
+  dentistId: string | null;
   branchId: string | null;
   status: "active" | "pending" | "inactive";
   invitedAt: string | null;
@@ -19,6 +20,7 @@ type StaffMember = {
 };
 type StaffData = {
   branches: Array<{ id: string; name: string; isMain: boolean }>;
+  dentists: Array<{ id: string; firstName: string; lastName: string; licenseNumber: string | null; verificationStatus: "unverified" | "pending" | "verified" }>;
   permissionKeys: string[];
   members: StaffMember[];
 };
@@ -68,6 +70,7 @@ export default function StaffManager({ clinicId, currentUserId, currentRole }: {
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteRole, setInviteRole] = useState<ClinicRole>("receptionist");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [addingBranchFor, setAddingBranchFor] = useState<string | null>(null);
   const [newBranchId, setNewBranchId] = useState("");
@@ -146,7 +149,7 @@ export default function StaffManager({ clinicId, currentUserId, currentRole }: {
     const form = new FormData(event.currentTarget);
     const saved = await mutate("invite", `/api/clinic/${clinicId}/staff/invitations`, {
       method: "POST",
-      body: JSON.stringify({ name: form.get("name"), email: form.get("email"), role: form.get("role"), branchId: form.get("branchId") || null }),
+      body: JSON.stringify({ name: form.get("name"), email: form.get("email"), role: form.get("role"), branchId: form.get("branchId") || null, dentistId: inviteRole === "dentist" ? form.get("dentistId") || null : null }),
     }, "Invitation recorded. Email delivery will begin when the notification provider is configured.");
     if (saved) setInviteOpen(false);
   }
@@ -171,7 +174,8 @@ export default function StaffManager({ clinicId, currentUserId, currentRole }: {
           <form onSubmit={invite} className="grid gap-4 rounded-2xl border border-violet-200 bg-white p-5 shadow-sm sm:grid-cols-2" aria-label="Invite clinic staff">
             <label className="text-sm font-medium text-slate-700">Full name<input name="name" required minLength={2} className="mt-1 h-11 w-full rounded-xl border border-slate-300 px-3" /></label>
             <label className="text-sm font-medium text-slate-700">Email<input name="email" type="email" required className="mt-1 h-11 w-full rounded-xl border border-slate-300 px-3" /></label>
-            <label className="text-sm font-medium text-slate-700">Role<select name="role" className="mt-1 h-11 w-full rounded-xl border border-slate-300 px-3">{roles.filter((role) => currentRole === "clinic_owner" || role.value !== "clinic_owner").map((role) => <option key={role.value} value={role.value}>{role.label}</option>)}</select></label>
+            <label className="text-sm font-medium text-slate-700">Role<select name="role" value={inviteRole} onChange={(event) => setInviteRole(event.target.value as ClinicRole)} className="mt-1 h-11 w-full rounded-xl border border-slate-300 px-3">{roles.filter((role) => currentRole === "clinic_owner" || role.value !== "clinic_owner").map((role) => <option key={role.value} value={role.value}>{role.label}</option>)}</select></label>
+            {inviteRole === "dentist" && <label className="text-sm font-medium text-slate-700 sm:col-span-2">PRC dentist profile<select name="dentistId" required defaultValue="" className="mt-1 h-11 w-full rounded-xl border border-slate-300 px-3"><option value="" disabled>Select affiliated dentist</option>{data.dentists.filter((dentist) => dentist.licenseNumber).map((dentist) => <option key={dentist.id} value={dentist.id}>Dr. {dentist.firstName} {dentist.lastName} · PRC {dentist.licenseNumber} · {dentist.verificationStatus}</option>)}</select>{!data.dentists.some((dentist) => dentist.licenseNumber) && <span className="mt-1 block text-xs font-normal text-amber-700">Ask Super Admin to create or update the PRC dentist profile and affiliate it to this clinic first.</span>}</label>}
             <label className="text-sm font-medium text-slate-700">Branch access<select name="branchId" className="mt-1 h-11 w-full rounded-xl border border-slate-300 px-3"><option value="">All branches</option>{data.branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}{branch.isMain ? " (Main)" : ""}</option>)}</select></label>
             <div className="flex gap-2 sm:col-span-2"><button disabled={busy === "invite"} className="h-10 rounded-xl bg-violet-600 px-4 text-sm font-semibold text-white disabled:opacity-50">{busy === "invite" ? "Sending…" : "Create invitation"}</button><button type="button" onClick={() => setInviteOpen(false)} className="h-10 rounded-xl border border-slate-300 px-4 text-sm font-semibold text-slate-600">Cancel</button></div>
           </form>
@@ -188,9 +192,9 @@ export default function StaffManager({ clinicId, currentUserId, currentRole }: {
               return (
                 <article key={member.membershipId} className="p-4 sm:p-5">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="font-semibold text-slate-900">{member.name || "Pending user"}{own ? " (You)" : ""}</h3><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${member.status === "active" ? "bg-emerald-100 text-emerald-700" : member.status === "pending" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}`}>{member.status}</span></div><p className="truncate text-sm text-slate-500">{member.email}</p><p className="mt-1 text-xs text-slate-500">{branch?.name ?? "All branches"} · {roleLabel(member.role)}{data.members.filter((other) => other.userId === member.userId).length > 1 && ` · also assigned to ${data.members.filter((other) => other.userId === member.userId && other.membershipId !== member.membershipId).length} other branch(es)`}</p></div>
+                    <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="font-semibold text-slate-900">{member.name || "Pending user"}{own ? " (You)" : ""}</h3><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${member.status === "active" ? "bg-emerald-100 text-emerald-700" : member.status === "pending" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}`}>{member.status}</span>{member.role === "dentist" && <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${member.dentistId ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{member.dentistId ? "Profile linked" : "Profile missing"}</span>}</div><p className="truncate text-sm text-slate-500">{member.email}</p><p className="mt-1 text-xs text-slate-500">{branch?.name ?? "All branches"} · {roleLabel(member.role)}{data.members.filter((other) => other.userId === member.userId).length > 1 && ` · also assigned to ${data.members.filter((other) => other.userId === member.userId && other.membershipId !== member.membershipId).length} other branch(es)`}</p></div>
                     <div className="grid gap-2 sm:grid-cols-2 lg:w-[34rem] lg:grid-cols-4">
-                      <select aria-label={`Role for ${member.name}`} value={member.role} disabled={disabled || (member.role === "clinic_owner" && currentRole !== "clinic_owner")} onChange={(event) => void mutate(member.membershipId, `/api/clinic/${clinicId}/staff/${member.membershipId}`, { method: "PATCH", body: JSON.stringify({ role: event.target.value }) }, "Role updated.")} className="h-10 rounded-xl border border-slate-300 px-2 text-sm disabled:bg-slate-50">{roles.filter((role) => currentRole === "clinic_owner" || role.value !== "clinic_owner").map((role) => <option key={role.value} value={role.value}>{role.label}</option>)}</select>
+                      <select aria-label={`Role for ${member.name}`} value={member.role} disabled={disabled || (member.role === "clinic_owner" && currentRole !== "clinic_owner")} onChange={(event) => void mutate(member.membershipId, `/api/clinic/${clinicId}/staff/${member.membershipId}`, { method: "PATCH", body: JSON.stringify({ role: event.target.value }) }, "Role updated.")} className="h-10 rounded-xl border border-slate-300 px-2 text-sm disabled:bg-slate-50">{roles.filter((role) => (currentRole === "clinic_owner" || role.value !== "clinic_owner") && (member.role === "dentist" || role.value !== "dentist")).map((role) => <option key={role.value} value={role.value}>{role.label}</option>)}</select>
                       <select aria-label={`Branch for ${member.name}`} value={member.branchId ?? ""} disabled={disabled} onChange={(event) => void mutate(member.membershipId, `/api/clinic/${clinicId}/staff/${member.membershipId}`, { method: "PATCH", body: JSON.stringify({ branchId: event.target.value || null }) }, "Branch access updated.")} className="h-10 rounded-xl border border-slate-300 px-2 text-sm disabled:bg-slate-50"><option value="">All branches</option>{data.branches.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
                       <button disabled={disabled} onClick={() => void mutate(member.membershipId, `/api/clinic/${clinicId}/staff/${member.membershipId}`, { method: "PATCH", body: JSON.stringify({ isActive: member.status === "inactive" }) }, member.status === "inactive" ? "Membership activated." : "Membership deactivated.")} className="h-10 rounded-xl border border-slate-300 px-3 text-sm font-medium text-slate-700 disabled:opacity-40">{member.status === "inactive" ? "Activate" : "Deactivate"}</button>
                       <button disabled={disabled} onClick={() => void removeMember(member)} className="inline-flex h-10 items-center justify-center gap-1 rounded-xl border border-red-200 px-3 text-sm font-medium text-red-600 disabled:opacity-40"><UserMinus size={15} /> Remove</button>

@@ -358,6 +358,7 @@ function createStaffService(): ClinicStaffService {
   return {
     list: vi.fn(async () => ({
       branches: [{ id: '88888888-8888-4888-8888-888888888888', name: 'Main Branch', isMain: true }],
+      dentists: [],
       permissionKeys: [],
       members: [
         {
@@ -366,6 +367,7 @@ function createStaffService(): ClinicStaffService {
           name: 'Demo Owner',
           email: 'owner@example.com',
           role: 'clinic_owner' as const,
+          dentistId: null,
           branchId: null,
           isActive: true,
           invitedAt: '2026-01-01T00:00:00.000Z',

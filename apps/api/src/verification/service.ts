@@ -2,9 +2,10 @@ import { randomUUID } from 'node:crypto';
 import { Client as StorageClient } from '@replit/object-storage';
 import { and, desc, eq, gte, isNotNull, lte, sql } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
-import { clinics, dentists, verificationSubmissions } from '@dentra/db/schema';
+import { clinics, clinicMemberships, dentists, users, verificationSubmissions } from '@dentra/db/schema';
 import { writeAudit } from '@dentra/db/audit';
 import { AuditAction } from '@dentra/shared';
+import { dentistVerificationNotification, type NotificationService } from '../notifications/service.js';
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
@@ -21,7 +22,7 @@ function documents(value: string): VerificationDocument[] {
   } catch { return []; }
 }
 
-export function createVerificationService(database: DB) {
+export function createVerificationService(database: DB, notifications?: NotificationService) {
   let storageClient: StorageClient | null = null;
   const storage = () => storageClient ??= new StorageClient();
 
@@ -93,6 +94,30 @@ export function createVerificationService(database: DB) {
       if (submission.dentistId) await tx.update(dentists).set({ verificationStatus: input.status === 'approved' ? 'verified' : 'unverified' }).where(eq(dentists.id, submission.dentistId));
       if (submission.clinicId) await tx.update(clinics).set({ verificationStatus: input.status === 'approved' ? 'verified' : 'unverified' }).where(eq(clinics.id, submission.clinicId));
       await writeAudit(tx as unknown as DB, { actorId: actor.id, actorEmail: actor.email, clinicId: submission.clinicId, entityType: 'verification_submission', entityId: submissionId, action: input.status === 'approved' ? AuditAction.VERIFICATION_APPROVED : input.status === 'revoked' ? AuditAction.VERIFICATION_REVOKED : AuditAction.VERIFICATION_REJECTED, metadata: JSON.stringify({ subjectType: submission.subjectType, reason: input.reason }), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
+      if (notifications && submission.dentistId) {
+        const [profile] = await tx.select({ firstName: dentists.firstName, lastName: dentists.lastName, email: dentists.email })
+          .from(dentists)
+          .where(eq(dentists.id, submission.dentistId))
+          .limit(1);
+        let recipient = profile?.email ?? null;
+        if (!recipient) {
+          const [linkedUser] = await tx.select({ email: users.email })
+            .from(clinicMemberships)
+            .innerJoin(users, eq(users.id, clinicMemberships.userId))
+            .where(and(eq(clinicMemberships.dentistId, submission.dentistId), eq(clinicMemberships.isActive, 'true')))
+            .limit(1);
+          recipient = linkedUser?.email ?? null;
+        }
+        if (profile && recipient) {
+          await notifications.enqueue(tx as unknown as DB, dentistVerificationNotification({
+            dentistName: `${profile.firstName} ${profile.lastName}`,
+            recipient,
+            status: input.status,
+            reason: input.reason,
+            dedupeKey: `verification:${submissionId}:${input.status}`,
+          }));
+        }
+      }
       return updated;
     }),
   };

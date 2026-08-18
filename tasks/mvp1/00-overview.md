@@ -48,6 +48,8 @@
 | `26-clinic-staff-management.md` | Staff invitations, roles, branches, activation, permissions | ✅ Done |
 | `27-dentist-self-service-profile.md` | Dentist-owned professional profile editor and preview | ✅ Done |
 | `28-dentist-schedule-patient-navigation.md` | Linked schedule-to-patient navigation and dentist-owned appointment updates | ✅ Done |
+| `29-dentist-patient-registration-modal.md` | Centered dentist patient-registration modal with accessible dismissal behavior | ✅ Done |
+| `30-dentist-prc-linking-verification-email-preview.md` | PRC profile linking, verification controls, and held email previews | ✅ Done |
 
 ---
 

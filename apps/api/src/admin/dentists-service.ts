@@ -16,10 +16,14 @@ import { writeAudit } from '@dentra/db/audit';
 import {
   branches,
   clinics,
+  clinicMemberships,
   dentistBranchAssignments,
   dentists,
+  users,
 } from '@dentra/db/schema';
 import { AuditAction } from '@dentra/shared';
+import { normalizePrcLicense } from '../dentists/prc-license.js';
+import { dentistVerificationNotification, type NotificationService } from '../notifications/service.js';
 
 export type DentistVerificationStatus =
   typeof dentists.$inferSelect.verificationStatus;
@@ -87,7 +91,7 @@ export type CreatedAdminDentist = {
 
 export class AdminDentistCreationError extends Error {
   constructor(
-    public readonly code: 'SLUG_TAKEN',
+    public readonly code: 'SLUG_TAKEN' | 'LICENSE_TAKEN',
     message: string,
   ) {
     super(message);
@@ -192,6 +196,7 @@ export type AdminDentistProfileStateService = {
   updateVerification: (
     dentistId: string,
     status: Extract<DentistVerificationStatus, 'unverified' | 'verified'>,
+    reason: string,
     actor: CreateAdminDentistActor,
   ) => Promise<{ id: string; verificationStatus: DentistVerificationStatus }>;
   updatePublication: (
@@ -299,14 +304,15 @@ export function createAdminDentistListService(
   };
 }
 
-function isDentistSlugConstraint(error: unknown): boolean {
-  if (typeof error !== 'object' || error === null) return false;
+function dentistUniqueConstraint(error: unknown): string | null {
+  if (typeof error !== 'object' || error === null) return null;
   const databaseError = error as {
     code?: unknown;
     constraint_name?: unknown;
   };
-  return databaseError.code === '23505' &&
-    databaseError.constraint_name === 'dentists_slug_unique';
+  return databaseError.code === '23505' && typeof databaseError.constraint_name === 'string'
+    ? databaseError.constraint_name
+    : null;
 }
 
 export function createAdminDentistCreationService(
@@ -316,13 +322,23 @@ export function createAdminDentistCreationService(
     create: async (input, actor) => {
       try {
         return await database.transaction(async (transaction) => {
+          const licenseNumber = normalizePrcLicense(input.licenseNumber);
           const [duplicateDentist] = await transaction
-            .select({ id: dentists.id })
+            .select({ id: dentists.id, slug: dentists.slug, licenseNumber: dentists.licenseNumber })
             .from(dentists)
-            .where(eq(dentists.slug, input.slug))
+            .where(or(
+              eq(dentists.slug, input.slug),
+              licenseNumber ? eq(dentists.licenseNumber, licenseNumber) : undefined,
+            ))
             .limit(1);
 
           if (duplicateDentist) {
+            if (licenseNumber && duplicateDentist.licenseNumber === licenseNumber) {
+              throw new AdminDentistCreationError(
+                'LICENSE_TAKEN',
+                'A dentist profile already uses this PRC license number',
+              );
+            }
             throw new AdminDentistCreationError(
               'SLUG_TAKEN',
               'That dentist slug is already in use',
@@ -335,7 +351,7 @@ export function createAdminDentistCreationService(
               firstName: input.firstName,
               lastName: input.lastName,
               slug: input.slug,
-              licenseNumber: input.licenseNumber,
+              licenseNumber,
               specialty: input.specialty,
               verificationStatus: 'unverified',
               publicationStatus: 'draft',
@@ -370,10 +386,17 @@ export function createAdminDentistCreationService(
         });
       } catch (error) {
         if (error instanceof AdminDentistCreationError) throw error;
-        if (isDentistSlugConstraint(error)) {
+        const constraint = dentistUniqueConstraint(error);
+        if (constraint === 'dentists_slug_unique') {
           throw new AdminDentistCreationError(
             'SLUG_TAKEN',
             'That dentist slug is already in use',
+          );
+        }
+        if (constraint === 'dentists_license_number_unique') {
+          throw new AdminDentistCreationError(
+            'LICENSE_TAKEN',
+            'A dentist profile already uses this PRC license number',
           );
         }
         throw error;
@@ -609,11 +632,12 @@ export function createAdminDentistAffiliationService(
 
 export function createAdminDentistProfileStateService(
   database: DB,
+  notifications?: NotificationService,
 ): AdminDentistProfileStateService {
   return {
-    updateVerification: async (dentistId, status, actor) =>
+    updateVerification: async (dentistId, status, reason, actor) =>
       database.transaction(async (transaction) => {
-        const [current] = await transaction.select({ status: dentists.verificationStatus })
+        const [current] = await transaction.select({ status: dentists.verificationStatus, firstName: dentists.firstName, lastName: dentists.lastName, email: dentists.email })
           .from(dentists).where(and(eq(dentists.id, dentistId), isNull(dentists.deletedAt))).limit(1);
         if (!current) throw new AdminDentistProfileStateError('DENTIST_NOT_FOUND', 'Dentist not found');
         if (current.status === status) throw new AdminDentistProfileStateError('STATE_UNCHANGED', `Dentist is already ${status}`);
@@ -624,9 +648,29 @@ export function createAdminDentistProfileStateService(
         await writeAudit(transaction, {
           actorId: actor.id, actorEmail: actor.email, entityType: 'dentist', entityId: dentistId,
           action: status === 'verified' ? AuditAction.DENTIST_VERIFIED : AuditAction.DENTIST_VERIFICATION_REVOKED,
-          metadata: JSON.stringify({ previousStatus: current.status, nextStatus: status }),
+          metadata: JSON.stringify({ previousStatus: current.status, nextStatus: status, reason }),
           ipAddress: actor.ipAddress, userAgent: actor.userAgent,
         });
+        if (notifications) {
+          let recipient = current.email;
+          if (!recipient) {
+            const [linkedUser] = await transaction.select({ email: users.email })
+              .from(clinicMemberships)
+              .innerJoin(users, eq(users.id, clinicMemberships.userId))
+              .where(and(eq(clinicMemberships.dentistId, dentistId), eq(clinicMemberships.isActive, 'true')))
+              .limit(1);
+            recipient = linkedUser?.email ?? null;
+          }
+          if (recipient) {
+            await notifications.enqueue(transaction as unknown as DB, dentistVerificationNotification({
+              dentistName: `${current.firstName} ${current.lastName}`,
+              recipient,
+              status: status === 'verified' ? 'approved' : 'revoked',
+              reason,
+              dedupeKey: `dentist-verification-manual:${dentistId}:${status}:${updated.id}:${Date.now()}`,
+            }));
+          }
+        }
         return updated;
       }),
     updatePublication: async (dentistId, status, actor) =>

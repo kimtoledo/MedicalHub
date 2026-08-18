@@ -41,7 +41,7 @@ function createAuth(context: AuthorizationContext | null): AuthServices {
 
 function createStaffService(overrides: Partial<ClinicStaffService> = {}): ClinicStaffService {
   return {
-    list: vi.fn(async () => ({ branches: [], permissionKeys: [], members: [] })),
+    list: vi.fn(async () => ({ branches: [], dentists: [], permissionKeys: [], members: [] })),
     invite: vi.fn(async () => ({ membershipId, delivery: 'pending_provider' as const })),
     resendInvite: vi.fn(async () => ({ membershipId, delivery: 'pending_provider' as const })),
     update: vi.fn(async () => ({ membershipId })),
@@ -103,6 +103,19 @@ describe('POST /v1/admin/clinics/:clinicId/staff/invitations', () => {
       expect.objectContaining({ role: 'cashier', email: 'cashier@example.test' }),
       expect.objectContaining({ id: superAdminContext.user.id, role: 'clinic_owner' }),
     );
+  });
+
+  it('passes the selected dentist profile when creating Dentist access', async () => {
+    const staff = createStaffService();
+    await createApp(superAdminContext, staff);
+    const dentistId = '77777777-7777-4777-8777-777777777777';
+    const response = await app!.inject({
+      method: 'POST',
+      url: `/v1/admin/clinics/${clinicId}/staff/invitations`,
+      payload: { name: 'Dr. Maria Reyes', email: 'maria@example.test', role: 'dentist', branchId: null, dentistId },
+    });
+    expect(response.statusCode).toBe(201);
+    expect(staff.invite).toHaveBeenCalledWith(clinicId, expect.objectContaining({ role: 'dentist', dentistId }), expect.anything());
   });
 
   it('rejects a platform_support account', async () => {

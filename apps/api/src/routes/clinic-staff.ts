@@ -17,10 +17,12 @@ const inviteBody = z.object({
   email: z.string().trim().email().max(255),
   role: z.enum(roles),
   branchId: postgresUuidSchema.nullable(),
+  dentistId: postgresUuidSchema.nullable().optional(),
 }).strict();
 const updateBody = z.object({
   role: z.enum(roles).optional(),
   branchId: postgresUuidSchema.nullable().optional(),
+  dentistId: postgresUuidSchema.nullable().optional(),
   isActive: z.boolean().optional(),
 }).strict().refine((value) => Object.keys(value).length > 0, 'At least one change is required');
 const permissionBody = z.object({ permissionKey: z.enum(permissions), isEnabled: z.boolean() }).strict();

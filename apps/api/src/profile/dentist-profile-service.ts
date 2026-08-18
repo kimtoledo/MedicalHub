@@ -11,6 +11,12 @@ export type DentistTimeOffInput = { startDate: string; endDate: string; reason: 
 export class DentistProfileError extends Error { constructor(public code: string, message: string, public statusCode = 400) { super(message); } }
 export type DentistProfileService = ReturnType<typeof createDentistProfileService>;
 
+function isPrcLicenseConstraint(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const databaseError = error as { code?: unknown; constraint_name?: unknown };
+  return databaseError.code === '23505' && databaseError.constraint_name === 'dentists_license_number_unique';
+}
+
 export function createDentistProfileService(database: DB) {
   const get = async (dentistId: string) => {
     const [profile] = await database.select().from(dentists).where(and(eq(dentists.id, dentistId), isNull(dentists.deletedAt))).limit(1);
@@ -25,14 +31,20 @@ export function createDentistProfileService(database: DB) {
   return {
     get,
     update: async (dentistId: string, input: DentistProfileInput, actor: DentistProfileActor) => {
-      await database.transaction(async (tx) => {
-        const [current] = await tx.select({ licenseNumber: dentists.licenseNumber, specialty: dentists.specialty, bio: dentists.bio, photoUrl: dentists.photoUrl, phone: dentists.phone, email: dentists.email }).from(dentists).where(and(eq(dentists.id, dentistId), isNull(dentists.deletedAt))).limit(1);
-        if (!current) throw new DentistProfileError('DENTIST_NOT_FOUND', 'Dentist profile not found', 404);
-        const changedFields = (Object.keys(input) as Array<keyof DentistProfileInput>).filter((field) => input[field] !== current[field]);
-        if (!changedFields.length) return;
-        await tx.update(dentists).set({ ...input, updatedAt: new Date() }).where(eq(dentists.id, dentistId));
-        await writeAudit(tx as unknown as DB, { actorId: actor.id, actorEmail: actor.email, clinicId: actor.clinicId, entityType: 'dentist', entityId: dentistId, action: AuditAction.DENTIST_PROFILE_UPDATED, metadata: JSON.stringify({ changedFields }), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
-      });
+      try {
+        await database.transaction(async (tx) => {
+          const [current] = await tx.select({ licenseNumber: dentists.licenseNumber, specialty: dentists.specialty, bio: dentists.bio, photoUrl: dentists.photoUrl, phone: dentists.phone, email: dentists.email }).from(dentists).where(and(eq(dentists.id, dentistId), isNull(dentists.deletedAt))).limit(1);
+          if (!current) throw new DentistProfileError('DENTIST_NOT_FOUND', 'Dentist profile not found', 404);
+          const changedFields = (Object.keys(input) as Array<keyof DentistProfileInput>).filter((field) => input[field] !== current[field]);
+          if (!changedFields.length) return;
+          await tx.update(dentists).set({ ...input, updatedAt: new Date() }).where(eq(dentists.id, dentistId));
+          await writeAudit(tx as unknown as DB, { actorId: actor.id, actorEmail: actor.email, clinicId: actor.clinicId, entityType: 'dentist', entityId: dentistId, action: AuditAction.DENTIST_PROFILE_UPDATED, metadata: JSON.stringify({ changedFields }), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
+        });
+      } catch (caught) {
+        if (caught instanceof DentistProfileError) throw caught;
+        if (isPrcLicenseConstraint(caught)) throw new DentistProfileError('PRC_LICENSE_TAKEN', 'Another dentist profile already uses this PRC license number', 409);
+        throw caught;
+      }
       return get(dentistId);
     },
     getSchedule: async (dentistId: string, branchId: string) => {

@@ -3,7 +3,17 @@ import type { DB } from '@dentra/db';
 import { notificationOutbox } from '@dentra/db/schema';
 import type { NotificationProvidersService } from './providers-service.js';
 
-export type NotificationInput = { clinicId?: string | null; channel: 'email' | 'sms'; type: 'booking_confirmation' | 'appointment_reminder' | 'appointment_cancelled' | 'appointment_rescheduled' | 'recall_reminder' | 'prescription_share'; recipient: string; subject: string; body: string; dedupeKey: string; nextAttemptAt?: Date };
+export type NotificationInput = {
+  clinicId?: string | null;
+  channel: 'email' | 'sms';
+  type: 'booking_confirmation' | 'appointment_reminder' | 'appointment_cancelled' | 'appointment_rescheduled' | 'recall_reminder' | 'prescription_share' | 'dentist_verification_approved' | 'dentist_verification_rejected' | 'dentist_verification_revoked';
+  recipient: string;
+  subject: string;
+  body: string;
+  dedupeKey: string;
+  status?: 'held' | 'queued';
+  nextAttemptAt?: Date;
+};
 
 const safeContent = (input: NotificationInput) => ({ ...input, subject: input.subject.slice(0, 300), body: input.body.slice(0, 2000) });
 const MAX_ATTEMPTS = 5;
@@ -93,4 +103,47 @@ export function appointmentCancelledNotification(input: { clinicId: string; pati
 export function appointmentRescheduledNotification(input: { clinicId: string; patientEmail: string; appointmentId: string; clinicName: string; branchName: string; startsAt: string; dedupeKey: string }): NotificationInput {
   const date = new Intl.DateTimeFormat('en-PH', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Asia/Manila' }).format(new Date(input.startsAt));
   return { clinicId: input.clinicId, channel: 'email', type: 'appointment_rescheduled', recipient: input.patientEmail, subject: `Appointment rescheduled — ${input.clinicName}`, body: `Your appointment with ${input.clinicName} at ${input.branchName} has been rescheduled to ${date}. Please contact the clinic if this doesn't work for you.`, dedupeKey: input.dedupeKey };
+}
+
+export function dentistVerificationNotification(input: {
+  dentistName: string;
+  recipient: string;
+  status: 'approved' | 'rejected' | 'revoked';
+  reason: string;
+  dedupeKey: string;
+}): NotificationInput {
+  const approved = input.status === 'approved';
+  const label = approved ? 'approved' : input.status === 'rejected' ? 'not approved' : 'revoked';
+  const type = input.status === 'approved'
+    ? 'dentist_verification_approved'
+    : input.status === 'rejected'
+      ? 'dentist_verification_rejected'
+      : 'dentist_verification_revoked';
+  const nextStep = approved
+    ? 'Your verified Dentra.ph dentist profile can now be linked to clinic access and published when ready.'
+    : input.status === 'rejected'
+      ? 'Please review the reason below and submit corrected or updated credentials when ready.'
+      : 'Your verified status is no longer active. Please contact Dentra.ph support before performing protected verified-profile actions.';
+  return {
+    clinicId: null,
+    channel: 'email',
+    type,
+    recipient: input.recipient,
+    subject: `Dentra.ph dentist verification ${label}`,
+    body: [
+      `Hi ${input.dentistName},`,
+      '',
+      `Your Dentra.ph dentist verification has been ${label}.`,
+      '',
+      `Review reason: ${input.reason}`,
+      '',
+      nextStep,
+      '',
+      'This message does not include or link to your private verification documents.',
+      '',
+      'Dentra.ph — Smarter Dentistry. Better Care.',
+    ].join('\n'),
+    dedupeKey: input.dedupeKey,
+    status: 'held',
+  };
 }

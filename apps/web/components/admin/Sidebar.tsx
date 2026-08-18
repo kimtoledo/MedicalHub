@@ -17,6 +17,7 @@ import {
   BadgeCheck,
   MessagesSquare,
   ShieldAlert,
+  MailSearch,
 } from "lucide-react";
 import { signOutAdmin } from "@/lib/admin-auth-client";
 import type { AdminIdentity } from "@/lib/admin-types";
@@ -27,6 +28,7 @@ export const navItems = [
   { label: "Clinics",          href: "/dentra-admin/clinics",      icon: Building2 },
   { label: "Dentists",         href: "/dentra-admin/dentists",     icon: Stethoscope },
   { label: "Verifications",    href: "/dentra-admin/verifications",icon: BadgeCheck },
+  { label: "Email Logs",       href: "/dentra-admin/email-logs",   icon: MailSearch },
   { label: "Reviews",          href: "/dentra-admin/reviews",      icon: MessagesSquare },
   { label: "Packages & Plans", href: "/dentra-admin/packages",     icon: Package },
   { label: "Subscriptions",    href: "/dentra-admin/subscriptions",icon: CreditCard },

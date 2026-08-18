@@ -252,9 +252,12 @@ export default function CreateDentistDrawer() {
                     <input
                       className={inputClassName}
                       name="licenseNumber"
+                      required
+                      minLength={3}
                       maxLength={50}
                       placeholder="PRC-DEN-2026-001234"
                     />
+                    <span className="mt-1 block text-xs text-slate-500">Used to find and link one professional profile across clinics. It is never used as a password.</span>
                   </label>
 
                   <label>

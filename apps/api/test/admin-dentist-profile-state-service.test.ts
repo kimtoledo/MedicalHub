@@ -20,11 +20,11 @@ describe('createAdminDentistProfileStateService', () => {
   it('conditionally verifies and audits the previous and next state', async () => {
     const { database, set, auditValues } = createDatabaseDouble({ status: 'pending' }, { id: 'dentist-id', verificationStatus: 'verified' });
     const service = createAdminDentistProfileStateService(database);
-    await service.updateVerification('dentist-id', 'verified', actor);
+    await service.updateVerification('dentist-id', 'verified', 'PRC documents reviewed', actor);
     expect(set).toHaveBeenCalledWith({ verificationStatus: 'verified' });
     expect(auditValues).toHaveBeenCalledWith(expect.objectContaining({
       action: AuditAction.DENTIST_VERIFIED,
-      metadata: JSON.stringify({ previousStatus: 'pending', nextStatus: 'verified' }),
+      metadata: JSON.stringify({ previousStatus: 'pending', nextStatus: 'verified', reason: 'PRC documents reviewed' }),
     }));
   });
 

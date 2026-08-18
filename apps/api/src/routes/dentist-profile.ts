@@ -2,11 +2,12 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { resolveRequestAuthorization } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
+import { normalizePrcLicense } from '../dentists/prc-license.js';
 import { DentistProfileError, type DentistProfileService } from '../profile/dentist-profile-service.js';
 import { postgresUuidSchema } from '../validation.js';
 
 const nullableText = (max: number) => z.string().trim().max(max).nullable();
-const body = z.object({ bio: nullableText(5000), specialty: nullableText(200), phone: nullableText(20), email: z.string().trim().email().max(255).nullable(), photoUrl: z.string().trim().url().max(500).refine((url) => url.startsWith('https://'), 'Photo URL must use HTTPS').nullable(), licenseNumber: nullableText(50) }).strict();
+const body = z.object({ bio: nullableText(5000), specialty: nullableText(200), phone: nullableText(20), email: z.string().trim().email().max(255).nullable(), photoUrl: z.string().trim().url().max(500).refine((url) => url.startsWith('https://'), 'Photo URL must use HTTPS').nullable(), licenseNumber: z.string().trim().min(3).max(50).transform((value) => normalizePrcLicense(value)).nullable() }).strict();
 const branchIdQuery = z.object({ branchId: postgresUuidSchema });
 const scheduleBody = z.object({ rows: z.array(z.object({ weekday: z.number().int().min(0).max(6), startsAt: z.number().int().min(0).max(1439), endsAt: z.number().int().min(1).max(1440) })).max(7) }).strict();
 const timeOffBody = z.object({ startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), reason: z.string().trim().max(500).nullable().optional() }).strict();

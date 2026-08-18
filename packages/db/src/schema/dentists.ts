@@ -56,6 +56,7 @@ export const dentists = pgTable(
   },
   (t) => ({
     slugUnique: unique('dentists_slug_unique').on(t.slug),
+    licenseNumberUnique: unique('dentists_license_number_unique').on(t.licenseNumber),
     publicationIdx: index('dentists_publication_idx').on(t.publicationStatus),
   }),
 );

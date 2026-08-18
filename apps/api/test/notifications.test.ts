@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bookingConfirmationNotification } from '../src/notifications/service.js';
+import { bookingConfirmationNotification, dentistVerificationNotification } from '../src/notifications/service.js';
 
 describe('notification templates', () => {
   it('uses non-sensitive booking confirmation content and a dedupe key', () => {
@@ -8,5 +8,23 @@ describe('notification templates', () => {
     expect(message.body).toContain('appointment request');
     expect(message.body).not.toMatch(/diagnosis|medication|procedure/i);
     expect(message.dedupeKey).toBe('booking-confirmation:appointment');
+  });
+
+  it('holds a safe, fully rendered dentist verification email for Super Admin preview', () => {
+    const message = dentistVerificationNotification({
+      dentistName: 'Maria Reyes',
+      recipient: 'maria@example.test',
+      status: 'approved',
+      reason: 'PRC identity and submitted credentials matched.',
+      dedupeKey: 'verification:submission:approved',
+    });
+    expect(message).toMatchObject({
+      channel: 'email',
+      type: 'dentist_verification_approved',
+      status: 'held',
+      recipient: 'maria@example.test',
+    });
+    expect(message.body).toContain('PRC identity and submitted credentials matched.');
+    expect(message.body).not.toMatch(/storage|document\/|https?:\/\//i);
   });
 });

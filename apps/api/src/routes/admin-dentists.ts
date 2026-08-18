@@ -10,6 +10,7 @@ import {
   type AdminDentistListService,
   type AdminDentistProfileStateService,
 } from '../admin/dentists-service.js';
+import { normalizePrcLicense } from '../dentists/prc-license.js';
 import { isSuperAdmin } from '../auth/authorization.js';
 import { resolveRequestAuthorization } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
@@ -40,7 +41,7 @@ const createDentistBodySchema = z.object({
     .min(2)
     .max(80)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-  licenseNumber: optionalText(50),
+  licenseNumber: z.string().trim().min(3).max(50).transform((value) => normalizePrcLicense(value)!),
   specialty: optionalText(200),
 }).strict();
 
@@ -55,7 +56,7 @@ const affiliationParamsSchema = dentistParamsSchema.extend({
 const createAffiliationBodySchema = z.object({
   branchId: postgresUuidSchema,
 }).strict();
-const updateVerificationBodySchema = z.object({ verificationStatus: z.enum(['unverified', 'verified']) }).strict();
+const updateVerificationBodySchema = z.object({ verificationStatus: z.enum(['unverified', 'verified']), reason: z.string().trim().min(3).max(1000) }).strict();
 const updatePublicationBodySchema = z.object({ publicationStatus: z.enum(['published', 'unpublished']) }).strict();
 
 type RegisterAdminDentistRoutesOptions = {
@@ -198,7 +199,7 @@ export async function registerAdminDentistRoutes(
       const body = updateVerificationBodySchema.safeParse(request.body);
       if (!params.success || !body.success) return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid verification change' } });
       try {
-        const result = await profileState.updateVerification(params.data.dentistId, body.data.verificationStatus, { id: authorization.user.id, email: authorization.user.email, ipAddress: request.ip, userAgent: request.headers['user-agent'] });
+        const result = await profileState.updateVerification(params.data.dentistId, body.data.verificationStatus, body.data.reason, { id: authorization.user.id, email: authorization.user.email, ipAddress: request.ip, userAgent: request.headers['user-agent'] });
         return reply.send({ success: true, data: result });
       } catch (error) {
         if (!(error instanceof AdminDentistProfileStateError)) throw error;

@@ -161,7 +161,7 @@ function createDentistAffiliationService(): AdminDentistAffiliationService {
 
 function createDentistProfileStateService(): AdminDentistProfileStateService {
   return {
-    updateVerification: vi.fn(async (id, verificationStatus) => ({ id, verificationStatus })),
+    updateVerification: vi.fn(async (id, verificationStatus, _reason) => ({ id, verificationStatus })),
     updatePublication: vi.fn(async (id, publicationStatus) => ({ id, publicationStatus })),
   };
 }
@@ -260,11 +260,11 @@ describe('Super Admin dentist verification and publication', () => {
   it('verifies and publishes through protected state services', async () => {
     const state = createDentistProfileStateService();
     await createApp(superAdminContext, createDentistService(), undefined, undefined, undefined, state);
-    const verifyResponse = await app!.inject({ method: 'PATCH', url: `/v1/admin/dentists/${dentistId}/verification`, payload: { verificationStatus: 'verified' } });
+    const verifyResponse = await app!.inject({ method: 'PATCH', url: `/v1/admin/dentists/${dentistId}/verification`, payload: { verificationStatus: 'verified', reason: 'PRC documents reviewed' } });
     const publishResponse = await app!.inject({ method: 'PATCH', url: `/v1/admin/dentists/${dentistId}/publication`, payload: { publicationStatus: 'published' } });
     expect(verifyResponse.statusCode).toBe(200);
     expect(publishResponse.statusCode).toBe(200);
-    expect(state.updateVerification).toHaveBeenCalledWith(dentistId, 'verified', expect.objectContaining({ id: superAdminContext.user.id }));
+    expect(state.updateVerification).toHaveBeenCalledWith(dentistId, 'verified', 'PRC documents reviewed', expect.objectContaining({ id: superAdminContext.user.id }));
     expect(state.updatePublication).toHaveBeenCalledWith(dentistId, 'published', expect.objectContaining({ id: superAdminContext.user.id }));
   });
 
@@ -279,6 +279,14 @@ describe('Super Admin dentist verification and publication', () => {
     const invalid = await app!.inject({ method: 'PATCH', url: `/v1/admin/dentists/${dentistId}/publication`, payload: { publicationStatus: 'draft' } });
     expect(invalid.statusCode).toBe(400);
     expect(state.updatePublication).not.toHaveBeenCalled();
+  });
+
+  it('requires a written reason for a direct verification change', async () => {
+    const state = createDentistProfileStateService();
+    await createApp(superAdminContext, createDentistService(), undefined, undefined, undefined, state);
+    const response = await app!.inject({ method: 'PATCH', url: `/v1/admin/dentists/${dentistId}/verification`, payload: { verificationStatus: 'verified', reason: '' } });
+    expect(response.statusCode).toBe(400);
+    expect(state.updateVerification).not.toHaveBeenCalled();
   });
 });
 
@@ -374,7 +382,7 @@ describe('POST /v1/admin/dentists', () => {
     firstName: '  Paolo ',
     lastName: ' Santos  ',
     slug: 'DR-PAOLO-SANTOS',
-    licenseNumber: '',
+    licenseNumber: ' prc-2026-123 ',
     specialty: ' Prosthodontics ',
   };
 
@@ -423,7 +431,7 @@ describe('POST /v1/admin/dentists', () => {
         firstName: 'Paolo',
         lastName: 'Santos',
         slug: 'dr-paolo-santos',
-        licenseNumber: null,
+        licenseNumber: 'PRC2026123',
         specialty: 'Prosthodontics',
       },
       expect.objectContaining({
