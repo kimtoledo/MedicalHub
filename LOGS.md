@@ -50,6 +50,15 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Presentation demo transaction readiness
+- Added `npm run demo:prepare`, a non-destructive scenario preparer that refreshes only fixed synthetic Smile Bright Dental rows for a chosen Manila date and automatically runs a read-only readiness gate
+- Added bounded `DEMO_SCENARIO=1..9` runs; preparation refuses to overwrite a scenario after one of its appointments produces an encounter, preserving prior clinical/billing/audit history without broad deletes or raw SQL
+- Prepared quick Cleaning and standard Braces Adjustment services, active clinic/subscription/entitlements, PRC-linked dentist access, branch/dentist hours, four fictional patients, and Completed/In Treatment/Waiting/Upcoming queue examples
+- Added `npm run demo:check` with 13 actionable checks and strict script typechecking; output never includes credentials, connection strings, tokens, or clinical payloads
+- Added `docs/PRESENTATION_DEMO.md` with the exact Super Admin → clinic Today → quick service/billing → dentist-profile route and same-Wi-Fi instructions
+- Prepared scenario 1 twice for August 19, 2026 without duplicates; authenticated Super Admin Email Logs, clinic Today/options, and dentist profile smoke requests returned HTTP 200
+- Verified 526 API tests, 18 web tests, repository/demo-script typechecks, production API/web builds, and database schema readiness
+
 ### ✅ Dentist PRC linking, verification, and email preview
 - Added one global professional dentist identity per normalized PRC license number; PRC remains a matching identifier while normal credentials remain the login mechanism
 - Dentist-role clinic access now requires selecting an actively clinic/branch-affiliated profile and persists `clinic_memberships.dentist_id`, allowing one professional profile to work across multiple clinics without duplicate records
@@ -987,6 +996,8 @@ npm run typecheck    # Run workspace TypeScript checks
 npm run db:generate  # Generate a new Drizzle migration from schema changes
 npm run db:migrate   # Apply pending migrations
 npm run db:seed      # Load demo data (idempotent)
+npm run demo:prepare # Refresh the bounded synthetic presentation scenario, then verify it
+npm run demo:check   # Read-only presentation readiness checks
 npm run db:studio    # Open Drizzle Studio (requires DATABASE_URL)
 ```
 

@@ -89,6 +89,9 @@ npm run db:migrate
 # then load the fully synthetic demo dataset
 npm run db:seed
 
+# Optional: prepare and validate a same-day synthetic presentation scenario
+npm run demo:prepare
+
 # 4. Start the frontend (local port 5001)
 npm run dev
 
@@ -97,6 +100,7 @@ npm run api:dev
 ```
 
 See **[DEVELOPER.md](DEVELOPER.md)** for full setup instructions across Replit, VS Code, and Codex.
+For the repeatable presentation flow, see **[docs/PRESENTATION_DEMO.md](docs/PRESENTATION_DEMO.md)**.
 
 The API exposes Better Auth under `/v1/auth/*`. Authenticated clients can call
 `GET /v1/session-context` to receive platform roles and active clinic

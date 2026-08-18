@@ -50,6 +50,7 @@
 | `28-dentist-schedule-patient-navigation.md` | Linked schedule-to-patient navigation and dentist-owned appointment updates | ✅ Done |
 | `29-dentist-patient-registration-modal.md` | Centered dentist patient-registration modal with accessible dismissal behavior | ✅ Done |
 | `30-dentist-prc-linking-verification-email-preview.md` | PRC profile linking, verification controls, and held email previews | ✅ Done |
+| `31-demo-transaction-readiness.md` | Deterministic presentation scenario, safe preparation, and readiness checks | ✅ Done |
 
 ---
 

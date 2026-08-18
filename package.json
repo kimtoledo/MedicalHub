@@ -9,7 +9,8 @@
     "api:dev": "npm run dev --workspace @dentra/api",
     "api:start": "npm run start --workspace @dentra/api",
     "build": "npm run build --workspace @dentra/web && npm run build --workspace @dentra/api",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "typecheck": "npm run typecheck:demo && npm run typecheck --workspaces --if-present",
+    "typecheck:demo": "tsc --project scripts/tsconfig.json",
     "test": "npm run test --workspaces --if-present",
     "db:generate": "cd packages/db && npx drizzle-kit generate --config=drizzle.config.ts",
     "db:migrate": "cd packages/db && DRIZZLE_MIGRATION=true npx drizzle-kit migrate --config=drizzle.config.ts && cd ../.. && npm run db:check",
@@ -18,6 +19,8 @@
     "db:studio": "cd packages/db && npx drizzle-kit studio --config=drizzle.config.ts",
     "db:push": "cd packages/db && npx drizzle-kit push --config=drizzle.config.ts",
     "db:seed": "tsx scripts/seed-demo.ts",
+    "demo:prepare": "npm run db:seed && tsx scripts/prepare-presentation-demo.ts && npm run demo:check",
+    "demo:check": "tsx scripts/check-demo-readiness.ts",
     "db:backfill-branch-hours": "tsx scripts/backfill-branch-hours.ts",
     "db:seed-ph-holidays": "tsx scripts/seed-ph-holidays.ts"
   },
