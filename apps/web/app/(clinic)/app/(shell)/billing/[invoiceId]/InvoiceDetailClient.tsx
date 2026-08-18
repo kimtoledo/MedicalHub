@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Printer, CreditCard, CheckCircle, RotateCcw, Shield, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
@@ -205,12 +205,18 @@ export default function InvoiceDetailClient({
   const [invoice, setInvoice] = useState(initialInvoice);
   const [showPayModal, setShowPayModal] = useState(false);
   const [transactionType, setTransactionType] = useState<"refund" | "adjustment" | null>(null);
+  const [paymentRecorded, setPaymentRecorded] = useState(false);
+
+  useEffect(() => {
+    setInvoice(initialInvoice);
+  }, [initialInvoice]);
 
   const isPaid    = invoice.status === "paid";
   const isPending = invoice.status === "pending" || invoice.status === "partially_paid";
 
   function handlePaySuccess() {
     setShowPayModal(false);
+    setPaymentRecorded(true);
     router.refresh();
   }
 
@@ -227,6 +233,12 @@ export default function InvoiceDetailClient({
       {transactionType && <RecordTransactionModal invoice={invoice} clinicId={clinicId} type={transactionType} onClose={() => setTransactionType(null)} onSuccess={() => { setTransactionType(null); router.refresh(); }} />}
 
       <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto space-y-6">
+        {paymentRecorded && (
+          <div role="status" className="flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 sm:flex-row sm:items-center sm:justify-between">
+            <div><p className="font-bold">Payment recorded</p><p className="text-xs text-emerald-700">This visit is complete. Continue with the next patient or arrange a follow-up.</p></div>
+            <div className="flex flex-wrap gap-2"><Link href="/app" className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white">Back to Today</Link><Link href="/app/appointments" className="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-bold text-emerald-800">Schedule follow-up</Link></div>
+          </div>
+        )}
         {/* Back + actions */}
         <div className="flex items-center justify-between gap-4 print:hidden">
           <Link

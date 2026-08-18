@@ -18,6 +18,10 @@ Updated manually after each session or merged task.
 
 ## In Progress
 
+### 🔄 Lean clinic defaults and shortcuts
+- Safe defaults now include remembered active branch, walk-in quick-service/sole-dentist selection, and `/` to focus Today patient search
+- Remaining work is tracked in MVP 2 task 26: favorites/recent services, clinic-managed note templates, and more save-and-continue actions
+
 ### ✅ e-Rx templates, dentist signature, PDF download & email share (task #48)
 - Migration `0045_glamorous_toad`: added `signature_url` + `template_id` on `dentists`; `clinic_logo_url` + `template_id` + `signature_url` on `prescriptions`; `prescription_share` added to `notification_type` enum
 - `prescription-service.ts`: `issuePrescription` and `amendPrescription` now snapshot `signatureUrl`, `templateId`, and `clinicLogoUrl` at issuance so the printed Rx is a durable snapshot even if the dentist later changes their settings
@@ -45,6 +49,22 @@ Updated manually after each session or merged task.
 ---
 
 ## Completed
+
+### ✅ Lean clinic Today workspace
+- Reframed `/app` and clinic navigation as **Today**, a low-click daily desk for small teams
+- Added Register Patient, New Appointment, Add Walk-in, Billing, and tenant-scoped patient search at the top of the workspace
+- Grouped the day into Waiting, In Treatment, Upcoming, Completed, and Closed queues with a clear next action per visit
+- Routine progress actions inside Today are one click; destructive actions, clinical documentation, and billing details retain their existing safeguards and drill-down pages
+- Verified authenticated live `/app`, dashboard, patient-search, and effective-permission responses; 521 API tests, 18 web tests, API/web typechecks, production builds, and diff validation pass
+
+### ✅ Lean clinic continuous transaction flow and flexible responsibilities
+- Added an **Add walk-in** flow that can minimally register a new patient inline, reuses active branch, prefers a quick service, auto-selects a sole dentist, takes the first valid slot today, creates the appointment, and legally advances it to checked-in
+- If automatic check-in fails after creation, the valid appointment is preserved and linked instead of being duplicated; quick-service completion similarly commits the clinical record before continuing separately to invoice generation
+- Payment completion refreshes invoice state and offers direct Today/follow-up handoffs
+- Made audited membership permission overrides authoritative for operational API access; Front Desk, Cashier, Inventory, and Small Clinic Coordinator bundles can extend appointments, patients, billing, inventory, and microsite work without changing the base role
+- Protected clinical actions and financial reporting remain base-role gated; existing appointment, clinical, approval, invoice, and payment actor fields preserve responsibility attribution without redundant schema
+- Desktop/mobile navigation follows effective responsibilities; existing receptionist/assistant billing access is preserved in their role presets
+- Verified 521 API tests, 18 web tests, repository-wide typechecks, production API/web builds, authenticated live smoke checks, and clean diff validation
 
 ### ✅ Dentist patient registration modal
 - Patient registration on `/app/dentist/patients` now opens as a centered, responsive modal; the shared clinic-staff `/app/patients` workflow keeps its existing drawer presentation

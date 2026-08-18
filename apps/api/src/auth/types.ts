@@ -4,10 +4,12 @@ export type PlatformRole = NonNullable<typeof users.$inferSelect.platformRole>;
 export type ClinicRole = typeof clinicMemberships.$inferSelect.role;
 
 export type ClinicAccess = {
+  membershipId?: string;
   clinicId: string;
   branchId: string | null;
   role: ClinicRole;
   dentistId: string | null;
+  permissions?: string[];
 };
 
 export type AuthorizationContext = {

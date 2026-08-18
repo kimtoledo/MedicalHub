@@ -27,11 +27,15 @@ export default function AppointmentActions({
   appointmentId,
   status,
   onUpdated,
+  primaryOnly = false,
+  skipRoutineConfirmation = false,
 }: {
   clinicId: string;
   appointmentId: string;
   status: string;
   onUpdated?: () => void;
+  primaryOnly?: boolean;
+  skipRoutineConfirmation?: boolean;
 }) {
   const router = useRouter();
   const confirmDialog = useConfirm();
@@ -39,11 +43,13 @@ export default function AppointmentActions({
   const [error, setError] = useState("");
   async function update(next: string) {
     const destructive = next === "cancelled" || next === "no_show";
-    const confirmed = await confirmDialog({
-      title: "Confirm status change",
-      message: `Mark this appointment as ${next.replace("_", " ")}?`,
-      tone: destructive ? "danger" : "default",
-    });
+    const confirmed = skipRoutineConfirmation && !destructive
+      ? true
+      : await confirmDialog({
+          title: "Confirm status change",
+          message: `Mark this appointment as ${next.replace("_", " ")}?`,
+          tone: destructive ? "danger" : "default",
+        });
     if (!confirmed) return;
     setSaving(next);
     setError("");
@@ -76,7 +82,7 @@ export default function AppointmentActions({
   return (
     <div>
       <div className="flex flex-wrap gap-1.5">
-        {(actions[status] ?? []).map((item) => (
+        {(primaryOnly ? (actions[status] ?? []).slice(0, 1) : (actions[status] ?? [])).map((item) => (
           <button
             key={item.status}
             disabled={Boolean(saving)}

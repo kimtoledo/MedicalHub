@@ -32,29 +32,29 @@ import { signOutClinic } from "@/lib/clinic-auth-client";
 import DentraLogo from "@/components/brand/DentraLogo";
 
 const clinicNavItems = [
-  { label: "Dashboard",       href: "/app",                    icon: LayoutDashboard, exact: true },
-  { label: "Appointments",    href: "/app/appointments",       icon: CalendarDays, feature: "appointments.manage" },
-  { label: "Patients",        href: "/app/patients",           icon: Users, feature: "patients.manage" },
-  { label: "Encounters",      href: "/app/encounters",         icon: ClipboardList, feature: "clinical.encounters", roles: ["clinic_owner", "clinic_admin", "dental_assistant"] },
-  { label: "Service Records", href: "/app/treatments",         icon: Stethoscope, feature: "clinical.treatment_records", roles: ["clinic_owner", "clinic_admin", "dental_assistant"] },
-  { label: "Prescriptions",   href: "/app/prescriptions",      icon: FileText, feature: "clinical.prescriptions", roles: ["clinic_owner", "clinic_admin", "dental_assistant"] },
-  { label: "Billing",         href: "/app/billing",            icon: Receipt, feature: "billing.invoices", roles: ["clinic_owner", "clinic_admin", "receptionist", "dental_assistant"] },
+  { label: "Today",           href: "/app",                    icon: LayoutDashboard, exact: true },
+  { label: "Appointments",    href: "/app/appointments",       icon: CalendarDays, feature: "appointments.manage", permission: "appointments.manage" },
+  { label: "Patients",        href: "/app/patients",           icon: Users, feature: "patients.manage", permission: "patients.manage" },
+  { label: "Encounters",      href: "/app/encounters",         icon: ClipboardList, feature: "clinical.encounters", permission: "clinical.records", roles: ["clinic_owner", "clinic_admin", "dental_assistant"] },
+  { label: "Service Records", href: "/app/treatments",         icon: Stethoscope, feature: "clinical.treatment_records", permission: "clinical.records", roles: ["clinic_owner", "clinic_admin", "dental_assistant"] },
+  { label: "Prescriptions",   href: "/app/prescriptions",      icon: FileText, feature: "clinical.prescriptions", permission: "clinical.records", roles: ["clinic_owner", "clinic_admin", "dental_assistant"] },
+  { label: "Billing",         href: "/app/billing",            icon: Receipt, feature: "billing.invoices", permission: "billing.invoices" },
   { label: "HMO Claims",      href: "/app/billing/hmo-claims", icon: Shield, feature: "hmo.claims" },
-  { label: "Staff",           href: "/app/staff",              icon: UserCog, feature: "staff.manage" },
+  { label: "Staff",           href: "/app/staff",              icon: UserCog, feature: "staff.manage", roles: ["clinic_owner", "clinic_admin"] },
   { label: "Organization",    href: "/app/organization",       icon: Network, feature: "organizations.manage" },
   { label: "Referrals",       href: "/app/referrals",          icon: ArrowLeftRight, feature: "patients.referrals" },
-  { label: "Analytics",       href: "/app/analytics",          icon: BarChart3, feature: "reports.advanced", roles: ["clinic_owner", "clinic_admin", "dentist"] },
-  { label: "Clinic Settings", href: "/app/settings",           icon: Settings },
+  { label: "Analytics",       href: "/app/analytics",          icon: BarChart3, feature: "reports.advanced", permission: "reports.basic" },
+  { label: "Clinic Settings", href: "/app/settings",           icon: Settings, roles: ["clinic_owner", "clinic_admin"] },
   { label: "My Profile",      href: "/app/profile",            icon: UserCircle },
 ];
 
 const dentistNavItems = [
-  { label: "My Schedule",     href: "/app/dentist",                 icon: CalendarCheck, exact: true, feature: "appointments.calendar" },
-  { label: "My Patients",     href: "/app/dentist/patients",        icon: Users, feature: "patients.manage" },
-  { label: "Encounters",      href: "/app/dentist/encounters",      icon: ClipboardList, feature: "clinical.encounters" },
-  { label: "Service Records", href: "/app/treatments",              icon: Stethoscope, feature: "clinical.treatment_records" },
-  { label: "Prescriptions",   href: "/app/prescriptions",           icon: FileText, feature: "clinical.prescriptions" },
-  { label: "Odontogram",      href: "/app/dentist/odontogram",      icon: Grid3X3, feature: "clinical.odontogram" },
+  { label: "My Schedule",     href: "/app/dentist",                 icon: CalendarCheck, exact: true, feature: "appointments.calendar", permission: "appointments.manage" },
+  { label: "My Patients",     href: "/app/dentist/patients",        icon: Users, feature: "patients.manage", permission: "patients.manage" },
+  { label: "Encounters",      href: "/app/dentist/encounters",      icon: ClipboardList, feature: "clinical.encounters", permission: "clinical.records" },
+  { label: "Service Records", href: "/app/treatments",              icon: Stethoscope, feature: "clinical.treatment_records", permission: "clinical.records" },
+  { label: "Prescriptions",   href: "/app/prescriptions",           icon: FileText, feature: "clinical.prescriptions", permission: "clinical.records" },
+  { label: "Odontogram",      href: "/app/dentist/odontogram",      icon: Grid3X3, feature: "clinical.odontogram", permission: "clinical.records" },
   { label: "Remote Consults", href: "/app/dentist/remote-consults", icon: Camera, feature: "teledentistry" },
   { label: "My Profile",      href: "/app/dentist/profile",         icon: UserCircle },
 ];
@@ -62,6 +62,7 @@ const dentistNavItems = [
 interface AppSidebarProps {
   role: ClinicRole;
   membershipRole: string;
+  permissions: string[];
   clinicName?: string;
   branches: ClinicBranchContext[];
   branchId: string | null;
@@ -75,6 +76,7 @@ interface AppSidebarProps {
 export default function AppSidebar({
   role,
   membershipRole,
+  permissions,
   clinicName = "Clinic",
   branches,
   branchId,
@@ -89,8 +91,9 @@ export default function AppSidebar({
 
   const navItems = (role === "dentist" ? dentistNavItems : clinicNavItems).filter((item) => {
     const hasFeature = !("feature" in item) || !item.feature || entitlements[item.feature];
+    const hasPermission = !("permission" in item) || !item.permission || permissions.includes(item.permission);
     const hasRole = !("roles" in item) || !item.roles || item.roles.includes(membershipRole);
-    return hasFeature && hasRole;
+    return hasFeature && hasPermission && hasRole;
   });
 
   const isActive = (href: string, exact?: boolean) =>

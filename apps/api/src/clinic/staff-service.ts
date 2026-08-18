@@ -13,6 +13,9 @@ import {
   PermissionKey,
   type ClinicRole,
 } from '@dentra/shared';
+import { permissionPresets } from './permissions.js';
+
+export { permissionPresets } from './permissions.js';
 
 export type StaffActor = {
   id: string;
@@ -37,16 +40,6 @@ export class ClinicStaffError extends Error {
     super(message);
   }
 }
-
-export const permissionPresets: Record<ClinicRole, string[]> = {
-  clinic_owner: Object.values(PermissionKey),
-  clinic_admin: Object.values(PermissionKey),
-  dentist: [PermissionKey.APPOINTMENTS, PermissionKey.PATIENTS, PermissionKey.CLINICAL_RECORDS, PermissionKey.REPORTS],
-  receptionist: [PermissionKey.APPOINTMENTS, PermissionKey.PATIENTS],
-  dental_assistant: [PermissionKey.APPOINTMENTS, PermissionKey.PATIENTS, PermissionKey.CLINICAL_RECORDS],
-  cashier: [PermissionKey.BILLING_INVOICES, PermissionKey.BILLING_PAYMENTS],
-  inventory_staff: [PermissionKey.INVENTORY],
-};
 
 async function assertBranch(database: DB, clinicId: string, branchId: string | null): Promise<void> {
   if (!branchId) return;

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { FastifyInstance } from "fastify";
-import { FeatureKey } from "@dentra/shared";
+import { FeatureKey, PermissionKey } from "@dentra/shared";
 import { buildApp } from "../src/app.js";
 import {
   ClinicDashboardError,
@@ -33,6 +33,23 @@ const member: AuthorizationContext = {
 const dentist: AuthorizationContext = {
   ...member,
   clinicMemberships: [{ clinicId, branchId, role: "dentist", dentistId }],
+};
+const flexibleCoordinator: AuthorizationContext = {
+  ...member,
+  clinicMemberships: [
+    {
+      clinicId,
+      branchId,
+      role: "cashier",
+      dentistId: null,
+      permissions: [
+        PermissionKey.APPOINTMENTS,
+        PermissionKey.PATIENTS,
+        PermissionKey.BILLING_INVOICES,
+        PermissionKey.BILLING_PAYMENTS,
+      ],
+    },
+  ],
 };
 const auth = (context: AuthorizationContext): AuthServices => ({
   handler: vi.fn(async () => new Response()),
@@ -103,6 +120,46 @@ describe("clinic dashboard routes", () => {
     const response = await app!.inject({ method: "POST", url: `/v1/clinic/appointments?clinicId=${clinicId}`, payload: { branchId, patientId: "00000000-0000-0000-0000-000000000601", dentistId, serviceId: "00000000-0000-0000-0000-000000000701", startsAt: "2030-01-10T09:00:00+08:00" } });
     expect(response.statusCode).toBe(201);
     expect(s.createAppointment).toHaveBeenCalledWith(clinicId, expect.objectContaining({ branchId, dentistId }), expect.anything(), undefined);
+  });
+  it("allows an operational responsibility override without changing the base role", async () => {
+    const s = service();
+    await setup(flexibleCoordinator, s);
+    const response = await app!.inject({ method: "POST", url: `/v1/clinic/appointments?clinicId=${clinicId}`, payload: { branchId, patientId: "00000000-0000-0000-0000-000000000601", dentistId, serviceId: "00000000-0000-0000-0000-000000000701", startsAt: "2030-01-10T09:00:00+08:00" } });
+    expect(response.statusCode).toBe(201);
+    expect(s.createAppointment).toHaveBeenCalledOnce();
+  });
+  it("honors an explicit operational permission removal", async () => {
+    const s = service();
+    await setup({
+      ...member,
+      clinicMemberships: [
+        { ...member.clinicMemberships[0], permissions: [] },
+      ],
+    }, s);
+    const response = await app!.inject({
+      method: "GET",
+      url: `/v1/clinic/dashboard/summary?clinicId=${clinicId}&date=2030-01-10`,
+    });
+    expect(response.statusCode).toBe(403);
+    expect(s.summary).not.toHaveBeenCalled();
+  });
+  it("does not let an operational override bypass protected clinical roles", async () => {
+    const s = service();
+    await setup({
+      ...flexibleCoordinator,
+      clinicMemberships: [
+        {
+          ...flexibleCoordinator.clinicMemberships[0],
+          permissions: [
+            ...(flexibleCoordinator.clinicMemberships[0].permissions ?? []),
+            PermissionKey.CLINICAL_RECORDS,
+          ],
+        },
+      ],
+    }, s);
+    const response = await app!.inject({ method: "POST", url: `/v1/clinic/appointments/${appointmentId}/quick-complete?clinicId=${clinicId}`, payload: {} });
+    expect(response.statusCode).toBe(403);
+    expect(s.completeQuickService).not.toHaveBeenCalled();
   });
   it("returns clinic-scoped internal availability", async () => {
     const s = service();

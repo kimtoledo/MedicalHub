@@ -6,6 +6,7 @@ import { resolveRequestAuthorization } from '../auth/request.js';
 import { hasActiveSupportGrant } from '../auth/support-access.js';
 import type { AuthServices, AuthorizationContext, ClinicRole } from '../auth/types.js';
 import type { EntitlementService } from '../entitlements/service.js';
+import { featurePermission, hasEffectivePermission, permissionCanExtendRole } from './permissions.js';
 
 const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -13,7 +14,13 @@ export async function requireClinicFeature(request: FastifyRequest, reply: Fasti
   const authorization = await resolveRequestAuthorization(request, options.auth);
   if (!authorization) { await reply.status(401).send({ success: false, error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' } }); return null; }
   const access = getClinicAccess(authorization, clinicId);
-  const localAccessOk = access.length > 0 && (!allowedRoles || access.some((item) => allowedRoles.includes(item.role)));
+  const requiredPermission = featurePermission[featureKey];
+  const localAccessOk = access.length > 0 && access.some((item) => {
+    const roleAllowed = !allowedRoles || allowedRoles.includes(item.role);
+    if (!requiredPermission) return roleAllowed;
+    if (!hasEffectivePermission(item, requiredPermission)) return false;
+    return roleAllowed || permissionCanExtendRole(requiredPermission);
+  });
   if (!localAccessOk) {
     const grantedViaSupport = options.db && (await hasActiveSupportGrant(options.db, authorization, clinicId));
     if (!grantedViaSupport) { await reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Clinic role access is required' } }); return null; }

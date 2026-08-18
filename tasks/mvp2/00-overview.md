@@ -30,6 +30,10 @@
 | `20-clinic-hours-holidays-dentist-availability.md` | Structured branch hours, PH holiday/custom closures, per-dentist schedule & time off | 🔵 Active |
 | `21-microsite-branding-uploads.md` | Standalone microsite header/footer ("Powered by Dentra.ph" link), logo/cover image upload with a color/gradient background alternative | ✅ Done |
 | `22-quick-services-clinic-appointments-record-search.md` | Quick routine-service documentation, internal appointment creation, and searchable service records | ✅ Done |
+| `23-lean-clinic-today-workspace.md` | Unified low-click daily workspace for small clinic teams | ✅ Done |
+| `24-continuous-patient-transaction-flow.md` | Guided appointment/walk-in through treatment, billing, and follow-up | ✅ Done |
+| `25-flexible-clinic-responsibilities.md` | Multi-responsibility staff access with protected clinical sign-off | ✅ Done |
+| `26-lean-clinic-defaults-and-shortcuts.md` | Remembered defaults, favorites, templates, and keyboard shortcuts | 🔵 Active |
 
 ---
 

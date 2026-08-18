@@ -12,6 +12,8 @@ export type ClinicIdentity = {
   clinicId: string;
   branchId: string | null;
   dentistId: string | null;
+  /** Effective operational permissions after role presets and overrides. */
+  permissions: string[];
 };
 
 export type ClinicBranchContext = { id: string; name: string; isMain: boolean; city: string | null; province: string | null };

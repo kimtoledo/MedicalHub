@@ -27,7 +27,7 @@ export default function AppShell({
   const branch = context.branches.find((item) => item.id === branchId) ?? context.branches[0] ?? null;
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
-      <AppSidebar role={identity.role} membershipRole={identity.membershipRole} userName={identity.name} userEmail={identity.email} clinicName={context.clinic.name} branches={context.branches} branchId={branch?.id ?? null} onBranchChange={changeBranch} entitlements={context.entitlements} packageName={context.packageName} />
+      <AppSidebar role={identity.role} membershipRole={identity.membershipRole} permissions={identity.permissions} userName={identity.name} userEmail={identity.email} clinicName={context.clinic.name} branches={context.branches} branchId={branch?.id ?? null} onBranchChange={changeBranch} entitlements={context.entitlements} packageName={context.packageName} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <AppTopBar role={identity.role} membershipRole={identity.membershipRole} userName={identity.name} userEmail={identity.email} clinicName={context.clinic.name} branchName={branch?.name ?? "No active branch"} entitlements={context.entitlements} />
         {context.clinic.maintenanceMode && (
@@ -39,7 +39,7 @@ export default function AppShell({
           <AppBranchProvider value={{ clinicId: context.clinic.id, branchId: branch?.id ?? null, branchName: branch?.name ?? "No active branch" }}>{children}</AppBranchProvider>
         </main>
       </div>
-      <AppMobileTabBar role={identity.role} entitlements={context.entitlements} />
+      <AppMobileTabBar role={identity.role} entitlements={context.entitlements} permissions={identity.permissions} />
     </div>
   );
 }

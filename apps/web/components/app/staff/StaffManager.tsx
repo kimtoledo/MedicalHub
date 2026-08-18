@@ -42,6 +42,12 @@ const permissionLabels: Record<string, string> = {
   "reports.basic": "Reports",
   "microsite.customize": "Microsite",
 };
+const responsibilityBundles = [
+  { label: "Front desk", permissions: ["appointments.manage", "patients.manage"] },
+  { label: "Cashier", permissions: ["billing.invoices", "billing.payments"] },
+  { label: "Inventory", permissions: ["inventory.manage"] },
+  { label: "Small clinic coordinator", permissions: ["appointments.manage", "patients.manage", "billing.invoices", "billing.payments", "inventory.manage"] },
+];
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { ...init, headers: { "content-type": "application/json", ...init?.headers } });
@@ -108,6 +114,33 @@ export default function StaffManager({ clinicId, currentUserId, currentRole }: {
     if (saved) { setAddingBranchFor(null); setNewBranchId(""); }
   }
 
+  async function addResponsibilityBundle(member: StaffMember, bundle: typeof responsibilityBundles[number]) {
+    const missing = bundle.permissions.filter((permission) => !member.permissions.includes(permission));
+    if (!missing.length) { setNotice(`${bundle.label} responsibilities are already active.`); return; }
+    const confirmed = await confirmDialog({
+      title: "Add responsibilities",
+      message: `Give ${member.name} the ${bundle.label} responsibility bundle? Existing access will remain.`,
+      confirmLabel: "Add responsibilities",
+    });
+    if (!confirmed) return;
+    setBusy(member.membershipId);
+    setError(null);
+    setNotice(null);
+    try {
+      for (const permissionKey of missing) {
+        await api(`/api/clinic/${clinicId}/staff/${member.membershipId}/permissions`, {
+          method: "PATCH",
+          body: JSON.stringify({ permissionKey, isEnabled: true }),
+        });
+      }
+      setNotice(`${bundle.label} responsibilities added.`);
+      await load();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to add responsibilities");
+      await load();
+    } finally { setBusy(null); }
+  }
+
   async function invite(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -126,7 +159,7 @@ export default function StaffManager({ clinicId, currentUserId, currentRole }: {
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-100"><UserCog className="text-violet-600" size={22} /></div>
-            <div><h1 className="text-2xl font-bold text-slate-900">Clinic Staff</h1><p className="text-sm text-slate-500">Manage roles, branch access, status, and permissions.</p></div>
+            <div><h1 className="text-2xl font-bold text-slate-900">Clinic Staff</h1><p className="text-sm text-slate-500">Give each person the responsibilities they actually handle, without sharing accounts.</p></div>
           </div>
           <button onClick={() => setInviteOpen((value) => !value)} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 text-sm font-semibold text-white hover:bg-violet-700"><MailPlus size={17} /> Invite staff</button>
         </header>
@@ -165,7 +198,7 @@ export default function StaffManager({ clinicId, currentUserId, currentRole }: {
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     {member.status === "pending" && <button disabled={busy === member.membershipId} onClick={() => void mutate(member.membershipId, `/api/clinic/${clinicId}/staff/${member.membershipId}/resend-invite`, { method: "POST" }, "Invitation timestamp refreshed; delivery is pending provider configuration.")} className="text-xs font-semibold text-violet-600 underline">Resend invitation</button>}
-                    <button onClick={() => setExpanded(expanded === member.membershipId ? null : member.membershipId)} className="inline-flex items-center gap-1 text-xs font-semibold text-violet-600"><ShieldCheck size={14} /> Permissions <ChevronDown size={14} className={expanded === member.membershipId ? "rotate-180" : ""} /></button>
+                    <button onClick={() => setExpanded(expanded === member.membershipId ? null : member.membershipId)} className="inline-flex items-center gap-1 text-xs font-semibold text-violet-600"><ShieldCheck size={14} /> Responsibilities <ChevronDown size={14} className={expanded === member.membershipId ? "rotate-180" : ""} /></button>
                     {member.branchId !== null && member.status === "active" && (
                       addingBranchFor === member.membershipId ? (
                         <span className="inline-flex items-center gap-1.5">
@@ -181,7 +214,7 @@ export default function StaffManager({ clinicId, currentUserId, currentRole }: {
                       )
                     )}
                   </div>
-                  {expanded === member.membershipId && <div className="mt-4 grid gap-2 rounded-xl bg-slate-50 p-3 sm:grid-cols-2 lg:grid-cols-4">{data.permissionKeys.map((permission) => <label key={permission} className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={member.permissions.includes(permission)} disabled={disabled || member.status !== "active"} onChange={(event) => void mutate(member.membershipId, `/api/clinic/${clinicId}/staff/${member.membershipId}/permissions`, { method: "PATCH", body: JSON.stringify({ permissionKey: permission, isEnabled: event.target.checked }) }, "Permission updated.")} className="h-4 w-4 rounded border-slate-300 text-violet-600" />{permissionLabels[permission] ?? permission}</label>)}</div>}
+                  {expanded === member.membershipId && <div className="mt-4 rounded-xl bg-slate-50 p-3"><div className="flex flex-wrap items-center gap-2"><span className="mr-1 text-xs font-bold uppercase tracking-wide text-slate-500">Quick bundles</span>{responsibilityBundles.map((bundle) => <button key={bundle.label} disabled={disabled || member.status !== "active"} onClick={() => void addResponsibilityBundle(member, bundle)} className="rounded-lg border border-violet-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-50 disabled:opacity-40">+ {bundle.label}</button>)}</div><p className="mt-2 text-xs text-slate-500">Bundles add operational access to this login. Protected clinical approval and signing still follow the member&apos;s base role.</p><div className="mt-3 grid gap-2 border-t border-slate-200 pt-3 sm:grid-cols-2 lg:grid-cols-4">{data.permissionKeys.map((permission) => <label key={permission} className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={member.permissions.includes(permission)} disabled={disabled || member.status !== "active"} onChange={(event) => void mutate(member.membershipId, `/api/clinic/${clinicId}/staff/${member.membershipId}/permissions`, { method: "PATCH", body: JSON.stringify({ permissionKey: permission, isEnabled: event.target.checked }) }, "Responsibility updated.")} className="h-4 w-4 rounded border-slate-300 text-violet-600" />{permissionLabels[permission] ?? permission}</label>)}</div></div>}
                 </article>
               );
             })}

@@ -180,7 +180,7 @@ export default function AppointmentDetail({
               )}
             </div>
           ) : canCompleteQuickService && data.serviceWorkflowMode === "quick" && ["confirmed", "checked_in", "in_progress"].includes(data.status) ? (
-            <div className="mt-3"><p className="text-sm text-slate-500">This service is configured for streamlined documentation.</p><QuickServiceCompletion clinicId={clinicId} appointmentId={data.id} serviceName={data.serviceName ?? "quick service"} />{canDocument && <Link href={`${encounterBasePath}/new?patientId=${data.patientId}&appointmentId=${data.id}`} className="ml-3 inline-flex items-center gap-1.5 rounded-xl border border-violet-200 px-4 py-2.5 text-sm font-bold text-violet-700 hover:bg-violet-50">Use full encounter instead</Link>}</div>
+            <div className="mt-3"><p className="text-sm text-slate-500">This service is configured for streamlined documentation.</p><QuickServiceCompletion clinicId={clinicId} appointmentId={data.id} serviceName={data.serviceName ?? "quick service"} canContinueToBilling={!dentist} />{canDocument && <Link href={`${encounterBasePath}/new?patientId=${data.patientId}&appointmentId=${data.id}`} className="ml-3 inline-flex items-center gap-1.5 rounded-xl border border-violet-200 px-4 py-2.5 text-sm font-bold text-violet-700 hover:bg-violet-50">Use full encounter instead</Link>}</div>
           ) : canDocument ? (
             <div className="mt-3">
               <p className="text-sm text-slate-500">No encounter has been documented for this visit yet.</p>

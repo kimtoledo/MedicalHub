@@ -2,29 +2,32 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, CalendarDays, Users, UserCircle, CalendarCheck, ClipboardList, Grid3X3, Network, BarChart3 } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Users, UserCircle, CalendarCheck, ClipboardList, Grid3X3, Receipt } from "lucide-react";
 import { type ClinicRole } from "@/lib/clinic-types";
 
 const clinicTabs = [
-  { label: "Dashboard",     href: "/app",              icon: LayoutDashboard, exact: true },
-  { label: "Appointments",  href: "/app/appointments", icon: CalendarDays, feature: "appointments.manage" },
-  { label: "Patients",      href: "/app/patients",     icon: Users, feature: "patients.manage" },
-  { label: "Group",         href: "/app/organization", icon: Network },
-  { label: "Analytics",     href: "/app/analytics",    icon: BarChart3, feature: "reports.advanced" },
+  { label: "Today",         href: "/app",              icon: LayoutDashboard, exact: true },
+  { label: "Appointments",  href: "/app/appointments", icon: CalendarDays, feature: "appointments.manage", permission: "appointments.manage" },
+  { label: "Patients",      href: "/app/patients",     icon: Users, feature: "patients.manage", permission: "patients.manage" },
+  { label: "Billing",       href: "/app/billing",      icon: Receipt, feature: "billing.invoices", permission: "billing.invoices" },
   { label: "Profile",       href: "/app/profile",      icon: UserCircle     },
 ];
 
 const dentistTabs = [
-  { label: "Schedule",   href: "/app/dentist",            icon: CalendarCheck, exact: true, feature: "appointments.calendar" },
-  { label: "Patients",   href: "/app/dentist/patients",   icon: Users, feature: "patients.manage" },
-  { label: "Encounters", href: "/app/dentist/encounters", icon: ClipboardList, feature: "clinical.encounters" },
-  { label: "Odontogram", href: "/app/dentist/odontogram", icon: Grid3X3, feature: "clinical.odontogram" },
+  { label: "Schedule",   href: "/app/dentist",            icon: CalendarCheck, exact: true, feature: "appointments.calendar", permission: "appointments.manage" },
+  { label: "Patients",   href: "/app/dentist/patients",   icon: Users, feature: "patients.manage", permission: "patients.manage" },
+  { label: "Encounters", href: "/app/dentist/encounters", icon: ClipboardList, feature: "clinical.encounters", permission: "clinical.records" },
+  { label: "Odontogram", href: "/app/dentist/odontogram", icon: Grid3X3, feature: "clinical.odontogram", permission: "clinical.records" },
   { label: "Profile",    href: "/app/dentist/profile",    icon: UserCircle    },
 ];
 
-export default function AppMobileTabBar({ role, entitlements }: { role: ClinicRole; entitlements: Record<string, boolean> }) {
+export default function AppMobileTabBar({ role, entitlements, permissions }: { role: ClinicRole; entitlements: Record<string, boolean>; permissions: string[] }) {
   const pathname = usePathname();
-  const tabs = (role === "dentist" ? dentistTabs : clinicTabs).filter((item) => !("feature" in item) || !item.feature || entitlements[item.feature]);
+  const tabs = (role === "dentist" ? dentistTabs : clinicTabs).filter((item) => {
+    const hasFeature = !("feature" in item) || !item.feature || entitlements[item.feature];
+    const hasPermission = !("permission" in item) || !item.permission || permissions.includes(item.permission);
+    return hasFeature && hasPermission;
+  });
 
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname === href || pathname.startsWith(href + "/");

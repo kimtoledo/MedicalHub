@@ -8,6 +8,7 @@ type ClinicMembership = {
   branchId: string | null;
   role: string;
   dentistId: string | null;
+  permissions?: string[];
 };
 
 type SessionContextResponse = {
@@ -53,6 +54,7 @@ export async function getClinicSession(): Promise<ClinicIdentity | null> {
       clinicId: membership.clinicId,
       branchId: membership.branchId,
       dentistId: membership.dentistId,
+      permissions: membership.permissions ?? [],
     };
   } catch {
     return null;
