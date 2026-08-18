@@ -1,10 +1,30 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, Plus, X } from "lucide-react";
-export default function NewPatientDrawer({ clinicId }: { clinicId: string }) {
+export default function NewPatientDrawer({ clinicId, variant = "drawer", basePath = "/app/patients" }: { clinicId: string; variant?: "drawer" | "modal"; basePath?: string }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const firstFieldRef = useRef<HTMLInputElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const savingRef = useRef(false);
+  useEffect(() => { savingRef.current = saving; }, [saving]);
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const frame = window.requestAnimationFrame(() => firstFieldRef.current?.focus());
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !savingRef.current) setOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      triggerRef.current?.focus();
+    };
+  }, [open]);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
@@ -32,7 +52,7 @@ export default function NewPatientDrawer({ clinicId }: { clinicId: string }) {
         throw new Error(
           result.error?.message ?? "Patient could not be registered",
         );
-      window.location.assign(`/app/patients/${result.data.id}`);
+      window.location.assign(`${basePath}/${result.data.id}`);
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -47,6 +67,7 @@ export default function NewPatientDrawer({ clinicId }: { clinicId: string }) {
   return (
     <>
       <button
+        ref={triggerRef}
         onClick={() => setOpen(true)}
         className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-violet-700"
       >
@@ -57,14 +78,16 @@ export default function NewPatientDrawer({ clinicId }: { clinicId: string }) {
         <>
           <button
             aria-label="Close patient registration"
-            className="fixed inset-0 z-40 bg-black/40"
-            onClick={() => setOpen(false)}
+            className="fixed inset-0 z-40 bg-slate-950/50"
+            onClick={() => { if (!saving) setOpen(false); }}
           />
-          <aside
+          <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="new-patient-title"
-            className="fixed inset-y-0 right-0 z-50 w-full max-w-xl overflow-y-auto bg-white p-5 shadow-2xl sm:p-7"
+            className={variant === "modal"
+              ? "fixed inset-x-4 top-1/2 z-50 max-h-[calc(100dvh-2rem)] -translate-y-1/2 overflow-y-auto rounded-2xl border border-violet-100 bg-white p-5 shadow-2xl sm:inset-x-auto sm:left-1/2 sm:w-[min(56rem,calc(100vw-3rem))] sm:-translate-x-1/2 sm:p-7"
+              : "fixed inset-y-0 right-0 z-50 w-full max-w-xl overflow-y-auto bg-white p-5 shadow-2xl sm:p-7"}
           >
             <div className="flex items-center justify-between">
               <div>
@@ -79,6 +102,7 @@ export default function NewPatientDrawer({ clinicId }: { clinicId: string }) {
                 </h2>
               </div>
               <button
+                disabled={saving}
                 onClick={() => setOpen(false)}
                 aria-label="Close"
                 className="rounded-full p-2 text-slate-500 hover:bg-slate-100"
@@ -95,6 +119,7 @@ export default function NewPatientDrawer({ clinicId }: { clinicId: string }) {
                   <label className="text-sm font-medium text-slate-700">
                     First name
                     <input
+                      ref={firstFieldRef}
                       required
                       name="firstName"
                       maxLength={100}
@@ -249,7 +274,7 @@ export default function NewPatientDrawer({ clinicId }: { clinicId: string }) {
                 Register patient
               </button>
             </form>
-          </aside>
+          </div>
         </>
       )}
     </>

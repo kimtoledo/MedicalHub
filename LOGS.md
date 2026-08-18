@@ -46,6 +46,12 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Dentist patient registration modal
+- Patient registration on `/app/dentist/patients` now opens as a centered, responsive modal; the shared clinic-staff `/app/patients` workflow keeps its existing drawer presentation
+- Reused the existing tenant-scoped registration form and API while adding guarded backdrop/Escape dismissal, background scroll locking, initial focus, and trigger-focus restoration
+- Successful dentist-side registrations now redirect to `/app/dentist/patients/{patientId}` instead of leaving the dentist route family
+- Verified the production web build, web typecheck, and 9 passing web tests
+
 ### ✅ Quick services, clinic appointment creation, and service-record search
 - Added service workflow classification (`quick` or `standard`) with generated migration `0048_chilly_red_ghost`; existing services remain `standard` until a clinic administrator explicitly changes them
 - Added protected clinic appointment options, availability, and creation endpoints: options respect role/branch scope, availability applies structured clinic hours, closures, dentist schedules/time off, and busy slots, while creation revalidates inside a row-locked transaction before creating a confirmed appointment and immutable audit/status history
@@ -54,7 +60,8 @@ Updated manually after each session or merged task.
 - Added `/app/treatments`, a clinic-wide service-record list defaulting to the last 30 days and active branch, with URL-backed patient/service search, date, branch, dentist, service, workflow, pagination, and branch/dentist authorization enforcement
 - Service Catalog now supports workflow selection, search, workflow/status filters, and per-service workflow updates
 - Updated the clinic manual and MVP 2 task index; the Replit task reference could not be confirmed because that panel was unavailable in the Codex session
-- Verified 518 passing API tests, 9 passing web tests, repository-wide TypeScript checks, production web/API builds, and `git diff --check`; migration is generated and intentionally not applied directly to the potentially shared development database
+- Applied migration `0048_chilly_red_ghost` through `npm run db:migrate` after the local dashboard exposed the expected schema mismatch (`services.workflow_mode` was absent); authenticated dashboard summary, appointment-options, and treatment-record smoke requests now return HTTP 200
+- Verified 518 passing API tests, 9 passing web tests, repository-wide TypeScript checks, production web/API builds, database readiness, and `git diff --check`
 
 ### ✅ Dentist schedule-to-patient workflow
 - Registered patient names are now accessible links from the dentist dashboard’s Next Up/Today’s Schedule sections and from `/app/dentist/schedule`; unlinked public bookings remain non-clickable

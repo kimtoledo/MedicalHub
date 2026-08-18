@@ -16,6 +16,7 @@ export default function PatientDirectory({
   data,
   search,
   basePath = "/app/patients",
+  registrationVariant = "drawer",
 }: {
   clinicId: string;
   data: {
@@ -24,6 +25,7 @@ export default function PatientDirectory({
   };
   search: string;
   basePath?: string;
+  registrationVariant?: "drawer" | "modal";
 }) {
   const href = (page: number) =>
     `${basePath}?${new URLSearchParams({ ...(search ? { search } : {}), page: String(page) })}`;
@@ -39,7 +41,7 @@ export default function PatientDirectory({
             {data.pagination.total} tenant-scoped patient records
           </p>
         </div>
-        <NewPatientDrawer clinicId={clinicId} />
+        <NewPatientDrawer clinicId={clinicId} variant={registrationVariant} basePath={basePath} />
       </div>
       <form className="mt-7 flex max-w-xl gap-2">
         <label className="relative flex-1">
