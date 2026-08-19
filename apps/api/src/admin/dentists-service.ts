@@ -21,9 +21,10 @@ import {
   dentists,
   users,
 } from '@dentra/db/schema';
-import { AuditAction } from '@dentra/shared';
+import { AuditAction, CapacityMetric } from '@dentra/shared';
 import { normalizePrcLicense } from '../dentists/prc-license.js';
 import { dentistVerificationNotification, type NotificationService } from '../notifications/service.js';
+import { assertClinicCapacity, ClinicCapacityError } from '../entitlements/capacity.js';
 
 export type DentistVerificationStatus =
   typeof dentists.$inferSelect.verificationStatus;
@@ -154,7 +155,8 @@ export type AdminDentistAffiliationErrorCode =
   | 'DENTIST_NOT_FOUND'
   | 'BRANCH_NOT_AVAILABLE'
   | 'AFFILIATION_EXISTS'
-  | 'AFFILIATION_NOT_FOUND';
+  | 'AFFILIATION_NOT_FOUND'
+  | 'DENTIST_LIMIT_REACHED';
 
 export class AdminDentistAffiliationError extends Error {
   constructor(
@@ -522,6 +524,15 @@ export function createAdminDentistAffiliationService(
           );
         }
 
+        // Lock the clinic row so concurrent affiliation requests for this
+        // clinic serialize instead of both reading the same dentist count.
+        await transaction
+          .select({ id: clinics.id })
+          .from(clinics)
+          .where(eq(clinics.id, branch.clinicId))
+          .limit(1)
+          .for('update');
+
         const [existing] = await transaction
           .select({ id: dentistBranchAssignments.id })
           .from(dentistBranchAssignments)
@@ -538,6 +549,32 @@ export function createAdminDentistAffiliationService(
             'AFFILIATION_EXISTS',
             'The dentist is already affiliated with that branch',
           );
+        }
+
+        // Only consume a capacity seat when this dentist isn't already
+        // counted for this clinic — affiliating an already-counted dentist
+        // to a second branch of the SAME clinic must never double-count or
+        // be blocked by the dentist limit.
+        const [alreadyInClinic] = await transaction
+          .select({ id: dentistBranchAssignments.id })
+          .from(dentistBranchAssignments)
+          .where(
+            and(
+              eq(dentistBranchAssignments.dentistId, dentistId),
+              eq(dentistBranchAssignments.clinicId, branch.clinicId),
+              eq(dentistBranchAssignments.isActive, 'true'),
+            ),
+          )
+          .limit(1);
+        if (!alreadyInClinic) {
+          try {
+            await assertClinicCapacity(transaction, branch.clinicId, CapacityMetric.DENTISTS);
+          } catch (error) {
+            if (error instanceof ClinicCapacityError) {
+              throw new AdminDentistAffiliationError('DENTIST_LIMIT_REACHED', error.message);
+            }
+            throw error;
+          }
         }
 
         const [affiliation] = await transaction

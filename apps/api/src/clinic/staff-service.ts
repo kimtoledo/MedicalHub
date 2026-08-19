@@ -3,6 +3,7 @@ import type { DB } from '@dentra/db';
 import {
   branches,
   accounts,
+  clinics,
   clinicMembershipPermissions,
   clinicMemberships,
   dentistBranchAssignments,
@@ -12,10 +13,12 @@ import {
 import { writeAudit } from '@dentra/db/audit';
 import {
   AuditAction,
+  CLINIC_ROLE_CAPACITY_METRIC,
   PermissionKey,
   type ClinicRole,
 } from '@dentra/shared';
 import { permissionPresets } from './permissions.js';
+import { assertClinicCapacity, ClinicCapacityError } from '../entitlements/capacity.js';
 
 export { permissionPresets } from './permissions.js';
 
@@ -216,6 +219,10 @@ export function createClinicStaffService(database: DB) {
       const now = new Date().toISOString();
 
       return database.transaction(async (tx) => {
+        // Lock the clinic row first so concurrent invites for the same
+        // clinic/role serialize instead of both slipping past the seat cap.
+        await tx.select({ id: clinics.id }).from(clinics).where(eq(clinics.id, clinicId)).limit(1).for('update');
+
         let [user] = await tx.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
         if (!user) {
           [user] = await tx.insert(users).values({ name: input.name.trim(), email, isActive: 'true' }).returning({ id: users.id });
@@ -232,6 +239,18 @@ export function createClinicStaffService(database: DB) {
           .where(and(eq(clinicMemberships.clinicId, clinicId), eq(clinicMemberships.userId, user.id)))
           .limit(1);
         if (existing) throw new ClinicStaffError('MEMBERSHIP_EXISTS', 'This user already belongs to the clinic', 409);
+
+        const seatMetric = CLINIC_ROLE_CAPACITY_METRIC[input.role];
+        if (seatMetric) {
+          try {
+            await assertClinicCapacity(tx, clinicId, seatMetric);
+          } catch (error) {
+            if (error instanceof ClinicCapacityError) {
+              throw new ClinicStaffError('SEAT_LIMIT_REACHED', error.message, 409);
+            }
+            throw error;
+          }
+        }
 
         const [membership] = await tx.insert(clinicMemberships).values({
           clinicId,
@@ -294,6 +313,22 @@ export function createClinicStaffService(database: DB) {
             : membership.dentistId;
         if (nextRole === 'dentist') await assertDentistLink(tx as unknown as DB, clinicId, nextDentistId, nextBranchId);
         else if (input.dentistId) throw new ClinicStaffError('DENTIST_ROLE_REQUIRED', 'A dentist profile can only be linked to the Dentist role', 422);
+
+        // A role change into a capped role grows that role's headcount just
+        // like invite() does — close that side door around seat caps.
+        if (input.role !== undefined && input.role !== membership.role) {
+          const seatMetric = CLINIC_ROLE_CAPACITY_METRIC[input.role];
+          if (seatMetric) {
+            try {
+              await assertClinicCapacity(tx, clinicId, seatMetric);
+            } catch (error) {
+              if (error instanceof ClinicCapacityError) {
+                throw new ClinicStaffError('SEAT_LIMIT_REACHED', error.message, 409);
+              }
+              throw error;
+            }
+          }
+        }
 
         await tx.update(clinicMemberships).set({
           ...(input.role !== undefined ? { role: input.role } : {}),

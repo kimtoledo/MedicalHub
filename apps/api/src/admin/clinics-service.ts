@@ -26,7 +26,8 @@ import {
   patients,
   users,
 } from '@dentra/db/schema';
-import { AuditAction, FeatureKey } from '@dentra/shared';
+import { AuditAction, CapacityMetric, FeatureKey } from '@dentra/shared';
+import { assertClinicCapacity, ClinicCapacityError } from '../entitlements/capacity.js';
 
 export type ClinicStatus = typeof clinics.$inferSelect.status;
 
@@ -257,7 +258,8 @@ export type CreatedAdminClinicBranch = {
 
 export type AdminClinicBranchCreationErrorCode =
   | 'CLINIC_NOT_FOUND'
-  | 'MAIN_BRANCH_EXISTS';
+  | 'MAIN_BRANCH_EXISTS'
+  | 'BRANCH_LIMIT_REACHED';
 
 export class AdminClinicBranchCreationError extends Error {
   constructor(
@@ -1064,6 +1066,15 @@ export function createAdminClinicBranchCreationService(
             'CLINIC_NOT_FOUND',
             'Clinic not found',
           );
+        }
+
+        try {
+          await assertClinicCapacity(transaction, clinicId, CapacityMetric.BRANCHES);
+        } catch (error) {
+          if (error instanceof ClinicCapacityError) {
+            throw new AdminClinicBranchCreationError('BRANCH_LIMIT_REACHED', error.message);
+          }
+          throw error;
         }
 
         const existingBranches = await transaction

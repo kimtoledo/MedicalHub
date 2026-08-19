@@ -13,7 +13,7 @@ let app: FastifyInstance | undefined;
 afterEach(async () => { await app?.close(); app = undefined; });
 
 function auth(context: AuthorizationContext | null): AuthServices { return { handler: vi.fn(async () => new Response('{}')), getSession: vi.fn(async () => context ? { session: { id: 'session', userId: context.user.id, expiresAt: new Date('2030-01-01') }, user: context.user } : null), resolveAuthorization: vi.fn(async () => context) }; }
-const item = { id: '44444444-4444-4444-8444-444444444444', name: 'Professional', slug: 'professional', description: 'For growing clinics', priceDisplay: '₱1,499 / month', isActive: true, sortOrder: '1', featureKeys: [FeatureKey.APPOINTMENTS_MANAGE], activeClinicCount: 2 };
+const item = { id: '44444444-4444-4444-8444-444444444444', name: 'Professional', slug: 'professional', description: 'For growing clinics', priceDisplay: '₱1,499 / month', isActive: true, sortOrder: '1', featureKeys: [FeatureKey.APPOINTMENTS_MANAGE], limits: {}, activeClinicCount: 2 };
 function service(): AdminPackageService { return { list: vi.fn(async () => [item]), create: vi.fn(async (input) => ({ ...item, ...input, sortOrder: '0', activeClinicCount: 0 })), update: vi.fn(async (_id, input) => ({ ...item, ...input })) }; }
 async function setup(context: AuthorizationContext | null, packages: AdminPackageService) { app = await buildApp({ config, checkDatabase: async () => undefined, logger: false, auth: auth(context), adminPackages: packages }); }
 
@@ -38,7 +38,7 @@ describe('Super Admin package routes', () => {
     const packages = service(); await setup(superAdmin, packages);
     const response = await app!.inject({ method: 'POST', url: '/v1/admin/packages', payload: { name: ' Starter ', slug: 'STARTER', description: '', priceDisplay: ' Free ', isActive: true, featureKeys: [FeatureKey.APPOINTMENTS_MANAGE] } });
     expect(response.statusCode).toBe(201);
-    expect(packages.create).toHaveBeenCalledWith({ name: 'Starter', slug: 'starter', description: null, priceDisplay: 'Free', isActive: true, featureKeys: [FeatureKey.APPOINTMENTS_MANAGE] }, expect.objectContaining({ id: superAdmin.user.id }));
+    expect(packages.create).toHaveBeenCalledWith({ name: 'Starter', slug: 'starter', description: null, priceDisplay: 'Free', isActive: true, featureKeys: [FeatureKey.APPOINTMENTS_MANAGE], limits: {} }, expect.objectContaining({ id: superAdmin.user.id }));
   });
 
   it('rejects unknown feature keys and client-injected fields', async () => {

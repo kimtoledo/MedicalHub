@@ -3,13 +3,30 @@ import type { DB } from '@dentra/db';
 import { writeAudit } from '@dentra/db/audit';
 import {
   clinicFeatureOverrides,
+  clinicLimitOverrides,
   clinics,
   clinicSubscriptions,
   packageFeatures,
   packages,
 } from '@dentra/db/schema';
-import { AuditAction, FeatureKey } from '@dentra/shared';
+import { AuditAction, CapacityMetric, FeatureKey } from '@dentra/shared';
 import type { FeatureKey as FeatureKeyValue } from '@dentra/shared';
+import { getClinicCapacitySummary } from '../entitlements/capacity.js';
+
+/**
+ * Non-blocking warnings for metrics where current usage already exceeds the
+ * clinic's new effective limit. Never blocks the write — only informs the
+ * admin that further growth on that metric is blocked until usage drops.
+ */
+async function capacityWarnings(
+  transaction: Parameters<typeof getClinicCapacitySummary>[0],
+  clinicId: string,
+): Promise<string[]> {
+  const summary = await getClinicCapacitySummary(transaction, clinicId);
+  return summary
+    .filter((item) => item.limit !== null && item.used > item.limit)
+    .map((item) => `${item.metric}: ${item.used} currently active exceeds the new limit of ${item.limit} — no new ${item.metric} can be added until usage drops`);
+}
 
 export type AdminSettingsActor = {
   id: string;
@@ -42,7 +59,7 @@ export class AdminClinicSettingsError extends Error {
 export type AdminClinicSettingsService = {
   assignPackage: (
     clinicId: string,
-    input: { packageId: string; effectiveAt: Date },
+    input: { packageId: string; effectiveAt: Date; negotiatedPricePhp?: string | null; billingNote?: string | null },
     actor: AdminSettingsActor,
   ) => Promise<{
     id: string;
@@ -51,7 +68,31 @@ export type AdminClinicSettingsService = {
     status: typeof clinicSubscriptions.$inferSelect.status;
     startsAt: Date;
     expiresAt: Date | null;
+    warnings: string[];
   }>;
+  setLimitOverride: (
+    clinicId: string,
+    input: {
+      metric: CapacityMetric;
+      limit: number | null;
+      reason: string;
+      expiresAt: Date | null;
+    },
+    actor: AdminSettingsActor,
+  ) => Promise<{
+    id: string;
+    metric: string;
+    limit: number | null;
+    reason: string;
+    expiresAt: Date | null;
+    createdAt: Date;
+    warnings: string[];
+  }>;
+  removeLimitOverride: (
+    clinicId: string,
+    overrideId: string,
+    actor: AdminSettingsActor,
+  ) => Promise<{ id: string; metric: string }>;
   setFeatureOverride: (
     clinicId: string,
     input: {
@@ -99,6 +140,13 @@ function activeOverrideAt(timestamp: Date) {
   return or(
     isNull(clinicFeatureOverrides.expiresAt),
     gt(clinicFeatureOverrides.expiresAt, timestamp),
+  );
+}
+
+function activeLimitOverrideAt(timestamp: Date) {
+  return or(
+    isNull(clinicLimitOverrides.expiresAt),
+    gt(clinicLimitOverrides.expiresAt, timestamp),
   );
 }
 
@@ -193,6 +241,8 @@ export function createAdminClinicSettingsService(
             status: nextStatus,
             startsAt: input.effectiveAt,
             assignedBy: actor.id,
+            negotiatedPricePhp: input.negotiatedPricePhp ?? null,
+            billingNote: input.billingNote ?? null,
           })
           .returning({
             id: clinicSubscriptions.id,
@@ -221,7 +271,7 @@ export function createAdminClinicSettingsService(
           userAgent: actor.userAgent,
         });
 
-        return subscription;
+        return { ...subscription, warnings: await capacityWarnings(transaction, clinicId) };
       }),
 
     setFeatureOverride: async (clinicId, input, actor) =>
@@ -342,6 +392,130 @@ export function createAdminClinicSettingsService(
           entityId: override.id,
           action: AuditAction.FEATURE_OVERRIDE_REMOVED,
           metadata: JSON.stringify({ featureKey: override.featureKey }),
+          ipAddress: actor.ipAddress,
+          userAgent: actor.userAgent,
+        });
+        return override;
+      }),
+
+    setLimitOverride: async (clinicId, input, actor) =>
+      database.transaction(async (transaction) => {
+        const now = new Date();
+        const [clinic] = await transaction
+          .select({ id: clinics.id })
+          .from(clinics)
+          .where(and(eq(clinics.id, clinicId), isNull(clinics.deletedAt)))
+          .limit(1)
+          .for('update');
+        if (!clinic) {
+          throw new AdminClinicSettingsError('CLINIC_NOT_FOUND', 'Clinic not found');
+        }
+        if (input.expiresAt && input.expiresAt <= now) {
+          throw new AdminClinicSettingsError(
+            'INVALID_OVERRIDE_EXPIRY',
+            'Override expiry must be in the future',
+          );
+        }
+
+        await transaction
+          .update(clinicLimitOverrides)
+          .set({ expiresAt: now })
+          .where(
+            and(
+              eq(clinicLimitOverrides.clinicId, clinicId),
+              eq(clinicLimitOverrides.metric, input.metric),
+              activeLimitOverrideAt(now),
+            ),
+          );
+
+        const [override] = await transaction
+          .insert(clinicLimitOverrides)
+          .values({
+            clinicId,
+            metric: input.metric,
+            limit: input.limit,
+            reason: input.reason,
+            grantedBy: actor.id,
+            expiresAt: input.expiresAt,
+          })
+          .returning({
+            id: clinicLimitOverrides.id,
+            metric: clinicLimitOverrides.metric,
+            limit: clinicLimitOverrides.limit,
+            reason: clinicLimitOverrides.reason,
+            expiresAt: clinicLimitOverrides.expiresAt,
+            createdAt: clinicLimitOverrides.createdAt,
+          });
+
+        await writeAudit(transaction, {
+          actorId: actor.id,
+          actorEmail: actor.email,
+          clinicId,
+          entityType: 'clinic_limit_override',
+          entityId: override.id,
+          action: AuditAction.LIMIT_OVERRIDE_SET,
+          metadata: JSON.stringify({
+            metric: override.metric,
+            limit: override.limit,
+          }),
+          ipAddress: actor.ipAddress,
+          userAgent: actor.userAgent,
+        });
+        return { ...override, warnings: await capacityWarnings(transaction, clinicId) };
+      }),
+
+    removeLimitOverride: async (clinicId, overrideId, actor) =>
+      database.transaction(async (transaction) => {
+        const now = new Date();
+        const [clinic] = await transaction
+          .select({ id: clinics.id })
+          .from(clinics)
+          .where(and(eq(clinics.id, clinicId), isNull(clinics.deletedAt)))
+          .limit(1)
+          .for('update');
+        if (!clinic) {
+          throw new AdminClinicSettingsError('CLINIC_NOT_FOUND', 'Clinic not found');
+        }
+
+        const [override] = await transaction
+          .select({
+            id: clinicLimitOverrides.id,
+            metric: clinicLimitOverrides.metric,
+          })
+          .from(clinicLimitOverrides)
+          .where(
+            and(
+              eq(clinicLimitOverrides.id, overrideId),
+              eq(clinicLimitOverrides.clinicId, clinicId),
+              activeLimitOverrideAt(now),
+            ),
+          )
+          .limit(1);
+        if (!override) {
+          throw new AdminClinicSettingsError(
+            'OVERRIDE_NOT_FOUND',
+            'Active limit override not found',
+          );
+        }
+
+        await transaction
+          .update(clinicLimitOverrides)
+          .set({ expiresAt: now })
+          .where(
+            and(
+              eq(clinicLimitOverrides.clinicId, clinicId),
+              eq(clinicLimitOverrides.metric, override.metric),
+              activeLimitOverrideAt(now),
+            ),
+          );
+        await writeAudit(transaction, {
+          actorId: actor.id,
+          actorEmail: actor.email,
+          clinicId,
+          entityType: 'clinic_limit_override',
+          entityId: override.id,
+          action: AuditAction.LIMIT_OVERRIDE_REMOVED,
+          metadata: JSON.stringify({ metric: override.metric }),
           ipAddress: actor.ipAddress,
           userAgent: actor.userAgent,
         });

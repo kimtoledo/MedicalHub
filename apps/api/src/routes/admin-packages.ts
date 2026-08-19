@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { FeatureKey } from '@dentra/shared';
+import { CapacityMetric, FeatureKey } from '@dentra/shared';
 import { AdminPackageError, type AdminPackageService } from '../admin/packages-service.js';
 import { isSuperAdmin } from '../auth/authorization.js';
 import { resolveRequestAuthorization } from '../auth/request.js';
@@ -8,6 +8,7 @@ import type { AuthServices } from '../auth/types.js';
 import { postgresUuidSchema } from '../validation.js';
 
 const featureValues = Object.values(FeatureKey) as [FeatureKey, ...FeatureKey[]];
+const capacityMetricValues = Object.values(CapacityMetric) as [CapacityMetric, ...CapacityMetric[]];
 const savePackageSchema = z.object({
   name: z.string().trim().min(2).max(100),
   slug: z.string().trim().toLowerCase().min(2).max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
@@ -15,6 +16,7 @@ const savePackageSchema = z.object({
   priceDisplay: z.string().trim().min(1).max(50),
   isActive: z.boolean(),
   featureKeys: z.array(z.enum(featureValues)).max(featureValues.length),
+  limits: z.partialRecord(z.enum(capacityMetricValues), z.number().int().min(0).nullable()).default({}),
 }).strict();
 const paramsSchema = z.object({ packageId: postgresUuidSchema });
 
@@ -32,6 +34,7 @@ export async function registerAdminPackageRoutes(app: FastifyInstance, options: 
       data: {
         items: await options.packages.list(),
         featureCatalog: Object.values(FeatureKey),
+        capacityMetricCatalog: Object.values(CapacityMetric),
       },
     });
   });

@@ -50,6 +50,18 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Subscription tier capacity limits — SOLO/CLINIC/BRANCHES (task #27)
+- New business model: SOLO (1 clinic, 1 dentist, 1 branch, no staff), CLINIC (up to 5 dentists, 1 of each staff role by default, extra seats purchasable), BRANCHES (fully custom per clinic — Super Admin sets branches/dentists/staff/pricing per contract)
+- Migration `0050_overconfident_umar`: added `package_limits` and `clinic_limit_overrides` tables (mirroring the existing `package_features`/`clinic_feature_overrides` override-precedence pattern, but for numeric headcount caps instead of boolean feature flags), plus `clinic_subscriptions.negotiated_price_php`/`billing_note` for BRANCHES custom pricing and `subscription_change_requests.requested_metric`/`requested_limit` for structured add-on requests
+- Absent limit rows deny by default (mirrors existing feature-key semantics); `limit: null` is an explicit, never-implied "unlimited" sentinel
+- New `apps/api/src/entitlements/capacity.ts`: `assertClinicCapacity`/`getClinicCapacitySummary` resolve override → package base → 0 and count live usage directly against `dentist_branch_assignments`/`branches`/`clinic_memberships` — deliberately not the existing (and previously unused) `clinic_usage_counters` table, which is built for resettable period-scoped metrics, not standing headcount
+- Enforcement wired into branch creation, dentist-clinic affiliation, staff invites, and staff role changes, each row-locking the clinic first to avoid races; affiliating a dentist to a second branch of the same clinic never double-counts or gets blocked
+- Super Admin can configure per-package default limits and per-clinic overrides (new `/v1/admin/clinics/:clinicId/limit-overrides` routes); downgrading a clinic below its current usage never retroactively touches existing dentists/branches/staff — it only blocks further growth, with a non-blocking `warnings` field surfaced from the write
+- CLINIC-tier add-on requests now auto-apply as a limit override on Super Admin approval, the same way upgrade requests already auto-apply a package change
+- Replaced the placeholder `starter`/`professional`/`enterprise` demo packages with `solo`/`clinic`/`branches`; reassigned the two demo clinics by their actual seeded shape (Smile Bright Dental's 2 branches → Branches tier with overrides, BrightSmile → Clinic tier, fitting its defaults with no overrides needed)
+- Verified against the real local dev database that capacity resolution and enforcement behave correctly on live data; 537 passing API tests (10 new), repository-wide TypeScript checks
+- Remaining: Super Admin and clinic-facing UI to surface usage/limits and the add-on request form — tracked as a follow-up task, not yet filed
+
 ### ✅ UI spacing consistency pass
 - Normalized compact half-step spacing utilities to the established whole-step Dentra.ph rhythm across public, clinic, dentist, patient-portal, and Super Admin surfaces
 - Kept the existing violet brand system and component behavior unchanged

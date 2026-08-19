@@ -29,6 +29,26 @@ const orderedSelect = (rows: unknown[]) => ({
   }),
 });
 
+/**
+ * A chainable stub that is ALSO thenable, used as the fallback for the
+ * capacity-summary queries assignPackage/setLimitOverride run after their
+ * main write (resolveLimit/countUsage, up to ~4 selects per metric across
+ * all 7 CapacityMetric values) — resolving everything to "no rows" is
+ * enough since these tests don't assert on the resulting warnings.
+ */
+function chainable(value: unknown): any {
+  const obj: any = {
+    from: () => obj,
+    where: () => obj,
+    orderBy: () => obj,
+    limit: () => obj,
+    for: () => Promise.resolve(value),
+    then: (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
+      Promise.resolve(value).then(resolve, reject),
+  };
+  return obj;
+}
+
 describe('createAdminClinicSettingsService', () => {
   it('closes the effective subscription, inserts its replacement, and audits the package change', async () => {
     const effectiveAt = new Date('2026-08-12T16:00:00.000Z');
@@ -40,7 +60,10 @@ describe('createAdminClinicSettingsService', () => {
         id: 'old-subscription',
         packageId: 'old-package',
         status: 'active',
-      }]));
+      }]))
+      // Post-write capacity-summary lookups (resolveLimit/countUsage across
+      // all metrics) — see the `chainable` helper doc comment above.
+      .mockImplementation(() => chainable([]));
     const updateSet = vi.fn(() => ({ where: async () => undefined }));
     const update = vi.fn(() => ({ set: updateSet }));
     const subscriptionValues = vi.fn(() => ({ returning: async () => [{

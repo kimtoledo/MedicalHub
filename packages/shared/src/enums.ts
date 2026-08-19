@@ -21,6 +21,32 @@ export const ClinicRole = {
 } as const;
 export type ClinicRole = (typeof ClinicRole)[keyof typeof ClinicRole];
 
+// ---------------------------------------------------------------------------
+// Subscription capacity metrics
+// Used as the authoritative contract for headcount limits (package_limits /
+// clinic_limit_overrides). Never branch enforcement on package name/slug —
+// always resolve the effective limit for one of these keys.
+// ---------------------------------------------------------------------------
+export const CapacityMetric = {
+  DENTISTS: 'dentists',
+  BRANCHES: 'branches',
+  STAFF_CLINIC_ADMIN: 'staff_clinic_admin',
+  STAFF_RECEPTIONIST: 'staff_receptionist',
+  STAFF_DENTAL_ASSISTANT: 'staff_dental_assistant',
+  STAFF_CASHIER: 'staff_cashier',
+  STAFF_INVENTORY_STAFF: 'staff_inventory_staff',
+} as const;
+export type CapacityMetric = (typeof CapacityMetric)[keyof typeof CapacityMetric];
+
+/** Clinic roles that consume a capacity seat. clinic_owner and dentist are intentionally absent. */
+export const CLINIC_ROLE_CAPACITY_METRIC: Partial<Record<ClinicRole, CapacityMetric>> = {
+  [ClinicRole.CLINIC_ADMIN]: CapacityMetric.STAFF_CLINIC_ADMIN,
+  [ClinicRole.RECEPTIONIST]: CapacityMetric.STAFF_RECEPTIONIST,
+  [ClinicRole.DENTAL_ASSISTANT]: CapacityMetric.STAFF_DENTAL_ASSISTANT,
+  [ClinicRole.CASHIER]: CapacityMetric.STAFF_CASHIER,
+  [ClinicRole.INVENTORY_STAFF]: CapacityMetric.STAFF_INVENTORY_STAFF,
+};
+
 export const PermissionKey = {
   APPOINTMENTS: 'appointments.manage',
   PATIENTS: 'patients.manage',
@@ -251,6 +277,8 @@ export const AuditAction = {
   PACKAGE_CREATED: 'package.created',
   PACKAGE_UPDATED: 'package.updated',
   PACKAGE_DEACTIVATED: 'package.deactivated',
+  LIMIT_OVERRIDE_SET: 'limit_override.set',
+  LIMIT_OVERRIDE_REMOVED: 'limit_override.removed',
 
   // Appointments
   APPOINTMENT_CREATED: 'appointment.created',

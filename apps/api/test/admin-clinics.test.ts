@@ -267,6 +267,7 @@ function createClinicSettingsService(): AdminClinicSettingsService {
       status: 'active' as const,
       startsAt: input.effectiveAt,
       expiresAt: null,
+      warnings: [],
     })),
     setFeatureOverride: vi.fn(async (_clinicId, input) => ({
       id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
@@ -279,6 +280,19 @@ function createClinicSettingsService(): AdminClinicSettingsService {
     removeFeatureOverride: vi.fn(async (_clinicId, overrideId) => ({
       id: overrideId,
       featureKey: 'microsite.publish',
+    })),
+    setLimitOverride: vi.fn(async (_clinicId, input) => ({
+      id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+      metric: input.metric,
+      limit: input.limit,
+      reason: input.reason,
+      expiresAt: input.expiresAt,
+      createdAt: new Date('2026-08-11T00:00:00.000Z'),
+      warnings: [],
+    })),
+    removeLimitOverride: vi.fn(async (_clinicId, overrideId) => ({
+      id: overrideId,
+      metric: 'dentists',
     })),
     updatePublication: vi.fn(async (clinicId, publicationStatus) => ({
       id: clinicId,

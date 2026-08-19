@@ -13,7 +13,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { hashPassword } from '@better-auth/utils/password';
 import dotenv from 'dotenv';
 import postgres from 'postgres';
-import { FeatureKey } from '@dentra/shared';
+import { CapacityMetric, FeatureKey } from '@dentra/shared';
 import * as schema from '../packages/db/src/schema';
 
 dotenv.config();
@@ -54,10 +54,11 @@ const db = drizzle(sql, { schema });
 const ADMIN_USER_ID = '00000000-0001-0000-0000-000000000001';
 const ADMIN_ACCOUNT_ID = '00000000-0013-0000-0000-000000000001';
 
-// Packages
-const PKG_STARTER_ID     = '00000000-0002-0000-0000-000000000001';
-const PKG_PRO_ID         = '00000000-0002-0000-0000-000000000002';
-const PKG_ENTERPRISE_ID  = '00000000-0002-0000-0000-000000000003';
+// Packages — SOLO / CLINIC / BRANCHES (same UUIDs as the original
+// starter/professional/enterprise placeholders; never change after first seed run)
+const PKG_SOLO_ID        = '00000000-0002-0000-0000-000000000001';
+const PKG_CLINIC_ID      = '00000000-0002-0000-0000-000000000002';
+const PKG_BRANCHES_ID    = '00000000-0002-0000-0000-000000000003';
 
 // Clinics
 const CLINIC_SBD_ID      = '00000000-0003-0000-0000-000000000001'; // Smile Bright Dental
@@ -158,6 +159,7 @@ const ENTERPRISE_FEATURES = [
   FeatureKey.INVENTORY_MANAGE,
   FeatureKey.RADIOGRAPHS,
   FeatureKey.MICROSITE_CUSTOMIZE,
+  FeatureKey.KIOSK_CHECKIN,
 ];
 
 // Filipino first/last name pools
@@ -369,26 +371,26 @@ async function seed() {
   console.log('  📦  Packages...');
   await db.insert(schema.packages).values([
     {
-      id: PKG_STARTER_ID,
-      name: 'Starter',
-      slug: 'starter',
-      description: 'Essential tools for solo practitioners and small clinics.',
+      id: PKG_SOLO_ID,
+      name: 'Solo',
+      slug: 'solo',
+      description: 'One dentist, one clinic, one account — everything a solo practitioner needs.',
       isActive: true,
       sortOrder: '1',
     },
     {
-      id: PKG_PRO_ID,
-      name: 'Professional',
-      slug: 'professional',
-      description: 'Full clinic suite with clinical records, odontogram, and online booking.',
+      id: PKG_CLINIC_ID,
+      name: 'Clinic',
+      slug: 'clinic',
+      description: 'Up to 5 dentists and a full front-desk team in a single clinic.',
       isActive: true,
       sortOrder: '2',
     },
     {
-      id: PKG_ENTERPRISE_ID,
-      name: 'Enterprise',
-      slug: 'enterprise',
-      description: 'Full-featured platform with billing, inventory, and multi-branch support.',
+      id: PKG_BRANCHES_ID,
+      name: 'Branches',
+      slug: 'branches',
+      description: 'Custom multi-branch plan — Super Admin configures branches, dentists, staff seats, and pricing per contract.',
       isActive: true,
       sortOrder: '3',
     },
@@ -396,27 +398,45 @@ async function seed() {
 
   // Package features
   console.log('  🔑  Package features...');
+  // A solo dentist has no one to invite — drop STAFF_MANAGE from the base Starter set.
+  const SOLO_FEATURES = STARTER_FEATURES.filter((key) => key !== FeatureKey.STAFF_MANAGE);
   const featureRows = [
-    ...STARTER_FEATURES.map((key, i) => ({
+    ...SOLO_FEATURES.map((key, i) => ({
       id: `00000000-0009-0001-${String(i).padStart(4, '0')}-000000000001`,
-      packageId: PKG_STARTER_ID,
+      packageId: PKG_SOLO_ID,
       featureKey: key,
       isEnabled: true,
     })),
     ...PRO_FEATURES.map((key, i) => ({
       id: `00000000-0009-0002-${String(i).padStart(4, '0')}-000000000001`,
-      packageId: PKG_PRO_ID,
+      packageId: PKG_CLINIC_ID,
       featureKey: key,
       isEnabled: true,
     })),
     ...ENTERPRISE_FEATURES.map((key, i) => ({
       id: `00000000-0009-0003-${String(i).padStart(4, '0')}-000000000001`,
-      packageId: PKG_ENTERPRISE_ID,
+      packageId: PKG_BRANCHES_ID,
       featureKey: key,
       isEnabled: true,
     })),
   ];
   await db.insert(schema.packageFeatures).values(featureRows).onConflictDoNothing();
+
+  // Package capacity limits (headcount caps). Absent metric = 0 (deny-by-default).
+  // BRANCHES intentionally has none — every real Branches clinic gets its
+  // numbers entirely via clinicLimitOverrides, set per contract by Super Admin.
+  console.log('  📏  Package limits...');
+  await db.insert(schema.packageLimits).values([
+    { id: '00000000-0014-0001-0000-000000000001', packageId: PKG_SOLO_ID, metric: CapacityMetric.DENTISTS, limit: 1 },
+    { id: '00000000-0014-0001-0000-000000000002', packageId: PKG_SOLO_ID, metric: CapacityMetric.BRANCHES, limit: 1 },
+    { id: '00000000-0014-0002-0000-000000000001', packageId: PKG_CLINIC_ID, metric: CapacityMetric.DENTISTS, limit: 5 },
+    { id: '00000000-0014-0002-0000-000000000002', packageId: PKG_CLINIC_ID, metric: CapacityMetric.BRANCHES, limit: 1 },
+    { id: '00000000-0014-0002-0000-000000000003', packageId: PKG_CLINIC_ID, metric: CapacityMetric.STAFF_CLINIC_ADMIN, limit: 1 },
+    { id: '00000000-0014-0002-0000-000000000004', packageId: PKG_CLINIC_ID, metric: CapacityMetric.STAFF_RECEPTIONIST, limit: 1 },
+    { id: '00000000-0014-0002-0000-000000000005', packageId: PKG_CLINIC_ID, metric: CapacityMetric.STAFF_DENTAL_ASSISTANT, limit: 1 },
+    { id: '00000000-0014-0002-0000-000000000006', packageId: PKG_CLINIC_ID, metric: CapacityMetric.STAFF_CASHIER, limit: 1 },
+    { id: '00000000-0014-0002-0000-000000000007', packageId: PKG_CLINIC_ID, metric: CapacityMetric.STAFF_INVENTORY_STAFF, limit: 1 },
+  ]).onConflictDoNothing();
 
   // ── 3. Clinics ─────────────────────────────────────────────────────────────
   console.log('  🏥  Clinics...');
@@ -714,25 +734,40 @@ async function seed() {
   console.log('  💳  Subscriptions...');
   await db.insert(schema.clinicSubscriptions).values([
     {
+      // Smile Bright Dental runs 2 branches (see BRANCH_SBD_MAIN_ID/BRANCH_SBD_B2_ID
+      // below) and 2 dentists — Branches tier, configured via clinicLimitOverrides.
       id: SUB_SBD_ID,
       clinicId: CLINIC_SBD_ID,
-      packageId: PKG_PRO_ID,
+      packageId: PKG_BRANCHES_ID,
       status: 'active',
       startsAt: daysFromNow(-180),
       expiresAt: daysFromNow(185),
       assignedBy: ADMIN_USER_ID,
-      notes: 'Initial Professional plan subscription.',
+      negotiatedPricePhp: '4500.00',
+      notes: 'Custom multi-branch contract — 2 branches, 2 dentists, front-desk team.',
     },
     {
+      // BrightSmile runs 1 branch, 2 dentists, and one of each front-desk role —
+      // fits entirely within the Clinic tier's default limits, no overrides needed.
       id: SUB_BSM_ID,
       clinicId: CLINIC_BSM_ID,
-      packageId: PKG_STARTER_ID,
+      packageId: PKG_CLINIC_ID,
       status: 'trial',
       startsAt: daysFromNow(-14),
       expiresAt: daysFromNow(16),
       assignedBy: ADMIN_USER_ID,
       notes: 'Free trial period.',
     },
+  ]).onConflictDoNothing();
+
+  // Clinic limit overrides — Smile Bright Dental's Branches-tier contract terms.
+  console.log('  📐  Clinic limit overrides...');
+  await db.insert(schema.clinicLimitOverrides).values([
+    { id: '00000000-0015-0000-0000-000000000001', clinicId: CLINIC_SBD_ID, metric: CapacityMetric.BRANCHES, limit: 2, reason: 'Initial Branches contract: 2 branches', grantedBy: ADMIN_USER_ID },
+    { id: '00000000-0015-0000-0000-000000000002', clinicId: CLINIC_SBD_ID, metric: CapacityMetric.DENTISTS, limit: 2, reason: 'Initial Branches contract: 2 dentists', grantedBy: ADMIN_USER_ID },
+    { id: '00000000-0015-0000-0000-000000000003', clinicId: CLINIC_SBD_ID, metric: CapacityMetric.STAFF_CLINIC_ADMIN, limit: 1, reason: 'Initial Branches contract: front-desk team', grantedBy: ADMIN_USER_ID },
+    { id: '00000000-0015-0000-0000-000000000004', clinicId: CLINIC_SBD_ID, metric: CapacityMetric.STAFF_RECEPTIONIST, limit: 1, reason: 'Initial Branches contract: front-desk team', grantedBy: ADMIN_USER_ID },
+    { id: '00000000-0015-0000-0000-000000000005', clinicId: CLINIC_SBD_ID, metric: CapacityMetric.STAFF_DENTAL_ASSISTANT, limit: 1, reason: 'Initial Branches contract: front-desk team', grantedBy: ADMIN_USER_ID },
   ]).onConflictDoNothing();
 
   // ── 8. Services ────────────────────────────────────────────────────────────
@@ -931,7 +966,7 @@ async function seed() {
       entityType: 'subscription',
       entityId: SUB_SBD_ID,
       action: 'subscription.assigned',
-      metadata: JSON.stringify({ package: 'professional', status: 'active' }),
+      metadata: JSON.stringify({ package: 'branches', status: 'active' }),
       occurredAt: daysFromNow(-180),
     },
     {
@@ -942,7 +977,7 @@ async function seed() {
       entityType: 'subscription',
       entityId: SUB_BSM_ID,
       action: 'subscription.assigned',
-      metadata: JSON.stringify({ package: 'starter', status: 'trial' }),
+      metadata: JSON.stringify({ package: 'clinic', status: 'trial' }),
       occurredAt: daysFromNow(-14),
     },
     ...completedSbd.slice(0, 3).map((a, i) => ({

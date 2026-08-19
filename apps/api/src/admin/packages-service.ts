@@ -1,17 +1,20 @@
 import { and, countDistinct, desc, eq, gt, inArray, isNull, lte, or } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
 import { writeAudit } from '@dentra/db/audit';
-import { clinicSubscriptions, packageFeatures, packages } from '@dentra/db/schema';
-import { AuditAction, FeatureKey } from '@dentra/shared';
+import { clinicSubscriptions, packageFeatures, packageLimits, packages } from '@dentra/db/schema';
+import { AuditAction, CapacityMetric, FeatureKey } from '@dentra/shared';
 
 export type AdminPackageItem = {
   id: string; name: string; slug: string; description: string | null;
   priceDisplay: string; isActive: boolean; sortOrder: string | null;
-  featureKeys: string[]; activeClinicCount: number;
+  featureKeys: string[]; limits: Partial<Record<CapacityMetric, number | null>>;
+  activeClinicCount: number;
 };
 export type SaveAdminPackageInput = {
   name: string; slug: string; description: string | null; priceDisplay: string;
   isActive: boolean; featureKeys: FeatureKey[];
+  /** Absent metric = 0 (deny-by-default). null = unlimited. */
+  limits: Partial<Record<CapacityMetric, number | null>>;
 };
 export type AdminPackageActor = { id: string; email: string; ipAddress?: string; userAgent?: string };
 export class AdminPackageError extends Error {
@@ -32,15 +35,18 @@ function isSlugConstraint(error: unknown): boolean {
 export function createAdminPackageService(database: DB): AdminPackageService {
   const list = async (): Promise<AdminPackageItem[]> => {
     const now = new Date();
-    const [packageRows, featureRows, clinicRows] = await Promise.all([
+    const [packageRows, featureRows, limitRows, clinicRows] = await Promise.all([
       database.select({ id: packages.id, name: packages.name, slug: packages.slug, description: packages.description, priceDisplay: packages.priceDisplay, isActive: packages.isActive, sortOrder: packages.sortOrder }).from(packages).orderBy(packages.sortOrder, packages.name),
       database.select({ packageId: packageFeatures.packageId, featureKey: packageFeatures.featureKey }).from(packageFeatures).where(eq(packageFeatures.isEnabled, true)).orderBy(packageFeatures.featureKey),
+      database.select({ packageId: packageLimits.packageId, metric: packageLimits.metric, limit: packageLimits.limit }).from(packageLimits),
       database.select({ packageId: clinicSubscriptions.packageId, activeClinicCount: countDistinct(clinicSubscriptions.clinicId) }).from(clinicSubscriptions).where(and(inArray(clinicSubscriptions.status, ['trial', 'active']), lte(clinicSubscriptions.startsAt, now), or(isNull(clinicSubscriptions.expiresAt), gt(clinicSubscriptions.expiresAt, now)))).groupBy(clinicSubscriptions.packageId),
     ]);
     const features = new Map<string, string[]>();
     featureRows.forEach((row) => features.set(row.packageId, [...(features.get(row.packageId) ?? []), row.featureKey]));
+    const limits = new Map<string, Partial<Record<CapacityMetric, number | null>>>();
+    limitRows.forEach((row) => limits.set(row.packageId, { ...(limits.get(row.packageId) ?? {}), [row.metric]: row.limit }));
     const counts = new Map(clinicRows.map((row) => [row.packageId, row.activeClinicCount]));
-    return packageRows.map((row) => ({ ...row, featureKeys: features.get(row.id) ?? [], activeClinicCount: counts.get(row.id) ?? 0 }));
+    return packageRows.map((row) => ({ ...row, featureKeys: features.get(row.id) ?? [], limits: limits.get(row.id) ?? {}, activeClinicCount: counts.get(row.id) ?? 0 }));
   };
 
   async function save(packageId: string | null, input: SaveAdminPackageInput, actor: AdminPackageActor): Promise<AdminPackageItem> {
@@ -56,15 +62,18 @@ export function createAdminPackageService(database: DB): AdminPackageService {
           wasActive = current.isActive;
           await transaction.update(packages).set({ name: input.name, slug: input.slug, description: input.description, priceDisplay: input.priceDisplay, isActive: input.isActive }).where(eq(packages.id, id));
           await transaction.delete(packageFeatures).where(eq(packageFeatures.packageId, id));
+          await transaction.delete(packageLimits).where(eq(packageLimits.packageId, id));
         } else {
           const [created] = await transaction.insert(packages).values({ name: input.name, slug: input.slug, description: input.description, priceDisplay: input.priceDisplay, isActive: input.isActive }).returning({ id: packages.id });
           id = created.id;
         }
         if (input.featureKeys.length) await transaction.insert(packageFeatures).values(input.featureKeys.map((featureKey) => ({ packageId: id!, featureKey, isEnabled: true })));
+        const limitEntries = Object.entries(input.limits) as [CapacityMetric, number | null][];
+        if (limitEntries.length) await transaction.insert(packageLimits).values(limitEntries.map(([metric, limit]) => ({ packageId: id!, metric, limit })));
         const action = packageId
           ? (wasActive && !input.isActive ? AuditAction.PACKAGE_DEACTIVATED : AuditAction.PACKAGE_UPDATED)
           : AuditAction.PACKAGE_CREATED;
-        await writeAudit(transaction, { actorId: actor.id, actorEmail: actor.email, entityType: 'package', entityId: id, action, metadata: JSON.stringify({ featureKeys: input.featureKeys, isActive: input.isActive }), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
+        await writeAudit(transaction, { actorId: actor.id, actorEmail: actor.email, entityType: 'package', entityId: id, action, metadata: JSON.stringify({ featureKeys: input.featureKeys, limits: input.limits, isActive: input.isActive }), ipAddress: actor.ipAddress, userAgent: actor.userAgent });
         return id!;
       });
       const item = (await list()).find((candidate) => candidate.id === savedId);

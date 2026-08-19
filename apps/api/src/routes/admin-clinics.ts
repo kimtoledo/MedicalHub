@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { FeatureKey } from '@dentra/shared';
+import { CapacityMetric, FeatureKey } from '@dentra/shared';
 import { isSuperAdmin } from '../auth/authorization.js';
 import { resolveRequestAuthorization } from '../auth/request.js';
 import type { AuthServices } from '../auth/types.js';
@@ -159,6 +159,8 @@ const effectiveDateSchema = z.string()
 const assignClinicPackageBodySchema = z.object({
   packageId: postgresUuidSchema,
   effectiveDate: effectiveDateSchema,
+  negotiatedPricePhp: z.string().trim().regex(/^\d+(\.\d{1,2})?$/).optional().transform((value) => value ?? null),
+  billingNote: z.string().trim().max(1000).optional().transform((value) => value || null),
 }).strict();
 
 const featureKeyValues = Object.values(FeatureKey) as [
@@ -169,6 +171,18 @@ const featureKeyValues = Object.values(FeatureKey) as [
 const setFeatureOverrideBodySchema = z.object({
   featureKey: z.enum(featureKeyValues),
   isEnabled: z.boolean(),
+  reason: z.string().trim().min(3).max(500),
+  expiresAt: z
+    .union([z.string().datetime({ offset: true }), z.null()])
+    .optional()
+    .transform((value) => value ? new Date(value) : null),
+}).strict();
+
+const capacityMetricValues = Object.values(CapacityMetric) as [CapacityMetric, ...CapacityMetric[]];
+
+const setLimitOverrideBodySchema = z.object({
+  metric: z.enum(capacityMetricValues),
+  limit: z.number().int().min(0).nullable(),
   reason: z.string().trim().min(3).max(500),
   expiresAt: z
     .union([z.string().datetime({ offset: true }), z.null()])
@@ -622,6 +636,8 @@ export async function registerAdminClinicRoutes(
           {
             packageId: body.data.packageId,
             effectiveAt: body.data.effectiveDate,
+            negotiatedPricePhp: body.data.negotiatedPricePhp,
+            billingNote: body.data.billingNote,
           },
           {
             id: authorization.user.id,
@@ -714,6 +730,100 @@ export async function registerAdminClinicRoutes(
         try {
           const userAgent = request.headers['user-agent'];
           const override = await settings.removeFeatureOverride(
+            params.data.clinicId,
+            params.data.overrideId,
+            {
+              id: authorization.user.id,
+              email: authorization.user.email,
+              ipAddress: request.ip,
+              userAgent: typeof userAgent === 'string' ? userAgent.slice(0, 500) : undefined,
+            },
+          );
+          return reply.send({ success: true, data: override });
+        } catch (error) {
+          if (!(error instanceof AdminClinicSettingsError)) throw error;
+          return reply.status(getSettingsErrorStatus(error)).send({
+            success: false,
+            error: { code: error.code, message: error.message },
+          });
+        }
+      },
+    );
+
+    app.post('/v1/admin/clinics/:clinicId/limit-overrides', async (request, reply) => {
+      const authorization = await resolveRequestAuthorization(request, options.auth);
+      if (!authorization) {
+        return reply.status(401).send({
+          success: false,
+          error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' },
+        });
+      }
+      if (!isSuperAdmin(authorization)) {
+        return reply.status(403).send({
+          success: false,
+          error: { code: 'FORBIDDEN', message: 'Super Admin access is required' },
+        });
+      }
+
+      const params = clinicParamsSchema.safeParse(request.params);
+      const body = setLimitOverrideBodySchema.safeParse(request.body);
+      if (!params.success || !body.success) {
+        return reply.status(400).send({
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid limit override' },
+        });
+      }
+
+      try {
+        const userAgent = request.headers['user-agent'];
+        const override = await settings.setLimitOverride(
+          params.data.clinicId,
+          body.data,
+          {
+            id: authorization.user.id,
+            email: authorization.user.email,
+            ipAddress: request.ip,
+            userAgent: typeof userAgent === 'string' ? userAgent.slice(0, 500) : undefined,
+          },
+        );
+        return reply.status(201).send({ success: true, data: override });
+      } catch (error) {
+        if (!(error instanceof AdminClinicSettingsError)) throw error;
+        return reply.status(getSettingsErrorStatus(error)).send({
+          success: false,
+          error: { code: error.code, message: error.message },
+        });
+      }
+    });
+
+    app.delete(
+      '/v1/admin/clinics/:clinicId/limit-overrides/:overrideId',
+      async (request, reply) => {
+        const authorization = await resolveRequestAuthorization(request, options.auth);
+        if (!authorization) {
+          return reply.status(401).send({
+            success: false,
+            error: { code: 'UNAUTHENTICATED', message: 'A valid session is required' },
+          });
+        }
+        if (!isSuperAdmin(authorization)) {
+          return reply.status(403).send({
+            success: false,
+            error: { code: 'FORBIDDEN', message: 'Super Admin access is required' },
+          });
+        }
+
+        const params = overrideParamsSchema.safeParse(request.params);
+        if (!params.success) {
+          return reply.status(400).send({
+            success: false,
+            error: { code: 'VALIDATION_ERROR', message: 'Invalid limit override identifier' },
+          });
+        }
+
+        try {
+          const userAgent = request.headers['user-agent'];
+          const override = await settings.removeLimitOverride(
             params.data.clinicId,
             params.data.overrideId,
             {

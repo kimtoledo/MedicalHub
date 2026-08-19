@@ -11,6 +11,10 @@ export const subscriptionChangeRequests = pgTable('subscription_change_requests'
   clinicId: uuid('clinic_id').notNull().references(() => clinics.id, { onDelete: 'cascade' }),
   requestedPackageId: uuid('requested_package_id').references(() => packages.id, { onDelete: 'set null' }),
   type: subscriptionRequestTypeEnum('type').notNull(),
+  /** Only used when type='addon'. Must be a CapacityMetric value from @dentra/shared. */
+  requestedMetric: varchar('requested_metric', { length: 60 }),
+  /** Only used when type='addon'. ABSOLUTE target limit, not a delta. */
+  requestedLimit: integer('requested_limit'),
   reason: text('reason').notNull(),
   status: subscriptionRequestStatusEnum('status').notNull().default('pending'),
   requestedBy: uuid('requested_by').notNull(),

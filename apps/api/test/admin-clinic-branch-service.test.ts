@@ -8,25 +8,45 @@ import {
 
 type ExistingBranch = { isMain: boolean };
 
+/**
+ * A chainable stub that is ALSO thenable, so it works both as an
+ * intermediate link (`.from().where().orderBy()`) and as the terminal
+ * awaited call (`await select(...).limit(1)` or `.limit(1).for('update')`),
+ * regardless of exactly how many chain methods the real query builds.
+ */
+function chainable(value: unknown): any {
+  const obj: any = {
+    from: () => obj,
+    where: () => obj,
+    orderBy: () => obj,
+    limit: () => obj,
+    for: () => Promise.resolve(value),
+    then: (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
+      Promise.resolve(value).then(resolve, reject),
+  };
+  return obj;
+}
+
 function createDatabaseDouble(options?: {
   clinicExists?: boolean;
   existingBranches?: ExistingBranch[];
+  /** Override lookup result for the capacity check. Defaults to unlimited. */
+  capacityOverride?: unknown[];
+  /** Live branch-count result the capacity check's countUsage query sees. */
+  capacityUsage?: unknown[];
 }) {
   const clinicRows = options?.clinicExists === false ? [] : [{ id: 'clinic-id' }];
   const existingBranches = options?.existingBranches ?? [];
-  const selectFor = vi.fn(async () => clinicRows);
-  const select = vi
-    .fn()
-    .mockImplementationOnce(() => ({
-      from: () => ({
-        where: () => ({
-          limit: () => ({ for: selectFor }),
-        }),
-      }),
-    }))
-    .mockImplementationOnce(() => ({
-      from: () => ({ where: async () => existingBranches }),
-    }));
+  const capacityOverride = options?.capacityOverride ?? [{ limit: null }];
+  // Call order: 1) clinic row lock, 2) capacity override lookup, 3) [only
+  // when the resolved limit isn't unlimited] live branch-count usage query,
+  // 4) existing-branches fetch (business logic's own "is there a main
+  // branch already" check, separate from the capacity system).
+  const selectQueue = capacityOverride[0] && (capacityOverride[0] as any).limit === null
+    ? [clinicRows, capacityOverride, existingBranches]
+    : [clinicRows, capacityOverride, options?.capacityUsage ?? [{ value: 0 }], existingBranches];
+  let selectCallIndex = 0;
+  const select = vi.fn(() => chainable(selectQueue[selectCallIndex++]));
 
   const createdAt = new Date('2026-08-11T00:00:00.000Z');
   const branchReturning = vi.fn(async () => [{
@@ -134,6 +154,20 @@ describe('createAdminClinicBranchCreationService', () => {
     await expect(
       service.create('missing-clinic', input, actor),
     ).rejects.toBeInstanceOf(AdminClinicBranchCreationError);
+    expect(branchValues).not.toHaveBeenCalled();
+    expect(auditValues).not.toHaveBeenCalled();
+  });
+
+  it('rejects branch creation with BRANCH_LIMIT_REACHED when at the resolved capacity limit', async () => {
+    const { auditValues, branchValues, database } = createDatabaseDouble({
+      capacityOverride: [{ limit: 1 }],
+      capacityUsage: [{ value: 1 }],
+    });
+    const service = createAdminClinicBranchCreationService(database);
+
+    await expect(
+      service.create('clinic-id', input, actor),
+    ).rejects.toMatchObject({ code: 'BRANCH_LIMIT_REACHED' });
     expect(branchValues).not.toHaveBeenCalled();
     expect(auditValues).not.toHaveBeenCalled();
   });

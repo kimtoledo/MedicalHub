@@ -34,6 +34,7 @@
 | `24-continuous-patient-transaction-flow.md` | Guided appointment/walk-in through treatment, billing, and follow-up | ✅ Done |
 | `25-flexible-clinic-responsibilities.md` | Multi-responsibility staff access with protected clinical sign-off | ✅ Done |
 | `26-lean-clinic-defaults-and-shortcuts.md` | Remembered defaults, favorites, templates, and keyboard shortcuts | 🔵 Active |
+| `27-subscription-tier-capacity-limits.md` | SOLO/CLINIC/BRANCHES package headcount caps (dentists, branches, staff seats) and enforcement | ✅ Done |
 
 ---
 
