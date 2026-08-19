@@ -99,6 +99,7 @@ Clinic staff also need to create appointments directly from the Clinic PWA, and 
 - Service settings now create/update, search, and filter quick versus standard workflows.
 - Clinic appointment creation uses server-returned available slots and row-locked collision protection shared with the existing scheduling rules.
 - Quick completion creates the finalized encounter, treatment record, appointment status/history, integration event, and audit events in one transaction.
+- Quick-completion locking targets only the appointment row, avoiding PostgreSQL's rejection of `FOR UPDATE` against the nullable service side of the context join; a focused regression test protects the lock scope.
 - `/app/treatments` provides the new clinic-wide, paginated, URL-filtered service-record list.
 - Appointment lists now search patients and filter by status, service, dentist, date, and branch context.
 - Verified with 518 passing API tests, 9 passing web tests, repository-wide TypeScript checks, production web/API builds, and `git diff --check`.

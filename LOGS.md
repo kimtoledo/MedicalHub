@@ -99,11 +99,12 @@ Updated manually after each session or merged task.
 - Added protected clinic appointment options, availability, and creation endpoints: options respect role/branch scope, availability applies structured clinic hours, closures, dentist schedules/time off, and busy slots, while creation revalidates inside a row-locked transaction before creating a confirmed appointment and immutable audit/status history
 - Added a responsive **New appointment** drawer to `/app/appointments` with tenant-scoped patient search, active service/dentist selection, and server-provided available times; appointment lists now include patient search plus service and dentist filters
 - Added transactional **Complete quick service** from eligible appointment details; it requires a linked patient and assigned dentist, then atomically creates/finalizes the encounter, records the treatment, completes the appointment, writes status history/audits, and dispatches the appointment update event without auto-creating an invoice
+- Fixed quick completion on PostgreSQL by limiting `FOR UPDATE` to the appointment table instead of also attempting to lock the nullable side of the service join; verified the real synthetic appointment completes, links a finalized encounter/treatment record, and opens the prefilled billing handoff
 - Added `/app/treatments`, a clinic-wide service-record list defaulting to the last 30 days and active branch, with URL-backed patient/service search, date, branch, dentist, service, workflow, pagination, and branch/dentist authorization enforcement
 - Service Catalog now supports workflow selection, search, workflow/status filters, and per-service workflow updates
 - Updated the clinic manual and MVP 2 task index; the Replit task reference could not be confirmed because that panel was unavailable in the Codex session
 - Applied migration `0048_chilly_red_ghost` through `npm run db:migrate` after the local dashboard exposed the expected schema mismatch (`services.workflow_mode` was absent); authenticated dashboard summary, appointment-options, and treatment-record smoke requests now return HTTP 200
-- Verified 518 passing API tests, 9 passing web tests, repository-wide TypeScript checks, production web/API builds, database readiness, and `git diff --check`
+- Added a focused row-lock regression test; API typecheck and all 527 API tests pass
 
 ### ✅ Dentist schedule-to-patient workflow
 - Registered patient names are now accessible links from the dentist dashboard’s Next Up/Today’s Schedule sections and from `/app/dentist/schedule`; unlinked public bookings remain non-clickable
