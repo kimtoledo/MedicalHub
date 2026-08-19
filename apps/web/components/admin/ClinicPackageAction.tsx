@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertCircle, CheckCircle2, Loader2, Package, X } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle2, Loader2, Package, X } from 'lucide-react';
 import type { AdminClinicPackageOption } from '@/lib/admin-clinics';
 
 type Props = {
@@ -37,6 +37,7 @@ export default function ClinicPackageAction({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [warnings, setWarnings] = useState<string[]>([]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -55,6 +56,9 @@ export default function ClinicPackageAction({
     );
     if (!selectedPackage) return;
 
+    const negotiatedPricePhp = String(formData.get('negotiatedPricePhp') ?? '').trim();
+    const billingNote = String(formData.get('billingNote') ?? '').trim();
+
     setIsSubmitting(true);
     setError(null);
     const response = await fetch(`/api/admin/clinics/${clinicId}/package`, {
@@ -63,6 +67,8 @@ export default function ClinicPackageAction({
       body: JSON.stringify({
         packageId: selectedPackage.id,
         effectiveDate: formData.get('effectiveDate'),
+        negotiatedPricePhp: negotiatedPricePhp || undefined,
+        billingNote: billingNote || undefined,
       }),
     }).catch(() => null);
 
@@ -78,6 +84,8 @@ export default function ClinicPackageAction({
       return;
     }
 
+    const payload = (await response.json().catch(() => ({}))) as { data?: { warnings?: string[] } };
+    setWarnings(payload.data?.warnings ?? []);
     setSuccess(`${selectedPackage.name} was scheduled successfully.`);
     setIsSubmitting(false);
     setIsOpen(false);
@@ -91,6 +99,7 @@ export default function ClinicPackageAction({
         onClick={() => {
           setError(null);
           setSuccess(null);
+          setWarnings([]);
           setIsOpen(true);
         }}
         disabled={packages.length === 0}
@@ -102,6 +111,15 @@ export default function ClinicPackageAction({
         <p role="status" className="mt-2 flex items-center gap-2 text-xs text-emerald-700">
           <CheckCircle2 size={14} /> {success}
         </p>
+      )}
+      {warnings.length > 0 && (
+        <div className="mt-2 space-y-1">
+          {warnings.map((warning) => (
+            <p key={warning} className="flex items-start gap-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-800">
+              <AlertTriangle size={14} className="mt-0.5 shrink-0" /> {warning}
+            </p>
+          ))}
+        </div>
       )}
 
       {isOpen && (
@@ -170,6 +188,27 @@ export default function ClinicPackageAction({
                   defaultValue={todayInManila()}
                   className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
                   required
+                />
+              </label>
+              <label className="block">
+                <span className="text-sm font-semibold text-slate-700">Negotiated price (₱/month) <span className="font-normal text-slate-400">(optional — Branches tier custom contracts)</span></span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  name="negotiatedPricePhp"
+                  placeholder="e.g. 4500.00"
+                  pattern="^\d+(\.\d{1,2})?$"
+                  className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                />
+              </label>
+              <label className="block">
+                <span className="text-sm font-semibold text-slate-700">Billing note <span className="font-normal text-slate-400">(optional)</span></span>
+                <textarea
+                  name="billingNote"
+                  rows={2}
+                  maxLength={1000}
+                  placeholder="Contract terms, invoicing schedule, etc."
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
                 />
               </label>
               <p className="rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">

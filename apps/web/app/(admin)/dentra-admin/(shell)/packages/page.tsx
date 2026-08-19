@@ -11,7 +11,7 @@ export default async function PackagesPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-7xl space-y-6">
       <div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-100"><Package size={22} className="text-violet-600" /></div><div><h1 className="text-2xl font-bold text-slate-900">Packages & Plans</h1><p className="text-sm text-slate-500">Manage plan pricing labels and authoritative feature entitlements.</p></div></div>
-      <PackageManager items={result.items} featureCatalog={result.featureCatalog} />
+      <PackageManager items={result.items} featureCatalog={result.featureCatalog} capacityMetricCatalog={result.capacityMetricCatalog} />
     </div></div>
   );
 }

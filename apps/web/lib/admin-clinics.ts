@@ -100,6 +100,16 @@ export type AdminClinicDetail = {
     expiresAt: string | null;
   }>;
   availableFeatureKeys: string[];
+  limitOverrides: Array<{
+    id: string;
+    metric: string;
+    limit: number | null;
+    reason: string;
+    expiresAt: string | null;
+    createdAt: string;
+  }>;
+  capacity: Array<{ metric: string; limit: number | null; used: number }>;
+  availableCapacityMetrics: string[];
   dentistCount: number;
   staffCount: number;
   patientCount: number;

@@ -16,6 +16,7 @@ import { writeAudit } from '@dentra/db/audit';
 import {
   branches,
   clinicFeatureOverrides,
+  clinicLimitOverrides,
   clinicMemberships,
   clinics,
   clinicSubscriptions,
@@ -27,7 +28,7 @@ import {
   users,
 } from '@dentra/db/schema';
 import { AuditAction, CapacityMetric, FeatureKey } from '@dentra/shared';
-import { assertClinicCapacity, ClinicCapacityError } from '../entitlements/capacity.js';
+import { assertClinicCapacity, ClinicCapacityError, getClinicCapacitySummary } from '../entitlements/capacity.js';
 
 export type ClinicStatus = typeof clinics.$inferSelect.status;
 
@@ -181,6 +182,16 @@ export type AdminClinicDetail = {
     expiresAt: Date | null;
   }>;
   availableFeatureKeys: FeatureKey[];
+  limitOverrides: Array<{
+    id: string;
+    metric: CapacityMetric | string;
+    limit: number | null;
+    reason: string;
+    expiresAt: Date | null;
+    createdAt: Date;
+  }>;
+  capacity: Array<{ metric: CapacityMetric | string; limit: number | null; used: number }>;
+  availableCapacityMetrics: CapacityMetric[];
   dentistCount: number;
   staffCount: number;
   patientCount: number;
@@ -420,7 +431,7 @@ export function createAdminClinicDetailService(
       }
 
       const now = new Date();
-      const [ownerRows, branchRows, subscriptionRows, overrideRows, dentistCountRows, staffCountRows, patientCountRows] =
+      const [ownerRows, branchRows, subscriptionRows, overrideRows, limitOverrideRows, capacitySummary, dentistCountRows, staffCountRows, patientCountRows] =
         await Promise.all([
           database
             .select({
@@ -508,6 +519,27 @@ export function createAdminClinicDetailService(
             )
             .orderBy(desc(clinicFeatureOverrides.createdAt)),
           database
+            .select({
+              id: clinicLimitOverrides.id,
+              metric: clinicLimitOverrides.metric,
+              limit: clinicLimitOverrides.limit,
+              reason: clinicLimitOverrides.reason,
+              expiresAt: clinicLimitOverrides.expiresAt,
+              createdAt: clinicLimitOverrides.createdAt,
+            })
+            .from(clinicLimitOverrides)
+            .where(
+              and(
+                eq(clinicLimitOverrides.clinicId, clinicId),
+                or(
+                  isNull(clinicLimitOverrides.expiresAt),
+                  gt(clinicLimitOverrides.expiresAt, now),
+                ),
+              ),
+            )
+            .orderBy(desc(clinicLimitOverrides.createdAt)),
+          getClinicCapacitySummary(database, clinicId),
+          database
             .select({ count: countDistinct(dentistBranchAssignments.dentistId) })
             .from(dentistBranchAssignments)
             .where(
@@ -549,6 +581,16 @@ export function createAdminClinicDetailService(
       overrideRows.forEach((override) => {
         if (!latestOverrides.has(override.featureKey)) {
           latestOverrides.set(override.featureKey, override);
+        }
+      });
+
+      const latestLimitOverrides = new Map<
+        string,
+        (typeof limitOverrideRows)[number]
+      >();
+      limitOverrideRows.forEach((override) => {
+        if (!latestLimitOverrides.has(override.metric)) {
+          latestLimitOverrides.set(override.metric, override);
         }
       });
 
@@ -603,6 +645,9 @@ export function createAdminClinicDetailService(
         featureOverrides: [...latestOverrides.values()],
         effectiveEntitlements,
         availableFeatureKeys: Object.values(FeatureKey),
+        limitOverrides: [...latestLimitOverrides.values()],
+        capacity: capacitySummary,
+        availableCapacityMetrics: Object.values(CapacityMetric),
         dentistCount: dentistCountRows[0]?.count ?? 0,
         staffCount: staffCountRows[0]?.count ?? 0,
         patientCount: patientCountRows[0]?.count ?? 0,

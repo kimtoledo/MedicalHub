@@ -6,6 +6,7 @@ import {
   Check,
   CircleSlash2,
   ExternalLink,
+  Gauge,
   Info,
   LayoutDashboard,
   Mail,
@@ -23,17 +24,19 @@ import ClinicAccountInfoAction from '@/components/admin/ClinicAccountInfoAction'
 import AddClinicBranch from '@/components/admin/AddClinicBranch';
 import ClinicPackageAction from '@/components/admin/ClinicPackageAction';
 import FeatureOverrideManager from '@/components/admin/FeatureOverrideManager';
+import LimitOverrideManager from '@/components/admin/LimitOverrideManager';
 import ClinicDentistsTab from '@/components/admin/ClinicDentistsTab';
 import ClinicMembersTab from '@/components/admin/ClinicMembersTab';
 import ClinicPatientsTab from '@/components/admin/ClinicPatientsTab';
 
-type Tab = 'overview' | 'account' | 'branches' | 'features' | 'dentists' | 'users' | 'patients';
+type Tab = 'overview' | 'account' | 'branches' | 'features' | 'capacity' | 'dentists' | 'users' | 'patients';
 
 const TABS: Array<{ id: Tab; label: string; icon: typeof LayoutDashboard }> = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'account', label: 'Account Info', icon: Info },
   { id: 'branches', label: 'Branches', icon: MapPin },
   { id: 'features', label: 'Features', icon: ShieldCheck },
+  { id: 'capacity', label: 'Capacity', icon: Gauge },
   { id: 'dentists', label: 'Dentists', icon: Stethoscope },
   { id: 'users', label: 'Users', icon: Users },
   { id: 'patients', label: 'Patients', icon: UsersRound },
@@ -50,6 +53,13 @@ function formatFeatureKey(value: string): string {
     .map((part) => part.replace(/_/g, ' '))
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' · ');
+}
+
+function formatMetric(value: string): string {
+  return value
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }
 
 function joinAddress(parts: Array<string | null>): string {
@@ -297,6 +307,44 @@ export default function ClinicDetailTabs({
           </section>
 
           <FeatureOverrideManager clinicId={clinic.id} availableFeatureKeys={clinic.availableFeatureKeys} overrides={clinic.featureOverrides} />
+        </div>
+      )}
+
+      {tab === 'capacity' && (
+        <div className="grid gap-6 xl:grid-cols-3">
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm xl:col-span-2">
+            <div className="border-b border-slate-200 px-5 py-4">
+              <div className="flex items-center gap-2">
+                <Gauge size={19} className="text-violet-600" />
+                <h2 className="font-bold text-slate-900">Effective capacity</h2>
+              </div>
+              <p className="mt-1 text-sm text-slate-500">Current usage against the resolved limit (override, else the package default).</p>
+            </div>
+            {clinic.capacity.length === 0 ? (
+              <p className="p-6 text-sm text-slate-500">No capacity metrics are configured.</p>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {clinic.capacity.map((item) => {
+                  const overCap = item.limit !== null && item.used > item.limit;
+                  const atCap = item.limit !== null && item.used >= item.limit;
+                  return (
+                    <div key={item.metric} className="flex items-center justify-between gap-4 px-5 py-3.5">
+                      <p className="text-sm font-semibold text-slate-800">{formatMetric(item.metric)}</p>
+                      <div className="flex items-center gap-3">
+                        <span className={`font-mono text-sm ${overCap ? 'font-bold text-red-600' : atCap ? 'font-semibold text-amber-600' : 'text-slate-600'}`}>
+                          {item.used} / {item.limit === null ? '∞' : item.limit}
+                        </span>
+                        {overCap && <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700">Over cap</span>}
+                        {!overCap && atCap && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">At cap</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          <LimitOverrideManager clinicId={clinic.id} availableMetrics={clinic.availableCapacityMetrics} overrides={clinic.limitOverrides} />
         </div>
       )}
 

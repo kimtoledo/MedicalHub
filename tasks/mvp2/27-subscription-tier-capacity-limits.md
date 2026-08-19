@@ -1,6 +1,6 @@
 # Subscription Tier Capacity Limits (SOLO / CLINIC / BRANCHES)
 
-> **Status:** ✅ Done — backend capacity/limit system implemented; Super Admin/clinic-facing UI is a separate follow-up task
+> **Status:** ✅ Done — backend capacity/limit system and Super Admin/clinic-facing UI both implemented and verified live
 
 ---
 
@@ -74,7 +74,7 @@ This task adds the missing capacity/limit layer alongside the existing feature-e
 6. Add-on request structured fields + auto-apply on approval.
 7. Replace demo seed packages (`starter`/`professional`/`enterprise` → `solo`/`clinic`/`branches`) with limits, and reassign demo clinic staff data to a tier it doesn't violate.
 8. Tests (new capacity-denied cases, updated DB-mock call sequences), `LOGS.md`, task status.
-9. Follow-up (separate task): Super Admin and clinic-facing UI to surface usage/limits and the add-on request form.
+9. Super Admin and clinic-facing UI to surface usage/limits and the add-on request form.
 
 ---
 
@@ -88,7 +88,10 @@ This task adds the missing capacity/limit layer alongside the existing feature-e
 - CLINIC-tier add-on requests (`subscription_change_requests` type `addon`) now carry a structured absolute `requestedMetric`/`requestedLimit` and auto-apply as a `clinicLimitOverrides` row on Super Admin approval, the same way package upgrade requests already auto-apply.
 - Replaced the placeholder `starter`/`professional`/`enterprise` demo packages with `solo`/`clinic`/`branches` in `scripts/seed-demo.ts`, including their limits. The two demo clinics were reassigned by their actual seeded shape rather than force-fit: Smile Bright Dental (2 branches, 2 dentists) → Branches tier with explicit overrides; BrightSmile (1 branch) → Clinic tier, fitting entirely within its default limits with no overrides needed.
 - Verified against the real local dev database: capacity summaries correctly resolve overrides vs. package defaults, and `assertClinicCapacity` correctly blocks metrics that are already at or over their resolved limit while allowing metrics under cap.
-- Verified with 537 passing API tests (10 new, covering the capacity helper directly and the denied-request path at each of the three enforcement sites) and a clean repository-wide TypeScript check across `apps/api` and `apps/web`.
+- **Super Admin UI**: `PackageManager.tsx`'s package editor gained a "Capacity limits" section (per-metric number input + Unlimited checkbox, mirroring the existing feature-checkbox section) and a limits-count badge on each package card. The clinic detail page (`ClinicDetailTabs.tsx`) gained a new **Capacity** tab showing effective usage-vs-limit per metric (with Over cap/At cap badges) alongside a new `LimitOverrideManager.tsx` (add/remove overrides, mirrors `FeatureOverrideManager.tsx`) — backed by new `admin/clinics-service.ts` fields (`limitOverrides`, `capacity`, `availableCapacityMetrics`) and new `/api/admin/clinics/:clinicId/limit-overrides[/:overrideId]` proxy routes. `ClinicPackageAction.tsx`'s change-package dialog gained negotiated-price/billing-note fields and surfaces the `warnings` the backend returns.
+- **Clinic-facing UI**: `SubscriptionClient.tsx` (previously a minified, untyped single-line component with no capacity visibility at all) was rewritten with proper types, a "Seats & capacity" usage table, and a request-type selector (upgrade/downgrade/add extra seats) — selecting "add extra seats" reveals a seat-type dropdown and an absolute new-total-seats input defaulted to current+1. Backed by a new `capacitySummary` method on `SubscriptionOperationsService` and `GET /v1/clinic/:clinicId/subscription` now returning a `capacity` field alongside `entitlement`/`requests`.
+- **Live-verified in a real browser** (Playwright against the actual local dev server + API, not just typecheck): logged in as Super Admin and confirmed the Solo package editor correctly shows only `dentists:1`/`branches:1` configured (all 5 staff metrics correctly blank/deny-by-default); opened Smile Bright Dental's new Capacity tab and confirmed it renders live over-cap state accurately (`Dentists 3/2 — Over cap`, `Staff Clinic Admin 2/1 — Over cap`, `Branches 2/2 — At cap`) matching the clinic's real seeded/manually-added data; opened the Add capacity override dialog. Logged in as a clinic user and confirmed `/app/settings/subscription` renders the identical live capacity data clinic-side, and that selecting "Add extra seats to my current plan" → "Dentists" correctly defaults the new-total input to 3 with a "Currently: 2" hint. No console errors traced to the new code in any of the three flows.
+- Verified with 537 passing API tests, 18 passing web tests (10 new API tests covering the capacity helper directly and the denied-request path at each of the three enforcement sites), a clean repository-wide TypeScript check, and clean production builds for both `apps/web` and `apps/api`.
 
 ---
 
@@ -97,4 +100,3 @@ This task adds the missing capacity/limit layer alongside the existing feature-e
 - Automated payment/billing processing for the negotiated BRANCHES price (still manual, per `11-subscription-operations.md`'s existing out-of-scope note).
 - Any change to the `organizations` (multi-clinic chain) feature — confirmed unrelated to this tier model.
 - Self-service (non-Super-Admin-reviewed) plan upgrades/downgrades.
-- Super Admin and clinic-facing UI screens (tracked as a follow-up task once this backend layer lands).

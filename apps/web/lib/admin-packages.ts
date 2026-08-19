@@ -5,9 +5,16 @@ import { getBackendUrl } from './backend';
 export type AdminPackageItem = {
   id: string; name: string; slug: string; description: string | null;
   priceDisplay: string; isActive: boolean; sortOrder: string | null;
-  featureKeys: string[]; activeClinicCount: number;
+  featureKeys: string[];
+  /** Absent metric = 0 (deny-by-default). null = unlimited. */
+  limits: Partial<Record<string, number | null>>;
+  activeClinicCount: number;
 };
-export type AdminPackageListResult = { items: AdminPackageItem[]; featureCatalog: string[] };
+export type AdminPackageListResult = {
+  items: AdminPackageItem[];
+  featureCatalog: string[];
+  capacityMetricCatalog: string[];
+};
 
 export async function getAdminPackages(): Promise<AdminPackageListResult> {
   const response = await fetch(getBackendUrl('/v1/admin/packages'), {

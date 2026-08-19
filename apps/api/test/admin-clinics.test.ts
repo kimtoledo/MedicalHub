@@ -223,6 +223,12 @@ function createClinicDetailService(): AdminClinicDetailService {
         'reports.advanced' as const,
         'microsite.publish' as const,
       ],
+      limitOverrides: [],
+      capacity: [
+        { metric: 'dentists', limit: 5, used: 2 },
+        { metric: 'branches', limit: 1, used: 1 },
+      ],
+      availableCapacityMetrics: ['dentists' as const, 'branches' as const],
       dentistCount: 2,
       staffCount: 4,
       patientCount: 128,
