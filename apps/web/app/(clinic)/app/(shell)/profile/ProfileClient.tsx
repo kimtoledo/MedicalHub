@@ -221,7 +221,7 @@ export default function ProfileClient({ initialProfile }: { initialProfile: Acco
               {profile.memberships.map((membership) => (
                 <li key={`${membership.clinicId}:${membership.branchId ?? "all"}:${membership.role}`} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
                   <p className="font-semibold text-slate-900">{membership.clinicName}</p>
-                  <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500"><MapPin size={13} aria-hidden="true" />{membership.branchName ?? "All branches"}</p>
+                  <p className="mt-1 flex items-center gap-2 text-xs text-slate-500"><MapPin size={13} aria-hidden="true" />{membership.branchName ?? "All branches"}</p>
                   <span className="mt-3 inline-flex rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-700">{roleLabel(membership.role)}</span>
                 </li>
               ))}

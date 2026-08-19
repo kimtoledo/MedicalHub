@@ -39,13 +39,13 @@ export default function NearMeButton() {
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       {active ? (
-        <button type="button" onClick={clearLocation} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-violet-200 bg-white px-4 text-sm font-semibold text-violet-700 hover:bg-violet-50">
+        <button type="button" onClick={clearLocation} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-violet-200 bg-white px-4 text-sm font-semibold text-violet-700 hover:bg-violet-50">
           <X size={15} /> Clear location
         </button>
       ) : (
-        <button type="button" onClick={useMyLocation} disabled={locating} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-violet-200 bg-white px-4 text-sm font-semibold text-violet-700 hover:bg-violet-50 disabled:opacity-60">
+        <button type="button" onClick={useMyLocation} disabled={locating} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-violet-200 bg-white px-4 text-sm font-semibold text-violet-700 hover:bg-violet-50 disabled:opacity-60">
           {locating ? <Loader2 size={15} className="animate-spin" /> : <LocateFixed size={15} />} {locating ? "Locating…" : "Near me"}
         </button>
       )}

@@ -53,7 +53,7 @@ const TEMPLATES = [
     description: "Violet accent header with color-coded medicine cards",
     preview: (
       <div className="w-full h-28 bg-white rounded-lg border border-slate-200 overflow-hidden text-[6px] font-sans">
-        <div className="px-2 py-1.5" style={{ background: "linear-gradient(135deg,#5b21b6,#7c3aed)" }}>
+        <div className="px-2 py-2" style={{ background: "linear-gradient(135deg,#5b21b6,#7c3aed)" }}>
           <div className="font-bold text-[7px] text-white">DENTAL CLINIC</div>
           <div className="text-violet-200 text-[5.5px]">123 Sample Street, Manila</div>
         </div>
@@ -376,7 +376,7 @@ export default function PrescriptionTemplateClient({
       <div className="mb-6">
         <Link
           href="/app/prescriptions"
-          className="inline-flex items-center gap-1.5 text-sm text-violet-500 hover:text-violet-700 mb-4"
+          className="inline-flex items-center gap-2 text-sm text-violet-500 hover:text-violet-700 mb-4"
         >
           <ArrowLeft size={15} /> Back to Prescriptions
         </Link>
@@ -420,12 +420,12 @@ export default function PrescriptionTemplateClient({
             </div>
 
             {templateError && (
-              <p className="text-sm text-red-600 flex items-center gap-1.5 mb-3">
+              <p className="text-sm text-red-600 flex items-center gap-2 mb-3">
                 <AlertCircle size={14} /> {templateError}
               </p>
             )}
             {templateSaved && (
-              <p className="text-sm text-green-600 flex items-center gap-1.5 mb-3">
+              <p className="text-sm text-green-600 flex items-center gap-2 mb-3">
                 <CheckCircle size={14} /> Template preference saved.
               </p>
             )}
@@ -433,7 +433,7 @@ export default function PrescriptionTemplateClient({
             <button
               onClick={handleSaveTemplate}
               disabled={templateSaving || selectedTemplate === (defaults.templateId as TemplateId)}
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-60"
             >
               {templateSaving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
               {templateSaving ? "Saving…" : "Save Layout"}
@@ -507,9 +507,9 @@ export default function PrescriptionTemplateClient({
                   }`}
                 >
                   {tab === "draw" ? (
-                    <span className="flex items-center gap-1.5"><Pen size={13} /> Draw</span>
+                    <span className="flex items-center gap-2"><Pen size={13} /> Draw</span>
                   ) : (
-                    <span className="flex items-center gap-1.5"><Upload size={13} /> Upload</span>
+                    <span className="flex items-center gap-2"><Upload size={13} /> Upload</span>
                   )}
                 </button>
               ))}
@@ -558,12 +558,12 @@ export default function PrescriptionTemplateClient({
             )}
 
             {signatureError && (
-              <p className="text-sm text-red-600 flex items-center gap-1.5 mt-3">
+              <p className="text-sm text-red-600 flex items-center gap-2 mt-3">
                 <AlertCircle size={14} /> {signatureError}
               </p>
             )}
             {signatureSaved && (
-              <p className="text-sm text-green-600 flex items-center gap-1.5 mt-3">
+              <p className="text-sm text-green-600 flex items-center gap-2 mt-3">
                 <CheckCircle size={14} /> Signature saved successfully.
               </p>
             )}
@@ -572,7 +572,7 @@ export default function PrescriptionTemplateClient({
               <button
                 onClick={handleSaveDrawn}
                 disabled={signatureSaving}
-                className="mt-4 inline-flex items-center gap-1.5 px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-60"
+                className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-60"
               >
                 {signatureSaving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                 {signatureSaving ? "Saving…" : "Save Signature"}

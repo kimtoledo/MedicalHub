@@ -104,7 +104,7 @@ export default function RemoteConsultsClient({
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
               currentStatus === id
                 ? "bg-white text-violet-900 shadow-sm"
                 : "text-violet-500 hover:text-violet-700"
@@ -182,11 +182,11 @@ export default function RemoteConsultsClient({
           <div className="flex gap-2">
             {currentPage > 1 && (
               <Link href={`/app/dentist/remote-consults?status=${currentStatus}&page=${currentPage - 1}`}
-                className="px-3 py-1.5 bg-white border border-violet-200 rounded-lg hover:bg-violet-50">← Prev</Link>
+                className="px-3 py-2 bg-white border border-violet-200 rounded-lg hover:bg-violet-50">← Prev</Link>
             )}
             {currentPage * 20 < total && (
               <Link href={`/app/dentist/remote-consults?status=${currentStatus}&page=${currentPage + 1}`}
-                className="px-3 py-1.5 bg-white border border-violet-200 rounded-lg hover:bg-violet-50">Next →</Link>
+                className="px-3 py-2 bg-white border border-violet-200 rounded-lg hover:bg-violet-50">Next →</Link>
             )}
           </div>
         </div>

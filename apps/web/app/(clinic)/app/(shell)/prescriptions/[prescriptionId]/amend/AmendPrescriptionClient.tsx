@@ -165,7 +165,7 @@ export default function AmendPrescriptionClient({
       <div>
         <Link
           href={`/app/prescriptions/${original.id}`}
-          className="flex items-center gap-1.5 text-sm text-violet-500 hover:text-violet-700 mb-2"
+          className="flex items-center gap-2 text-sm text-violet-500 hover:text-violet-700 mb-2"
         >
           <ArrowLeft size={15} /> Back to original prescription
         </Link>
@@ -231,13 +231,13 @@ export default function AmendPrescriptionClient({
           <h2 className="text-sm font-semibold text-violet-900">Medicines</h2>
           <div>
             <p className="text-xs font-semibold text-violet-700 mb-2">Common medicines — click to add</p>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {MEDICINE_PRESETS.map((preset) => (
                 <button
                   key={preset.medicineName}
                   type="button"
                   onClick={() => applyPreset(preset)}
-                  className="rounded-full border border-violet-200 px-3 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-50"
+                  className="rounded-full border border-violet-200 px-3 py-2 text-xs font-semibold text-violet-700 hover:bg-violet-50"
                 >
                   {preset.medicineName} · {preset.frequency} · {preset.duration}
                 </button>
@@ -308,7 +308,7 @@ export default function AmendPrescriptionClient({
           <button
             type="button"
             onClick={addRow}
-            className="flex items-center gap-1.5 text-sm text-violet-600 hover:text-violet-800 font-semibold transition-colors"
+            className="flex items-center gap-2 text-sm text-violet-600 hover:text-violet-800 font-semibold transition-colors"
           >
             <Plus size={14} /> Add another medicine
           </button>
@@ -319,7 +319,7 @@ export default function AmendPrescriptionClient({
           <label className="block text-xs font-semibold text-violet-700 mb-2">
             Additional notes
           </label>
-          <div className="mb-2 flex flex-wrap gap-1.5">
+          <div className="mb-2 flex flex-wrap gap-2">
             {NOTES_PRESETS.map((term) => {
               const active = notes.split(";").map((item) => item.trim()).includes(term);
               return (

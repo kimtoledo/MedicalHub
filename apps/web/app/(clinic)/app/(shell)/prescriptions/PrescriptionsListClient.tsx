@@ -61,7 +61,7 @@ export default function PrescriptionsListClient({ clinicId }: { clinicId: string
         </div>
         <Link
           href="/app/prescriptions/new"
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors"
         >
           <Plus size={15} /> New Prescription
         </Link>
@@ -141,14 +141,14 @@ export default function PrescriptionsListClient({ clinicId }: { clinicId: string
             <button
               onClick={() => setPage((p) => p - 1)}
               disabled={page === 1}
-              className="px-3 py-1.5 text-sm rounded-lg border border-violet-200 text-violet-600 hover:bg-violet-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-2 text-sm rounded-lg border border-violet-200 text-violet-600 hover:bg-violet-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Previous
             </button>
             <button
               onClick={() => setPage((p) => p + 1)}
               disabled={page === totalPages}
-              className="px-3 py-1.5 text-sm rounded-lg border border-violet-200 text-violet-600 hover:bg-violet-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-2 text-sm rounded-lg border border-violet-200 text-violet-600 hover:bg-violet-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Next
             </button>

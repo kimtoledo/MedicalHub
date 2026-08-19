@@ -105,7 +105,7 @@ export default function ClinicAccountInfoAction({
           setError(null);
           setIsOpen(true);
         }}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
       >
         <Pencil size={13} /> Edit
       </button>

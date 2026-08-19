@@ -128,7 +128,7 @@ export default function PatientProfile({
         </div>
         <Link
           href={`/app/dentist/encounters?patientId=${patient.id}`}
-          className="inline-flex items-center gap-1.5 self-start rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20"
+          className="inline-flex items-center gap-2 self-start rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20"
         >
           <ClipboardList size={14} />
           Encounters

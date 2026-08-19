@@ -153,7 +153,7 @@ function NoteField({
     <label className="block text-sm font-semibold text-slate-700">
       {label}
       {!disabled && (
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
+        <div className="mt-1.5 flex flex-wrap gap-2">
           {presets.map((term) => (
             <button
               key={term}

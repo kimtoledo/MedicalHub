@@ -198,7 +198,7 @@ export default function AINoteSuggest({
             <button
               type="button"
               onClick={handleStop}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-100 text-red-600 text-sm font-semibold rounded-xl hover:bg-red-200 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 text-red-600 text-sm font-semibold rounded-xl hover:bg-red-200 transition-colors"
             >
               <X size={13} /> Stop
             </button>
@@ -207,7 +207,7 @@ export default function AINoteSuggest({
               type="button"
               onClick={handleSuggest}
               disabled={!isReady}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50 transition-colors"
             >
               <Sparkles size={13} />
               Suggest Notes
@@ -275,7 +275,7 @@ export default function AINoteSuggest({
                     <button
                       type="button"
                       onClick={() => handleAccept(section)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-lg transition-colors flex-shrink-0"
+                      className="inline-flex items-center gap-1 px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-lg transition-colors flex-shrink-0"
                     >
                       <Check size={12} /> Accept
                     </button>

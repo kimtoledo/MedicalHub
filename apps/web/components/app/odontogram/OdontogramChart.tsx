@@ -258,7 +258,7 @@ export default function OdontogramChart({
                   key={option}
                   type="button"
                   onClick={() => selectDentition(option)}
-                  className={`rounded-lg px-3 py-1.5 capitalize ${dentition === option ? 'bg-violet-600 text-white' : 'text-slate-600'}`}
+                  className={`rounded-lg px-3 py-2 capitalize ${dentition === option ? 'bg-violet-600 text-white' : 'text-slate-600'}`}
                 >
                   {option}
                 </button>

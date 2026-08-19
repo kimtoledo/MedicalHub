@@ -81,13 +81,13 @@ export default function AppointmentActions({
   }
   return (
     <div>
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-2">
         {(primaryOnly ? (actions[status] ?? []).slice(0, 1) : (actions[status] ?? [])).map((item) => (
           <button
             key={item.status}
             disabled={Boolean(saving)}
             onClick={() => void update(item.status)}
-            className={`rounded-lg px-2.5 py-1.5 text-xs font-bold ${item.status === "cancelled" || item.status === "no_show" ? "border border-red-200 text-red-600" : "bg-violet-600 text-white"}`}
+            className={`rounded-lg px-2.5 py-2 text-xs font-bold ${item.status === "cancelled" || item.status === "no_show" ? "border border-red-200 text-red-600" : "bg-violet-600 text-white"}`}
           >
             {saving === item.status ? (
               <Loader2 size={13} className="animate-spin" />

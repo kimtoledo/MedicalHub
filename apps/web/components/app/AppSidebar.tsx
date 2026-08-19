@@ -125,8 +125,8 @@ export default function AppSidebar({
               </div>
             </div>
             {/* Branch selector */}
-            <label className="relative flex w-full items-center bg-violet-900/60 px-2.5 py-1.5 rounded-lg">
-              <div className="flex items-center gap-1.5 min-w-0">
+            <label className="relative flex w-full items-center bg-violet-900/60 px-2.5 py-2 rounded-lg">
+              <div className="flex items-center gap-2 min-w-0">
                 <Building2 size={13} className="text-violet-400 flex-shrink-0" />
                 <span className="sr-only">Active branch</span>
                 <select aria-label="Active branch" value={branchId ?? ''} onChange={(event) => onBranchChange(event.target.value)} disabled={branches.length < 2} className="min-w-0 flex-1 appearance-none bg-transparent pr-5 text-xs font-medium text-violet-200 outline-none disabled:cursor-default">{branches.length ? branches.map((branch) => <option key={branch.id} value={branch.id} className="text-slate-900">{branch.name}</option>) : <option value="">No active branch</option>}</select>

@@ -68,7 +68,7 @@ export default function Hero() {
           <div className="bg-white rounded-4xl shadow-2xl shadow-violet-100 border border-violet-100 overflow-hidden">
             {/* Fake browser bar */}
             <div className="bg-violet-50 border-b border-violet-100 px-4 py-3 flex items-center gap-2">
-              <div className="flex gap-1.5">
+              <div className="flex gap-2">
                 <span className="w-3 h-3 rounded-full bg-red-300" />
                 <span className="w-3 h-3 rounded-full bg-yellow-300" />
                 <span className="w-3 h-3 rounded-full bg-green-300" />

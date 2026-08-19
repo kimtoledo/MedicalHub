@@ -61,7 +61,7 @@ export default function HmoClaimsClient({
         </div>
         <Link
           href="/app/billing/hmo-claims/new"
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors"
         >
           <Plus size={15} /> New Claim
         </Link>
@@ -73,7 +73,7 @@ export default function HmoClaimsClient({
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+            className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
               currentStatus === id
                 ? "bg-white text-violet-900 shadow-sm"
                 : "text-violet-500 hover:text-violet-700"
@@ -138,11 +138,11 @@ export default function HmoClaimsClient({
           <div className="flex gap-2">
             {currentPage > 1 && (
               <Link href={`/app/billing/hmo-claims?${currentStatus ? `status=${currentStatus}&` : ""}page=${currentPage - 1}`}
-                className="px-3 py-1.5 bg-white border border-violet-200 rounded-lg hover:bg-violet-50">← Prev</Link>
+                className="px-3 py-2 bg-white border border-violet-200 rounded-lg hover:bg-violet-50">← Prev</Link>
             )}
             {currentPage * 20 < total && (
               <Link href={`/app/billing/hmo-claims?${currentStatus ? `status=${currentStatus}&` : ""}page=${currentPage + 1}`}
-                className="px-3 py-1.5 bg-white border border-violet-200 rounded-lg hover:bg-violet-50">Next →</Link>
+                className="px-3 py-2 bg-white border border-violet-200 rounded-lg hover:bg-violet-50">Next →</Link>
             )}
           </div>
         </div>

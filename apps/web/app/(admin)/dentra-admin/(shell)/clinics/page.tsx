@@ -240,7 +240,7 @@ export default async function ClinicsPage({ searchParams }: ClinicsPageProps) {
                         {clinic.packageName ?? 'Unassigned'}
                       </td>
                       <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-700">
-                        <span className="inline-flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-2">
                           <MapPin size={15} className="text-slate-400" />
                           {clinic.branchCount}
                         </span>

@@ -130,7 +130,7 @@ function SupportAccessSection() {
           ))}
         </ul>
       )}
-      {error && <p role="alert" className="mt-3 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+      {error && <p role="alert" className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
     </section>
   );
 }
@@ -224,7 +224,7 @@ function TenantExportSection() {
           ))}
         </ul>
       )}
-      {error && <p role="alert" className="mt-3 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+      {error && <p role="alert" className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
     </section>
   );
 }
@@ -324,7 +324,7 @@ function FeatureFlagsSection() {
                   </button>
                 </div>
                 {!flag.enabledByDefault && (
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
                     {flag.clinics.map((row) => (
                       <span key={row.clinicId} className="flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-xs text-violet-700">
                         {row.clinicName}
@@ -343,7 +343,7 @@ function FeatureFlagsSection() {
           })}
         </ul>
       )}
-      {error && <p role="alert" className="mt-3 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+      {error && <p role="alert" className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
     </section>
   );
 }
@@ -414,7 +414,7 @@ function RetentionReviewSection() {
           ))}
         </ul>
       )}
-      {error && <p role="alert" className="mt-3 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+      {error && <p role="alert" className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
     </section>
   );
 }
@@ -486,7 +486,7 @@ function SecurityAlertsSection() {
           ))}
         </ul>
       )}
-      {error && <p role="alert" className="mt-3 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+      {error && <p role="alert" className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
     </section>
   );
 }
@@ -553,7 +553,7 @@ function PlatformInventorySection() {
       <details className="mb-3"><summary className="cursor-pointer text-xs font-semibold text-violet-700">Toggle maintenance mode for a clinic</summary>
         <div className="mt-2 max-h-48 space-y-1.5 overflow-y-auto">
           {clinics.filter((clinic) => !clinic.maintenanceMode).map((clinic) => (
-            <div key={clinic.id} className="flex items-center justify-between gap-2 rounded-xl border border-slate-100 px-3 py-1.5">
+            <div key={clinic.id} className="flex items-center justify-between gap-2 rounded-xl border border-slate-100 px-3 py-2">
               <p className="text-xs text-slate-600">{clinic.name}</p>
               <button onClick={() => void toggleMaintenance(clinic.id, true)} disabled={busyId === clinic.id} className="rounded-lg border border-violet-200 px-2 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-50 disabled:opacity-60">Turn on</button>
             </div>
@@ -589,7 +589,7 @@ function PlatformInventorySection() {
           ) : <p className="text-xs text-slate-400">Loading…</p>}
         </div>
       </div>
-      {error && <p role="alert" className="mt-3 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+      {error && <p role="alert" className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
     </section>
   );
 }

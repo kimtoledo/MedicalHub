@@ -330,7 +330,7 @@ export default function ClinicDashboard() {
                         ) : null}
                         <Link
                           href={`/app/appointments/${item.id}`}
-                          className="inline-flex items-center gap-1 rounded-lg border border-violet-200 px-3 py-1.5 text-xs font-bold text-violet-700 hover:bg-violet-50"
+                          className="inline-flex items-center gap-1 rounded-lg border border-violet-200 px-3 py-2 text-xs font-bold text-violet-700 hover:bg-violet-50"
                         >
                           {todayAppointmentLinkLabel(item.status)} <ArrowRight size={13} />
                         </Link>

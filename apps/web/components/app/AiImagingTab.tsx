@@ -132,7 +132,7 @@ export default function AiImagingTab({ clinicId, patientId, canConfirm }: { clin
                 <button
                   onClick={() => void analyze(file.id)}
                   disabled={runningId === file.id}
-                  className="flex items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60"
+                  className="flex items-center gap-2 rounded-xl bg-violet-600 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60"
                 >
                   {runningId === file.id ? <Loader2 size={12} className="animate-spin" /> : null} {runningId === file.id ? "Analyzing…" : "Run analysis"}
                 </button>
@@ -142,7 +142,7 @@ export default function AiImagingTab({ clinicId, patientId, canConfirm }: { clin
         )}
       </section>
 
-      {error && <p role="alert" className="flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+      {error && <p role="alert" className="flex items-center gap-2 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
 
       <section className="rounded-2xl border border-violet-100 bg-white p-5">
         <h3 className="mb-3 text-sm font-bold text-violet-900">Analysis history</h3>

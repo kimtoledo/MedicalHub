@@ -218,7 +218,7 @@ export default function ClinicDetailTabs({
             </div>
             {clinic.website && (
               <div className="sm:col-span-2">
-                <a href={clinic.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm font-semibold text-violet-700">
+                <a href={clinic.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm font-semibold text-violet-700">
                   Visit clinic website <ExternalLink size={15} />
                 </a>
               </div>
@@ -253,8 +253,8 @@ export default function ClinicDetailTabs({
                     <p className="mt-1 text-sm text-slate-500">{joinAddress([branch.address, branch.city, branch.province])}</p>
                   </div>
                   <div className="space-y-1 text-sm text-slate-500 sm:text-right">
-                    {branch.email && <p className="inline-flex items-center gap-1.5 sm:flex"><Mail size={14} /> {branch.email}</p>}
-                    {branch.phone && <p className="inline-flex items-center gap-1.5 sm:flex"><Phone size={14} /> {branch.phone}</p>}
+                    {branch.email && <p className="inline-flex items-center gap-2 sm:flex"><Mail size={14} /> {branch.email}</p>}
+                    {branch.phone && <p className="inline-flex items-center gap-2 sm:flex"><Phone size={14} /> {branch.phone}</p>}
                   </div>
                 </div>
               ))}

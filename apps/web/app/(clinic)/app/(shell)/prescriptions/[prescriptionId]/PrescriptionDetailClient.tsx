@@ -176,7 +176,7 @@ export default function PrescriptionDetailClient({
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <Link
             href="/app/prescriptions"
-            className="flex items-center gap-1.5 text-sm text-violet-500 hover:text-violet-700"
+            className="flex items-center gap-2 text-sm text-violet-500 hover:text-violet-700"
           >
             <ArrowLeft size={15} /> Back to Prescriptions
           </Link>
@@ -185,7 +185,7 @@ export default function PrescriptionDetailClient({
             {/* Template / Signature settings */}
             <Link
               href="/app/settings/prescription-template"
-              className="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-500 hover:bg-slate-50 text-sm rounded-xl transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-2 border border-slate-200 text-slate-500 hover:bg-slate-50 text-sm rounded-xl transition-colors"
               title="Prescription template & signature settings"
             >
               <Settings size={14} />
@@ -196,7 +196,7 @@ export default function PrescriptionDetailClient({
             <button
               onClick={handleAmend}
               disabled={amending}
-              className="inline-flex items-center gap-1.5 px-4 py-2 border border-violet-300 text-violet-600 hover:bg-violet-50 text-sm font-semibold rounded-xl transition-colors disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-violet-300 text-violet-600 hover:bg-violet-50 text-sm font-semibold rounded-xl transition-colors disabled:opacity-60"
             >
               {amending ? <Loader2 size={14} className="animate-spin" /> : <Edit3 size={14} />}
               Amend
@@ -206,7 +206,7 @@ export default function PrescriptionDetailClient({
             <button
               onClick={handleDownloadPdf}
               disabled={downloading}
-              className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-semibold rounded-xl transition-colors disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-semibold rounded-xl transition-colors disabled:opacity-60"
             >
               {downloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
               {downloading ? "Generating…" : "PDF"}
@@ -215,7 +215,7 @@ export default function PrescriptionDetailClient({
             {/* Print */}
             <button
               onClick={() => window.print()}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors"
             >
               <Printer size={14} /> Print
             </button>
@@ -224,7 +224,7 @@ export default function PrescriptionDetailClient({
             <div className="relative">
               <button
                 onClick={() => { setShareOpen((o) => !o); setShareStatus("idle"); setShareEmail(""); }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-semibold rounded-xl transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-semibold rounded-xl transition-colors"
               >
                 <Share2 size={14} />
                 Share
@@ -244,7 +244,7 @@ export default function PrescriptionDetailClient({
 
                   {/* Email share */}
                   <form onSubmit={handleShareEmail} className="px-4 pb-3">
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 mb-1.5">
+                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600 mb-1.5">
                       <Mail size={12} /> Email to Patient
                     </label>
                     <div className="flex gap-2">

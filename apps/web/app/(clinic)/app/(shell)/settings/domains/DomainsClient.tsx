@@ -34,7 +34,7 @@ function DnsInstructions({ domain }: { domain: CustomDomain }) {
     <div className="mt-3 space-y-2 rounded-xl bg-violet-50 p-3 text-xs">
       <p className="font-semibold text-violet-700">Add this TXT record at your DNS provider, then recheck:</p>
       <div className="grid gap-2 sm:grid-cols-2">
-        <div className="flex items-center justify-between gap-2 rounded-lg bg-white px-2.5 py-1.5">
+        <div className="flex items-center justify-between gap-2 rounded-lg bg-white px-2.5 py-2">
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase text-violet-400">Name</p>
             <p className="truncate font-mono text-violet-800">_dentra-verification</p>
@@ -43,7 +43,7 @@ function DnsInstructions({ domain }: { domain: CustomDomain }) {
             {copied === "name" ? <Check size={13} /> : <Copy size={13} />}
           </button>
         </div>
-        <div className="flex items-center justify-between gap-2 rounded-lg bg-white px-2.5 py-1.5">
+        <div className="flex items-center justify-between gap-2 rounded-lg bg-white px-2.5 py-2">
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase text-violet-400">Value</p>
             <p className="truncate font-mono text-violet-800">{domain.verificationToken}</p>
@@ -129,7 +129,7 @@ export default function DomainsClient({ domains: initial, clinicId }: { domains:
             className="w-full rounded-xl border border-violet-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
           />
         </div>
-        <button disabled={adding} className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-700 disabled:opacity-60">
+        <button disabled={adding} className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-700 disabled:opacity-60">
           {adding ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} {adding ? "Adding…" : "Add domain"}
         </button>
       </form>
@@ -171,12 +171,12 @@ export default function DomainsClient({ domains: initial, clinicId }: { domains:
                     </div>
                     <div className="flex flex-shrink-0 gap-2">
                       {(domain.status === "pending_verification" || domain.status === "failed") && (
-                        <button onClick={() => void verify(domain.id)} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl border border-violet-200 px-3 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-50 disabled:opacity-60">
+                        <button onClick={() => void verify(domain.id)} disabled={busy} className="inline-flex items-center gap-2 rounded-xl border border-violet-200 px-3 py-2 text-xs font-semibold text-violet-700 hover:bg-violet-50 disabled:opacity-60">
                           {busy ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />} Recheck DNS
                         </button>
                       )}
                       {domain.status === "verified" && (
-                        <button onClick={() => void activate(domain.id)} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
+                        <button onClick={() => void activate(domain.id)} disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
                           {busy ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />} Activate
                         </button>
                       )}
@@ -186,7 +186,7 @@ export default function DomainsClient({ domains: initial, clinicId }: { domains:
                   {domain.status !== "active" && domain.status !== "disabled" && <DnsInstructions domain={domain} />}
 
                   {domain.status === "active" && (
-                    <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-400">
+                    <p className="mt-2 flex items-center gap-2 text-xs text-slate-400">
                       <Clock3 size={12} /> SSL and canonical redirect are provisioned by our infrastructure after activation and can take some time to propagate. If DNS ever breaks or the certificate lapses, your microsite automatically falls back to its Dentra.ph URL with no downtime.
                     </p>
                   )}

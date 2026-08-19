@@ -52,7 +52,7 @@ export default function NewInvoiceClient({
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/app/billing" className="flex items-center gap-1.5 text-sm text-violet-500 hover:text-violet-700">
+        <Link href="/app/billing" className="flex items-center gap-2 text-sm text-violet-500 hover:text-violet-700">
           <ArrowLeft size={15} /> Back
         </Link>
       </div>
@@ -113,7 +113,7 @@ export default function NewInvoiceClient({
                   <button
                     onClick={() => { void generate(enc); }}
                     disabled={!!generating}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors flex-shrink-0"
+                    className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors flex-shrink-0"
                   >
                     {isGenerating ? (
                       <>

@@ -118,7 +118,7 @@ export default function ClinicPatientsTab({ clinicId }: { clinicId: string }) {
                 type="button"
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
                 disabled={result.pagination.page <= 1 || loading}
-                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ChevronLeft size={14} /> Prev
               </button>
@@ -126,7 +126,7 @@ export default function ClinicPatientsTab({ clinicId }: { clinicId: string }) {
                 type="button"
                 onClick={() => setPage((current) => Math.min(result.pagination.totalPages, current + 1))}
                 disabled={result.pagination.page >= result.pagination.totalPages || loading}
-                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Next <ChevronRight size={14} />
               </button>

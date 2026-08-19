@@ -33,7 +33,7 @@ export default async function NewClinicPage() {
         <div>
           <Link
             href="/dentra-admin/clinics"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-violet-700"
+            className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-violet-700"
           >
             <ArrowLeft size={16} /> Back to clinics
           </Link>

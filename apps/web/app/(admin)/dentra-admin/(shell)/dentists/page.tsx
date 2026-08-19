@@ -244,7 +244,7 @@ export default async function DentistsPage({ searchParams }: DentistsPageProps) 
                       </td>
                       <td className="whitespace-nowrap px-5 py-4">
                         <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ring-1 ring-inset ${verificationStyles[dentist.verificationStatus]}`}
+                          className={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ring-1 ring-inset ${verificationStyles[dentist.verificationStatus]}`}
                         >
                           {dentist.verificationStatus === 'verified' && (
                             <ShieldCheck size={13} />
@@ -253,7 +253,7 @@ export default async function DentistsPage({ searchParams }: DentistsPageProps) 
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-700">
-                        <span className="inline-flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-2">
                           <Building2 size={15} className="text-slate-400" />
                           {dentist.affiliatedClinicCount}
                         </span>

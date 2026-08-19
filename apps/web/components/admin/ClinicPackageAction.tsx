@@ -99,7 +99,7 @@ export default function ClinicPackageAction({
         <Package size={15} /> Change package
       </button>
       {success && (
-        <p role="status" className="mt-2 flex items-center gap-1.5 text-xs text-emerald-700">
+        <p role="status" className="mt-2 flex items-center gap-2 text-xs text-emerald-700">
           <CheckCircle2 size={14} /> {success}
         </p>
       )}

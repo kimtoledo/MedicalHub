@@ -88,7 +88,7 @@ export default function AppointmentDetail({
             </div>
             <div>
               <dt className="text-xs text-slate-500">Service</dt>
-              <dd className="flex items-center gap-1.5 font-semibold text-slate-900"><Stethoscope size={14} className="text-violet-500" />{show(data.serviceName)}</dd>
+              <dd className="flex items-center gap-2 font-semibold text-slate-900"><Stethoscope size={14} className="text-violet-500" />{show(data.serviceName)}</dd>
             </div>
             <div>
               <dt className="text-xs text-slate-500">Dentist</dt>
@@ -96,7 +96,7 @@ export default function AppointmentDetail({
             </div>
             <div>
               <dt className="text-xs text-slate-500">Branch</dt>
-              <dd className="flex items-start gap-1.5 font-semibold text-slate-900"><MapPin size={14} className="mt-0.5 text-violet-500" />{data.branchName}
+              <dd className="flex items-start gap-2 font-semibold text-slate-900"><MapPin size={14} className="mt-0.5 text-violet-500" />{data.branchName}
                 {[data.branchAddress, data.branchCity, data.branchProvince].filter(Boolean).length > 0 && (
                   <span className="block text-xs font-normal text-slate-500">{[data.branchAddress, data.branchCity, data.branchProvince].filter(Boolean).join(", ")}</span>
                 )}
@@ -106,15 +106,15 @@ export default function AppointmentDetail({
           <div className="mt-5 grid gap-4 border-t border-violet-100 pt-4 sm:grid-cols-2">
             <div>
               <dt className="text-xs text-slate-500">Phone</dt>
-              <dd className="flex items-center gap-1.5 font-semibold text-slate-900"><Phone size={14} className="text-violet-500" />{show(data.patientPhone)}</dd>
+              <dd className="flex items-center gap-2 font-semibold text-slate-900"><Phone size={14} className="text-violet-500" />{show(data.patientPhone)}</dd>
             </div>
             <div>
               <dt className="text-xs text-slate-500">Email</dt>
-              <dd className="flex items-center gap-1.5 font-semibold text-slate-900"><Mail size={14} className="text-violet-500" />{show(data.patientEmail)}</dd>
+              <dd className="flex items-center gap-2 font-semibold text-slate-900"><Mail size={14} className="text-violet-500" />{show(data.patientEmail)}</dd>
             </div>
           </div>
           <div className="mt-5 border-t border-violet-100 pt-4">
-            <p className="flex items-center gap-1.5 text-xs text-slate-500"><ClipboardList size={14} />Chief complaint</p>
+            <p className="flex items-center gap-2 text-xs text-slate-500"><ClipboardList size={14} />Chief complaint</p>
             <p className="mt-1 text-sm text-slate-800">{show(data.chiefComplaint)}</p>
           </div>
           {data.notes && (
@@ -166,27 +166,27 @@ export default function AppointmentDetail({
               </span>
               <Link
                 href={`${encounterBasePath}/${linkedEncounter.id}`}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-700"
+                className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-700"
               >
                 {linkedEncounter.status === "final" ? "View encounter" : "Continue encounter"}<ArrowRight size={15} />
               </Link>
               {linkedEncounter.status === "final" && (
                 <Link
                   href={`/app/billing/new?encounterId=${linkedEncounter.id}`}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-violet-200 px-4 py-2 text-sm font-bold text-violet-700 hover:bg-violet-50"
+                  className="inline-flex items-center gap-2 rounded-xl border border-violet-200 px-4 py-2 text-sm font-bold text-violet-700 hover:bg-violet-50"
                 >
                   <Receipt size={15} />Generate invoice
                 </Link>
               )}
             </div>
           ) : canCompleteQuickService && data.serviceWorkflowMode === "quick" && ["confirmed", "checked_in", "in_progress"].includes(data.status) ? (
-            <div className="mt-3"><p className="text-sm text-slate-500">This service is configured for streamlined documentation.</p><QuickServiceCompletion clinicId={clinicId} appointmentId={data.id} serviceName={data.serviceName ?? "quick service"} canContinueToBilling={!dentist} />{canDocument && <Link href={`${encounterBasePath}/new?patientId=${data.patientId}&appointmentId=${data.id}`} className="ml-3 inline-flex items-center gap-1.5 rounded-xl border border-violet-200 px-4 py-2.5 text-sm font-bold text-violet-700 hover:bg-violet-50">Use full encounter instead</Link>}</div>
+            <div className="mt-3"><p className="text-sm text-slate-500">This service is configured for streamlined documentation.</p><QuickServiceCompletion clinicId={clinicId} appointmentId={data.id} serviceName={data.serviceName ?? "quick service"} canContinueToBilling={!dentist} />{canDocument && <Link href={`${encounterBasePath}/new?patientId=${data.patientId}&appointmentId=${data.id}`} className="ml-3 inline-flex items-center gap-2 rounded-xl border border-violet-200 px-4 py-2.5 text-sm font-bold text-violet-700 hover:bg-violet-50">Use full encounter instead</Link>}</div>
           ) : canDocument ? (
             <div className="mt-3">
               <p className="text-sm text-slate-500">No encounter has been documented for this visit yet.</p>
               <Link
                 href={`${encounterBasePath}/new?patientId=${data.patientId}&appointmentId=${data.id}`}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-700"
+                className="mt-3 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-700"
               >
                 <Stethoscope size={15} />Start encounter<ArrowRight size={15} />
               </Link>

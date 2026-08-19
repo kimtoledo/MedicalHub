@@ -55,7 +55,7 @@ export default function EncounterDetailClient({
       <div>
         <Link
           href="/app/encounters"
-          className="flex items-center gap-1.5 text-sm text-violet-500 hover:text-violet-700 mb-2"
+          className="flex items-center gap-2 text-sm text-violet-500 hover:text-violet-700 mb-2"
         >
           <ArrowLeft size={15} /> All Encounters
         </Link>
@@ -113,7 +113,7 @@ export default function EncounterDetailClient({
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
               tab === id
                 ? "bg-white text-violet-900 shadow-sm"
                 : "text-violet-500 hover:text-violet-700"

@@ -26,7 +26,7 @@ export default function StubPage({
         </div>
         <h2 className="text-lg font-bold text-violet-900 mb-2">Coming soon</h2>
         <p className="text-violet-500 text-sm leading-relaxed">{description}</p>
-        <div className="mt-6 inline-flex items-center gap-2 bg-violet-50 text-violet-600 text-xs font-semibold px-3 py-1.5 rounded-full">
+        <div className="mt-6 inline-flex items-center gap-2 bg-violet-50 text-violet-600 text-xs font-semibold px-3 py-2 rounded-full">
           <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-pulse" />
           In development
         </div>

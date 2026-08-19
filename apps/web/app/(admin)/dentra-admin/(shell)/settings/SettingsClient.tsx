@@ -104,7 +104,7 @@ function PlatformDefaultsSection() {
           {settings && <p className="text-xs text-slate-400 sm:col-span-2">Last updated {new Date(settings.updatedAt).toLocaleString('en-PH', { timeZone: 'Asia/Manila', dateStyle: 'medium', timeStyle: 'short' })}</p>}
         </form>
       )}
-      {error && <p role="alert" className="mt-3 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+      {error && <p role="alert" className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
       {message && <p role="status" className="mt-3 rounded-lg bg-emerald-50 p-2 text-xs text-emerald-700">{message}</p>}
     </section>
   );
@@ -170,7 +170,7 @@ function SessionSecuritySection() {
           ))}
         </ul>
       )}
-      {error && <p role="alert" className="mt-3 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+      {error && <p role="alert" className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
     </section>
   );
 }

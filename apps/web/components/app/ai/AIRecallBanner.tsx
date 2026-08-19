@@ -93,14 +93,14 @@ export default function AIRecallBanner({
           <button
             type="button"
             onClick={() => setStatus("dismissed")}
-            className="inline-flex items-center gap-1 px-3 py-1.5 bg-violet-100 hover:bg-violet-200 text-violet-700 text-xs font-semibold rounded-lg transition-colors"
+            className="inline-flex items-center gap-1 px-3 py-2 bg-violet-100 hover:bg-violet-200 text-violet-700 text-xs font-semibold rounded-lg transition-colors"
           >
             <BookMarked size={12} /> Got it — noted
           </button>
           <button
             type="button"
             onClick={() => setStatus("dismissed")}
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-violet-400 hover:text-violet-600 text-xs"
+            className="inline-flex items-center gap-1 px-3 py-2 text-violet-400 hover:text-violet-600 text-xs"
           >
             <X size={12} /> Dismiss
           </button>

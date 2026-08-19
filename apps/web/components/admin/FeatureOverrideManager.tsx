@@ -121,13 +121,13 @@ export default function FeatureOverrideManager({
             setSuccess(null);
             setIsAdding(true);
           }}
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-violet-600 px-3 text-xs font-semibold text-white hover:bg-violet-700"
+          className="inline-flex h-9 shrink-0 items-center gap-2 rounded-xl bg-violet-600 px-3 text-xs font-semibold text-white hover:bg-violet-700"
         >
           <Plus size={15} /> Add
         </button>
       </div>
       {success && (
-        <p role="status" className="mt-3 flex items-center gap-1.5 text-xs text-emerald-700">
+        <p role="status" className="mt-3 flex items-center gap-2 text-xs text-emerald-700">
           <CheckCircle2 size={14} /> {success}
         </p>
       )}

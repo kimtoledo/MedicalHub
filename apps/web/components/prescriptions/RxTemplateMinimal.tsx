@@ -76,7 +76,7 @@ export default function RxTemplateMinimal({
       <div className="space-y-2 mb-3">
         {items.map((item, idx) => (
           <div key={item.id} className="text-xs border-b border-slate-100 pb-1.5 last:border-0">
-            <div className="flex gap-1.5 items-baseline">
+            <div className="flex gap-2 items-baseline">
               <span className="text-slate-400 w-4 flex-shrink-0">{idx + 1}.</span>
               <div>
                 <span className="font-semibold text-sm text-slate-800">{item.medicineName}</span>

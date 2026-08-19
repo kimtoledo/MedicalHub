@@ -243,7 +243,7 @@ export default function InvoiceDetailClient({
         <div className="flex items-center justify-between gap-4 print:hidden">
           <Link
             href="/app/billing"
-            className="flex items-center gap-1.5 text-sm text-violet-500 hover:text-violet-700"
+            className="flex items-center gap-2 text-sm text-violet-500 hover:text-violet-700"
           >
             <ArrowLeft size={15} /> Back to Billing
           </Link>
@@ -251,7 +251,7 @@ export default function InvoiceDetailClient({
             {isPending && (
               <Link
                 href={`/app/billing/hmo-claims/new?patientId=${invoice.patient.id}&invoiceId=${invoice.id}${invoice.encounterId ? `&encounterId=${invoice.encounterId}` : ""}`}
-                className="flex items-center gap-1.5 rounded-xl border border-violet-200 px-4 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-50"
+                className="flex items-center gap-2 rounded-xl border border-violet-200 px-4 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-50"
               >
                 <Shield size={14} /> HMO Claim
               </Link>
@@ -259,16 +259,16 @@ export default function InvoiceDetailClient({
             {isPending && (
               <button
                 onClick={() => setShowPayModal(true)}
-                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-colors"
               >
                 <CreditCard size={14} /> Record Payment
               </button>
             )}
-            {(invoice.status === "paid" || invoice.status === "partially_paid") && <button onClick={() => setTransactionType("refund")} className="flex items-center gap-1.5 rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700"><RotateCcw size={14} /> Refund</button>}
-            {isPending && <button onClick={() => setTransactionType("adjustment")} className="flex items-center gap-1.5 rounded-xl border border-violet-200 px-4 py-2 text-sm font-semibold text-violet-700"><SlidersHorizontal size={14} /> Adjustment</button>}
+            {(invoice.status === "paid" || invoice.status === "partially_paid") && <button onClick={() => setTransactionType("refund")} className="flex items-center gap-2 rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700"><RotateCcw size={14} /> Refund</button>}
+            {isPending && <button onClick={() => setTransactionType("adjustment")} className="flex items-center gap-2 rounded-xl border border-violet-200 px-4 py-2 text-sm font-semibold text-violet-700"><SlidersHorizontal size={14} /> Adjustment</button>}
             <button
               onClick={() => window.print()}
-              className="flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors"
             >
               <Printer size={14} /> Print / PDF
             </button>

@@ -254,7 +254,7 @@ export default function FilesTab({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors"
           >
             <Upload size={14} /> Upload File
           </button>
@@ -278,7 +278,7 @@ export default function FilesTab({
           </div>
 
           {uploadError && (
-            <p className="text-red-600 text-xs bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg">{uploadError}</p>
+            <p className="text-red-600 text-xs bg-red-50 border border-red-200 px-3 py-2 rounded-lg">{uploadError}</p>
           )}
 
           <div className="grid grid-cols-2 gap-3">
@@ -331,7 +331,7 @@ export default function FilesTab({
             <button
               type="submit"
               disabled={uploading}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60 transition-colors"
             >
               {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
               {uploading ? "Uploading…" : "Upload"}

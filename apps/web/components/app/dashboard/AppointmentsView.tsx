@@ -85,13 +85,13 @@ export default function AppointmentsView({ dentist = false }: { dentist?: boolea
         <div className="flex rounded-xl border border-violet-200 bg-white p-1 text-sm font-semibold">
           <button
             onClick={() => setMode("list")}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 ${mode === "list" ? "bg-violet-600 text-white" : "text-violet-700"}`}
+            className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 ${mode === "list" ? "bg-violet-600 text-white" : "text-violet-700"}`}
           >
             <Rows3 size={15} />List
           </button>
           <button
             onClick={() => setMode("calendar")}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 ${mode === "calendar" ? "bg-violet-600 text-white" : "text-violet-700"}`}
+            className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 ${mode === "calendar" ? "bg-violet-600 text-white" : "text-violet-700"}`}
           >
             <CalendarRange size={15} />Calendar
           </button>
@@ -108,7 +108,7 @@ export default function AppointmentsView({ dentist = false }: { dentist?: boolea
             className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
           />
         ) : (
-          <div className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-2 py-1.5 text-sm">
+          <div className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-2 py-2 text-sm">
             <button onClick={() => setDate(addDays(date, -7))} className="rounded-lg p-1 text-violet-700 hover:bg-violet-50" aria-label="Previous week">
               <ChevronLeft size={16} />
             </button>

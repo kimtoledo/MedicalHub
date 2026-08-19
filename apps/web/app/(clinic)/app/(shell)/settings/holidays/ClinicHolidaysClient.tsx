@@ -106,7 +106,7 @@ export default function ClinicHolidaysClient({ clinicId, branches, closures }: {
     <section className="rounded-2xl border border-violet-100 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2"><CalendarOff size={17} className="text-violet-600" /><h2 className="font-bold text-slate-900">{view === 'list' ? 'Configured closures' : monthLabel}</h2></div>
-        {view === 'list' && <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600"><input type="checkbox" checked={hidePast} onChange={(event) => { setHidePast(event.target.checked); setVisibleCount(PAGE_SIZE); }} className="h-3.5 w-3.5 rounded border-slate-300" />Hide past dates</label>}
+        {view === 'list' && <label className="flex items-center gap-2 text-xs font-semibold text-slate-600"><input type="checkbox" checked={hidePast} onChange={(event) => { setHidePast(event.target.checked); setVisibleCount(PAGE_SIZE); }} className="h-3.5 w-3.5 rounded border-slate-300" />Hide past dates</label>}
       </div>
 
       {view === 'list'
@@ -118,7 +118,7 @@ export default function ClinicHolidaysClient({ clinicId, branches, closures }: {
                 return <div key={closure.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
                   <div><p className="text-sm font-semibold text-slate-800">{closure.label}</p><p className="text-xs text-slate-500">{closure.date} · {branchName} · {closure.source === 'ph_holiday' ? 'PH holiday' : 'Custom'}</p></div>
                   <div className="flex items-center gap-2">
-                    <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+                    <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
                       <input type="checkbox" checked={closure.isEnabled} disabled={busy === closure.id} onChange={() => void toggleClosure(closure)} className="h-3.5 w-3.5 rounded border-slate-300" />
                       {closure.isEnabled ? 'Closed' : 'Open (ignored)'}
                     </label>

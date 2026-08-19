@@ -108,11 +108,11 @@ export function HmoTab({
         <p className="text-xs text-violet-500">HMO card records for this patient</p>
         <div className="flex flex-wrap justify-end gap-2">
           <Link href={`/app/billing/hmo-claims/new?patientId=${patientId}`}
-            className="inline-flex items-center gap-1 rounded-lg border border-violet-200 px-3 py-1.5 text-xs font-semibold text-violet-700 transition-colors hover:bg-violet-50">
+            className="inline-flex items-center gap-1 rounded-lg border border-violet-200 px-3 py-2 text-xs font-semibold text-violet-700 transition-colors hover:bg-violet-50">
             <Shield size={12} /> Create claim
           </Link>
           <button onClick={() => setShowForm(true)}
-            className="inline-flex items-center gap-1 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-lg transition-colors">
+            className="inline-flex items-center gap-1 px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-lg transition-colors">
             <Plus size={12} /> Add HMO Card
           </button>
         </div>
@@ -120,49 +120,49 @@ export function HmoTab({
 
       {showForm && (
         <div className="bg-violet-50 border border-violet-200 rounded-2xl p-4 space-y-3">
-          {error && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5">{error}</p>}
+          {error && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[10px] font-bold text-violet-700 mb-1 uppercase">HMO Provider *</label>
               <input value={form.payerNameSnapshot} onChange={(e) => setForm((f) => ({ ...f, payerNameSnapshot: e.target.value }))}
-                placeholder="e.g. Maxicare" className="w-full px-3 py-1.5 rounded-xl border border-violet-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" />
+                placeholder="e.g. Maxicare" className="w-full px-3 py-2 rounded-xl border border-violet-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" />
             </div>
             <div>
               <label className="block text-[10px] font-bold text-violet-700 mb-1 uppercase">Card Number *</label>
               <input value={form.cardNumber} onChange={(e) => setForm((f) => ({ ...f, cardNumber: e.target.value }))}
-                placeholder="HMO card number" className="w-full px-3 py-1.5 rounded-xl border border-violet-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" />
+                placeholder="HMO card number" className="w-full px-3 py-2 rounded-xl border border-violet-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" />
             </div>
             <div>
               <label className="block text-[10px] font-bold text-violet-700 mb-1 uppercase">Member Name</label>
               <input value={form.memberName} onChange={(e) => setForm((f) => ({ ...f, memberName: e.target.value }))}
-                placeholder="Name on card" className="w-full px-3 py-1.5 rounded-xl border border-violet-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" />
+                placeholder="Name on card" className="w-full px-3 py-2 rounded-xl border border-violet-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" />
             </div>
             <div>
               <label className="block text-[10px] font-bold text-violet-700 mb-1 uppercase">Coverage Type</label>
               <select value={form.coverageType} onChange={(e) => setForm((f) => ({ ...f, coverageType: e.target.value }))}
-                className="w-full px-3 py-1.5 rounded-xl border border-violet-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-400">
+                className="w-full px-3 py-2 rounded-xl border border-violet-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-400">
                 {COVERAGE_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-[10px] font-bold text-violet-700 mb-1 uppercase">Effective Date</label>
               <input type="date" value={form.effectiveDate} onChange={(e) => setForm((f) => ({ ...f, effectiveDate: e.target.value }))}
-                className="w-full px-3 py-1.5 rounded-xl border border-violet-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" />
+                className="w-full px-3 py-2 rounded-xl border border-violet-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" />
             </div>
             <div>
               <label className="block text-[10px] font-bold text-violet-700 mb-1 uppercase">Expiry Date</label>
               <input type="date" value={form.expiryDate} onChange={(e) => setForm((f) => ({ ...f, expiryDate: e.target.value }))}
-                className="w-full px-3 py-1.5 rounded-xl border border-violet-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" />
+                className="w-full px-3 py-2 rounded-xl border border-violet-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" />
             </div>
           </div>
           <div className="flex gap-2">
             <button onClick={save} disabled={saving}
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-lg disabled:opacity-60 transition-colors">
+              className="inline-flex items-center gap-1 px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-lg disabled:opacity-60 transition-colors">
               {saving ? <Loader2 size={11} className="animate-spin" /> : null}
               {saving ? "Saving…" : "Save"}
             </button>
             <button onClick={() => { setShowForm(false); setError(null); }}
-              className="px-3 py-1.5 text-xs text-violet-400 hover:text-violet-600">Cancel</button>
+              className="px-3 py-2 text-xs text-violet-400 hover:text-violet-600">Cancel</button>
           </div>
         </div>
       )}
@@ -225,7 +225,7 @@ export default function PatientDetailClient({
       {/* Header */}
       <div>
         <Link href="/app/patients"
-          className="flex items-center gap-1.5 text-sm text-violet-500 hover:text-violet-700 mb-2">
+          className="flex items-center gap-2 text-sm text-violet-500 hover:text-violet-700 mb-2">
           <ArrowLeft size={15} /> All Patients
         </Link>
         <div className="flex items-center gap-4">
@@ -251,7 +251,7 @@ export default function PatientDetailClient({
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
               tab === id
                 ? "bg-white text-violet-900 shadow-sm"
                 : "text-violet-500 hover:text-violet-700"

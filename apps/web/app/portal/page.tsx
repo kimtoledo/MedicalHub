@@ -167,7 +167,7 @@ export default function PatientPortalPage() {
 
   return (
     <main className="min-h-screen bg-[#F7F6FB] pb-24">
-      <header className="border-b border-violet-100 bg-white px-4 py-4"><div className="mx-auto flex max-w-5xl items-center justify-between"><div><p className="text-sm font-bold text-violet-600">Dentra.ph</p><p className="text-xs text-slate-500">Patient Portal</p></div><button disabled={busy} onClick={() => void signOut()} className="inline-flex items-center gap-1.5 rounded-xl border border-violet-200 px-3 py-2 text-sm font-semibold text-violet-700"><LogOut size={15} /> Sign out</button></div></header>
+      <header className="border-b border-violet-100 bg-white px-4 py-4"><div className="mx-auto flex max-w-5xl items-center justify-between"><div><p className="text-sm font-bold text-violet-600">Dentra.ph</p><p className="text-xs text-slate-500">Patient Portal</p></div><button disabled={busy} onClick={() => void signOut()} className="inline-flex items-center gap-2 rounded-xl border border-violet-200 px-3 py-2 text-sm font-semibold text-violet-700"><LogOut size={15} /> Sign out</button></div></header>
       <div className="mx-auto max-w-5xl space-y-5 p-4 sm:p-8">
         {notice && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{notice}</div>}
         {error && <div role="alert" className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"><span>{error}</span><button onClick={() => setError(null)} className="font-semibold">Dismiss</button></div>}

@@ -50,6 +50,11 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ UI spacing consistency pass
+- Normalized compact half-step spacing utilities to the established whole-step Dentra.ph rhythm across public, clinic, dentist, patient-portal, and Super Admin surfaces
+- Kept the existing violet brand system and component behavior unchanged
+- Verified web TypeScript checks and 18 passing web tests; the repository's `next lint` command still requires first-run ESLint configuration
+
 ### ✅ Presentation demo transaction readiness
 - Added `npm run demo:prepare`, a non-destructive scenario preparer that refreshes only fixed synthetic Smile Bright Dental rows for a chosen Manila date and automatically runs a read-only readiness gate
 - Added bounded `DEMO_SCENARIO=1..9` runs; preparation refuses to overwrite a scenario after one of its appointments produces an encounter, preserving prior clinical/billing/audit history without broad deletes or raw SQL

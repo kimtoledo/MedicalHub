@@ -155,12 +155,12 @@ export default function ClinicStatusActions({
           })}
         </div>
         {success && (
-          <p role="status" className="inline-flex items-center gap-1.5 text-sm text-emerald-700">
+          <p role="status" className="inline-flex items-center gap-2 text-sm text-emerald-700">
             <CheckCircle2 size={16} /> {success}
           </p>
         )}
         {error && (
-          <p role="alert" className="inline-flex items-center gap-1.5 text-sm text-red-700">
+          <p role="alert" className="inline-flex items-center gap-2 text-sm text-red-700">
             <AlertCircle size={16} /> {error}
           </p>
         )}

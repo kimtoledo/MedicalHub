@@ -74,7 +74,7 @@ export default function ClinicDentistsTab({ clinicId }: { clinicId: string }) {
           className="flex flex-col gap-2 py-4 transition hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
-            <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+            <p className="flex items-center gap-2 text-sm font-semibold text-slate-900">
               Dr. {dentist.firstName} {dentist.lastName}
               {dentist.verificationStatus === 'verified' && <ShieldCheck size={14} className="text-emerald-600" />}
             </p>

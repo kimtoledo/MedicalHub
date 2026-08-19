@@ -119,7 +119,7 @@ export default function HmoPayersClient({
         </div>
         <button
           onClick={openAdd}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors"
         >
           <Plus size={15} /> Add Payer
         </button>
@@ -201,7 +201,7 @@ export default function HmoPayersClient({
             <button
               onClick={save}
               disabled={formState === "saving"}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60 transition-colors"
             >
               {formState === "saving" ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
               {formState === "saving" ? "Saving…" : "Save"}

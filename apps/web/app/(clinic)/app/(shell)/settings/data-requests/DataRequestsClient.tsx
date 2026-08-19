@@ -108,7 +108,7 @@ export default function DataRequestsClient({ supportAccess: initialSupport, expo
             placeholder="What do you need help with?"
             className="w-full rounded-xl border border-violet-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
           />
-          <button disabled={submittingSupport} className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
+          <button disabled={submittingSupport} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
             {submittingSupport ? <Loader2 size={14} className="animate-spin" /> : null} {submittingSupport ? "Submitting…" : "Submit request"}
           </button>
         </form>
@@ -134,7 +134,7 @@ export default function DataRequestsClient({ supportAccess: initialSupport, expo
       <section className="rounded-2xl border border-violet-100 bg-white p-5">
         <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-violet-900"><DatabaseBackup size={15} /> Export your clinic&apos;s data</h2>
         <p className="mb-3 text-xs text-slate-500">Request a structured JSON export of your clinic&apos;s records. Our platform team reviews and generates each export; uploaded file binaries (radiographs/photos) and staff accounts are not included.</p>
-        <button onClick={() => void submitExport()} disabled={submittingExport} className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
+        <button onClick={() => void submitExport()} disabled={submittingExport} className="mb-4 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
           {submittingExport ? <Loader2 size={14} className="animate-spin" /> : null} {submittingExport ? "Submitting…" : "Request export"}
         </button>
         {exportRequests.length === 0 ? (

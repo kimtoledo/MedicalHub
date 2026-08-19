@@ -77,7 +77,7 @@ export default function PaymentLinksPanel({ clinicId, invoiceId }: { clinicId: s
     <div className="rounded-2xl border border-violet-100 bg-white p-5 print:hidden">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="flex items-center gap-2 text-sm font-bold text-violet-900"><Link2 size={15} /> Payment links</h3>
-        <button onClick={() => void createLink()} disabled={creating} className="rounded-xl bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
+        <button onClick={() => void createLink()} disabled={creating} className="rounded-xl bg-violet-600 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
           {creating ? "Creating…" : "New link"}
         </button>
       </div>

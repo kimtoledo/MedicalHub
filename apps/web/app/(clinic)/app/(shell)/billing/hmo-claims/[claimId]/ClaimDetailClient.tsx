@@ -98,7 +98,7 @@ export default function ClaimDetailClient({
       {/* Back */}
       <div>
         <Link href="/app/billing/hmo-claims"
-          className="inline-flex items-center gap-1.5 text-sm text-violet-500 hover:text-violet-700 mb-2">
+          className="inline-flex items-center gap-2 text-sm text-violet-500 hover:text-violet-700 mb-2">
           <ArrowLeft size={15} /> HMO Claims
         </Link>
         <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -112,7 +112,7 @@ export default function ClaimDetailClient({
             </span>
             <button
               onClick={() => window.print()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-violet-500 border border-violet-200 hover:bg-violet-50 rounded-xl transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm text-violet-500 border border-violet-200 hover:bg-violet-50 rounded-xl transition-colors"
             >
               <Printer size={13} /> Print
             </button>
@@ -304,7 +304,7 @@ export default function ClaimDetailClient({
                     <button
                       onClick={() => doStatusUpdate(nextStatus)}
                       disabled={updateState === "submitting"}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60 transition-colors"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60 transition-colors"
                     >
                       {updateState === "submitting" ? <Loader2 size={13} className="animate-spin" /> : null}
                       {updateState === "submitting" ? "Updating…" : "Confirm"}

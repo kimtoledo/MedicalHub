@@ -52,8 +52,8 @@ function SecretReveal({ label, value }: { label: string; value: string }) {
     <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 p-3">
       <p className="mb-1.5 text-xs font-semibold text-amber-800">{label} — copy it now, it won&apos;t be shown again</p>
       <div className="flex items-center gap-2">
-        <input readOnly value={value} className="flex-1 truncate rounded-lg bg-white px-2.5 py-1.5 font-mono text-xs text-amber-900" />
-        <button onClick={() => void copy()} className="flex items-center gap-1 rounded-lg border border-amber-300 px-2 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100">
+        <input readOnly value={value} className="flex-1 truncate rounded-lg bg-white px-2.5 py-2 font-mono text-xs text-amber-900" />
+        <button onClick={() => void copy()} className="flex items-center gap-1 rounded-lg border border-amber-300 px-2 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100">
           {copied ? <Check size={13} /> : <Copy size={13} />} {copied ? "Copied" : "Copy"}
         </button>
       </div>
@@ -111,7 +111,7 @@ function ApiKeysSection({ apiKeys: initial, clinicId }: { apiKeys: ApiKey[]; cli
         />
         <div className="flex flex-wrap gap-3">
           {SCOPES.map((scope) => (
-            <label key={scope.value} className="flex items-center gap-1.5 text-xs text-violet-700">
+            <label key={scope.value} className="flex items-center gap-2 text-xs text-violet-700">
               <input
                 type="checkbox"
                 checked={scopes.includes(scope.value)}
@@ -121,12 +121,12 @@ function ApiKeysSection({ apiKeys: initial, clinicId }: { apiKeys: ApiKey[]; cli
             </label>
           ))}
         </div>
-        <button disabled={creating} className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
+        <button disabled={creating} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
           {creating ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} {creating ? "Creating…" : "Create key"}
         </button>
       </form>
 
-      {error && <p role="alert" className="mb-3 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+      {error && <p role="alert" className="mb-3 flex items-center gap-2 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
       {newSecret && <SecretReveal label="API key secret" value={newSecret} />}
 
       {keys.length === 0 ? (
@@ -225,7 +225,7 @@ function WebhooksSection({ webhooks: initial, clinicId }: { webhooks: Webhook[];
         />
         <div className="flex flex-wrap gap-3">
           {EVENT_TYPES.map((eventType) => (
-            <label key={eventType.value} className="flex items-center gap-1.5 text-xs text-violet-700">
+            <label key={eventType.value} className="flex items-center gap-2 text-xs text-violet-700">
               <input
                 type="checkbox"
                 checked={eventTypes.includes(eventType.value)}
@@ -235,12 +235,12 @@ function WebhooksSection({ webhooks: initial, clinicId }: { webhooks: Webhook[];
             </label>
           ))}
         </div>
-        <button disabled={creating} className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
+        <button disabled={creating} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
           {creating ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} {creating ? "Creating…" : "Create webhook"}
         </button>
       </form>
 
-      {error && <p role="alert" className="mb-3 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+      {error && <p role="alert" className="mb-3 flex items-center gap-2 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
       {newSecret && <SecretReveal label="Webhook signing secret" value={newSecret} />}
 
       {webhooks.length === 0 ? (
@@ -331,10 +331,10 @@ function CalendarFeedSection({ apiKeys: initial, clinicId }: { apiKeys: ApiKey[]
     <section className="rounded-2xl border border-violet-100 bg-white p-5">
       <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-violet-900"><CalendarClock size={15} /> Calendar feed</h2>
       <p className="mb-3 text-xs text-slate-500">Subscribe to this clinic&apos;s appointments (7 days back, 60 days ahead) from Google Calendar or any app that supports an .ics URL. The link is a bearer credential — anyone with it can view appointment times and patient first names, so revoke it if it leaks.</p>
-      <button onClick={() => void create()} disabled={creating} className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
+      <button onClick={() => void create()} disabled={creating} className="mb-4 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
         {creating ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} {creating ? "Creating…" : "Create feed link"}
       </button>
-      {error && <p role="alert" className="mb-3 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+      {error && <p role="alert" className="mb-3 flex items-center gap-2 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
       {subscribeUrl && <SecretReveal label="Calendar subscribe URL" value={subscribeUrl} />}
       {keys.length === 0 ? (
         <p className="text-xs text-violet-400">No calendar feed links yet.</p>
@@ -380,16 +380,16 @@ function AccountingExportSection({ clinicId }: { clinicId: string }) {
       <p className="mb-3 text-xs text-slate-500">A software-agnostic CSV ledger — invoice issued, payment received, refund, and adjustment rows — for import into any Philippine accounting tool. No file binaries, staff accounts, or clinical notes are included.</p>
       <div className="flex flex-wrap items-end gap-3">
         <label className="text-xs font-semibold text-violet-700">From
-          <input type="date" value={from} onChange={(event) => setFrom(event.target.value)} className="mt-1 block rounded-lg border border-violet-200 px-2 py-1.5 text-sm" />
+          <input type="date" value={from} onChange={(event) => setFrom(event.target.value)} className="mt-1 block rounded-lg border border-violet-200 px-2 py-2 text-sm" />
         </label>
         <label className="text-xs font-semibold text-violet-700">To
-          <input type="date" value={to} onChange={(event) => setTo(event.target.value)} className="mt-1 block rounded-lg border border-violet-200 px-2 py-1.5 text-sm" />
+          <input type="date" value={to} onChange={(event) => setTo(event.target.value)} className="mt-1 block rounded-lg border border-violet-200 px-2 py-2 text-sm" />
         </label>
-        <button onClick={download} className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700">
+        <button onClick={download} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-700">
           <FileSpreadsheet size={12} /> Download CSV
         </button>
       </div>
-      {error && <p role="alert" className="mt-2 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+      {error && <p role="alert" className="mt-2 flex items-center gap-2 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
     </section>
   );
 }
@@ -434,10 +434,10 @@ function ConnectProviderForm({ channel, clinicId, onConnected }: { channel: "ema
           <input type="password" value={authToken} onChange={(event) => setAuthToken(event.target.value)} placeholder="Twilio Auth Token" className="w-full rounded-lg border border-violet-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" />
         </>
       )}
-      <button disabled={saving} className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
+      <button disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
         {saving ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} {saving ? "Connecting…" : `Connect ${providerName === "sendgrid" ? "SendGrid" : "Twilio"}`}
       </button>
-      {error && <p role="alert" className="flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+      {error && <p role="alert" className="flex items-center gap-2 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
     </form>
   );
 }
@@ -469,7 +469,7 @@ function NotificationProvidersSection({ providers: initial, clinicId }: { provid
     <section className="rounded-2xl border border-violet-100 bg-white p-5">
       <h2 className="mb-1 text-sm font-bold text-violet-900">Notification providers</h2>
       <p className="mb-3 text-xs text-slate-500">Connect your own SendGrid (email) or Twilio (SMS) account so booking confirmations and recall reminders actually send. Credentials are encrypted at rest and never displayed again after saving.</p>
-      {error && <p role="alert" className="mb-3 flex items-center gap-1.5 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
+      {error && <p role="alert" className="mb-3 flex items-center gap-2 rounded-lg bg-red-50 p-2 text-xs text-red-700"><AlertCircle size={13} /> {error}</p>}
       <div className="grid gap-3 sm:grid-cols-2">
         {(["email", "sms"] as const).map((channel) => {
           const provider = byChannel[channel];

@@ -98,7 +98,7 @@ export default async function BillingPage({
         </div>
         <Link
           href="/app/billing/new"
-          className="flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-colors"
         >
           <Plus size={15} /> Generate Invoice
         </Link>
