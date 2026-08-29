@@ -4,6 +4,7 @@ import {
   branches,
   clinicLimitOverrides,
   clinicMemberships,
+  clinics,
   clinicSubscriptions,
   dentistBranchAssignments,
   packageLimits,
@@ -14,6 +15,26 @@ import { CapacityMetric, ClinicRole } from '@dentra/shared';
 // handle or an in-flight transaction without forcing callers to cast.
 type DBTransaction = Parameters<Parameters<DB['transaction']>[0]>[0];
 type Queryable = DB | DBTransaction;
+
+/**
+ * Locks the clinic row for the rest of the enclosing transaction. Every call
+ * site that adds a brand-new capacity-counted unit (a branch, a dentist
+ * affiliation, a staff invite, a staff role change into a capped role) must
+ * take this lock — and must be inside a transaction — before calling
+ * `assertClinicCapacity`, so two concurrent requests against the same
+ * clinic serialize instead of both reading the same stale count and both
+ * slipping past the limit. A hand-copied inline `.for('update')` at each
+ * call site is exactly how one such site (staff role changes) once shipped
+ * without the lock — prefer this shared helper over re-writing the query.
+ * (A site that also needs a combined existence/soft-delete check on the
+ * same row, like branch creation, may fold that condition into its own
+ * locked select instead — the invariant that matters is "locked before
+ * counting", not which helper does the locking.)
+ */
+export async function lockClinicRow(database: Queryable, clinicId: string): Promise<{ id: string } | undefined> {
+  const [row] = await database.select({ id: clinics.id }).from(clinics).where(eq(clinics.id, clinicId)).limit(1).for('update');
+  return row;
+}
 
 export class ClinicCapacityError extends Error {
   constructor(

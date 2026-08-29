@@ -3,7 +3,6 @@ import type { DB } from '@dentra/db';
 import {
   branches,
   accounts,
-  clinics,
   clinicMembershipPermissions,
   clinicMemberships,
   dentistBranchAssignments,
@@ -18,7 +17,7 @@ import {
   type ClinicRole,
 } from '@dentra/shared';
 import { permissionPresets } from './permissions.js';
-import { assertClinicCapacity, ClinicCapacityError } from '../entitlements/capacity.js';
+import { assertClinicCapacity, ClinicCapacityError, lockClinicRow } from '../entitlements/capacity.js';
 
 export { permissionPresets } from './permissions.js';
 
@@ -221,7 +220,7 @@ export function createClinicStaffService(database: DB) {
       return database.transaction(async (tx) => {
         // Lock the clinic row first so concurrent invites for the same
         // clinic/role serialize instead of both slipping past the seat cap.
-        await tx.select({ id: clinics.id }).from(clinics).where(eq(clinics.id, clinicId)).limit(1).for('update');
+        await lockClinicRow(tx, clinicId);
 
         let [user] = await tx.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
         if (!user) {
@@ -289,6 +288,11 @@ export function createClinicStaffService(database: DB) {
     update: async (clinicId: string, membershipId: string, input: StaffMutation, actor: StaffActor) => {
       await assertBranch(database, clinicId, input.branchId ?? null);
       return database.transaction(async (tx) => {
+        // Lock the clinic row first so a concurrent role change into the
+        // same capped role serializes instead of both slipping past the
+        // seat cap — matches invite()'s lock above.
+        await lockClinicRow(tx, clinicId);
+
         const [membership] = await tx.select({
           id: clinicMemberships.id,
           userId: clinicMemberships.userId,

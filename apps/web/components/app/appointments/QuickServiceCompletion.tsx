@@ -1,12 +1,39 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { CheckCircle2, Loader2, Receipt } from 'lucide-react';
 
 export default function QuickServiceCompletion({ clinicId, appointmentId, serviceName, canContinueToBilling = false }: { clinicId: string; appointmentId: string; serviceName: string; canContinueToBilling?: boolean }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false); const [saving, setSaving] = useState(false); const [error, setError] = useState('');
   const nextStep = useRef<'stay' | 'billing'>('stay');
-  async function submit(event: React.FormEvent<HTMLFormElement>) { event.preventDefault(); setSaving(true); setError(''); const form = new FormData(event.currentTarget); const response = await fetch(`/api/clinic/appointments/${encodeURIComponent(appointmentId)}/quick-complete?clinicId=${encodeURIComponent(clinicId)}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ toothRef: String(form.get('toothRef') ?? '').trim() || undefined, notes: String(form.get('notes') ?? '').trim() || undefined }) }); const payload = await response.json().catch(() => null) as { data?: { encounterId?: string }; error?: { message?: string } } | null; if (!response.ok) { setError(payload?.error?.message ?? 'Quick service could not be completed.'); setSaving(false); return; } if (nextStep.current === 'billing' && payload?.data?.encounterId) { window.location.assign(`/app/billing/new?encounterId=${encodeURIComponent(payload.data.encounterId)}`); return; } window.location.reload(); }
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setError('');
+    const form = new FormData(event.currentTarget);
+    try {
+      const response = await fetch(`/api/clinic/appointments/${encodeURIComponent(appointmentId)}/quick-complete?clinicId=${encodeURIComponent(clinicId)}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ toothRef: String(form.get('toothRef') ?? '').trim() || undefined, notes: String(form.get('notes') ?? '').trim() || undefined }),
+      });
+      const payload = await response.json().catch(() => null) as { data?: { encounterId?: string }; error?: { message?: string } } | null;
+      if (!response.ok) { setError(payload?.error?.message ?? 'Quick service could not be completed.'); return; }
+      if (nextStep.current === 'billing' && payload?.data?.encounterId) { window.location.assign(`/app/billing/new?encounterId=${encodeURIComponent(payload.data.encounterId)}`); return; }
+      setOpen(false);
+      router.refresh();
+    } catch {
+      // Network-level failure (offline, timeout, dropped connection) — never
+      // leave the form stuck mid-save with no way for the front desk to retry.
+      setError('Could not reach the server. Check your connection and try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (!open) return <button onClick={() => setOpen(true)} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"><CheckCircle2 size={16} />Complete quick service</button>;
-  return <form onSubmit={submit} className="mt-4 grid gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 sm:grid-cols-2"><div className="sm:col-span-2"><p className="font-bold text-emerald-900">Complete {serviceName}</p><p className="text-xs text-emerald-700">This creates and finalizes the linked encounter and treatment record.</p></div><label className="text-sm font-semibold text-slate-700">Tooth or area <span className="font-normal text-slate-400">(optional)</span><input name="toothRef" maxLength={50} placeholder="General or tooth number" className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 font-normal" /></label><label className="text-sm font-semibold text-slate-700">Short note <span className="font-normal text-slate-400">(optional)</span><input name="notes" maxLength={5000} className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 font-normal" /></label>{error && <p role="alert" className="text-sm text-red-700 sm:col-span-2">{error}</p>}<div className="flex flex-wrap gap-2 sm:col-span-2"><button disabled={saving} onClick={() => { nextStep.current = 'stay'; }} className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{saving ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}Complete service</button>{canContinueToBilling && <button disabled={saving} onClick={() => { nextStep.current = 'billing'; }} className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"><Receipt size={15} />Complete &amp; continue to billing</button>}<button type="button" disabled={saving} onClick={() => setOpen(false)} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 disabled:opacity-50">Cancel</button></div></form>;
+  return <form onSubmit={submit} className="mt-4 grid gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 sm:grid-cols-2"><div className="sm:col-span-2"><p className="font-bold text-emerald-900">Complete {serviceName}</p><p className="text-xs text-emerald-700">This creates and finalizes the linked encounter and treatment record.</p></div><label className="text-sm font-semibold text-slate-700">Tooth or area <span className="font-normal text-slate-400">(optional)</span><input name="toothRef" maxLength={50} placeholder="General or tooth number" className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 font-normal" /></label><label className="text-sm font-semibold text-slate-700">Short note <span className="font-normal text-slate-400">(optional)</span><input name="notes" maxLength={5000} className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 font-normal" /></label>{error && <p role="alert" className="text-sm text-red-700 sm:col-span-2">{error}</p>}<div className="flex flex-wrap gap-2 sm:col-span-2"><button disabled={saving} onClick={() => { nextStep.current = 'stay'; }} className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{saving && nextStep.current === 'stay' ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}Complete service</button>{canContinueToBilling && <button disabled={saving} onClick={() => { nextStep.current = 'billing'; }} className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{saving && nextStep.current === 'billing' ? <Loader2 size={15} className="animate-spin" /> : <Receipt size={15} />}Complete &amp; continue to billing</button>}<button type="button" disabled={saving} onClick={() => setOpen(false)} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 disabled:opacity-50">Cancel</button></div></form>;
 }

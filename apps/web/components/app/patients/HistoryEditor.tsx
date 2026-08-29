@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2, Save } from "lucide-react";
 import type { DentalHistory, MedicalHistory } from "@/lib/clinic-patients";
 const input =
@@ -15,6 +16,7 @@ export default function HistoryEditor({
   patientId: string;
   current: MedicalHistory | DentalHistory | null;
 }) {
+  const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -40,7 +42,8 @@ export default function HistoryEditor({
       };
       if (!response.ok)
         throw new Error(result.error?.message ?? "History could not be saved");
-      window.location.reload();
+      setSaving(false);
+      router.refresh();
     } catch (caught) {
       setError(
         caught instanceof Error ? caught.message : "History could not be saved",

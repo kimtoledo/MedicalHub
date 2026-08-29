@@ -1,8 +1,17 @@
 # Dentra.ph - Claude Instructions
 
 @README.md
-@docs/PRODUCT_SPEC.md
-@docs/SECURITY_PRIVACY.md
+
+<!--
+  README.md is the current product spec (surfaces, roles, domain rules, MVP
+  roadmap). This file's own "Security/privacy rules" section below is the
+  current security/privacy spec. Previous versions of this file also
+  imported docs/PRODUCT_SPEC.md and docs/SECURITY_PRIVACY.md as separate
+  documents; those files do not exist in this repository — if you are
+  splitting this content back out into standalone docs, update this import
+  list and the repository-layout table in README.md together so neither
+  drifts from the other again.
+-->
 
 ## Role
 Act as a senior reviewer/implementation partner for Dentra.ph. Optimize for correctness, multi-tenant safety, maintainability, and clear incremental delivery rather than large rewrites.

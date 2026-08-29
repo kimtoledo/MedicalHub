@@ -108,33 +108,29 @@ packages/
   ui/                   # optional shared UI package
 
 docs/
-  PRODUCT_SPEC.md
-  ARCHITECTURE.md
-  ROUTES.md
-  DATABASE_SCHEMA.md
-  API_CONTRACT.md
-  ROLE_PERMISSION_MATRIX.md
-  FEATURE_ENTITLEMENTS.md
-  APPOINTMENT_ENGINE.md
-  ODONTOGRAM.md
-  PWA.md
-  SECURITY_PRIVACY.md
-  DEPLOYMENT.md
+  README.md               # this file — product spec, surfaces, roles, domain rules
+  CLAUDE.md               # Claude agent instructions (imports this file)
+  AGENTS.md
+  BRANDING.md
   MVP_1.md
   MVP_2.md
   MVP_3.md
-  DEVELOPMENT_WORKFLOW.md
-prompts/
-  REPLIT_INITIAL_PROMPT.md
-  CLAUDE_REVIEW_PROMPT.md
-  CODEX_IMPLEMENTATION_PROMPT.md
+  MVP1_RELEASE_CHECKLIST.md
+  PRESENTATION_DEMO.md
+  THREAT_MODEL_OFFLINE_MODE.md
+  USER_GUIDE.md
+  USER_GUIDE_CLINICS.md
+  USER_GUIDE_PATIENTS.md
+  USER_GUIDE_SUPER_ADMIN.md
+  qa/                     # QA test reports and bug findings
 README.md
-CLAUDE.md
 AGENTS.md
 replit.md
 .env.example
 pnpm-workspace.yaml
 ```
+
+Note: an earlier revision of this layout also listed `docs/PRODUCT_SPEC.md`, `ARCHITECTURE.md`, `ROUTES.md`, `DATABASE_SCHEMA.md`, `API_CONTRACT.md`, `ROLE_PERMISSION_MATRIX.md`, `FEATURE_ENTITLEMENTS.md`, `APPOINTMENT_ENGINE.md`, `ODONTOGRAM.md`, `PWA.md`, `SECURITY_PRIVACY.md`, `DEPLOYMENT.md`, `DEVELOPMENT_WORKFLOW.md`, and a `prompts/` directory. None of those exist in this repository today — this file (product surfaces, roles, domain rules, MVP roadmap) and `CLAUDE.md` (security/privacy rules, review checklist) are the closest current equivalents. If you split that content back out into standalone files, update this list so it doesn't drift again.
 
 Do not create separate applications or databases per clinic. Dentra.ph is one multi-tenant product.
 
