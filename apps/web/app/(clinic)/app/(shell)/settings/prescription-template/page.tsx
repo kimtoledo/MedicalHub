@@ -24,7 +24,7 @@ export default async function PrescriptionTemplatePage() {
 
   // This page is for dentists only — they must have a dentist session role
   // The /encounters endpoint returns prescriber defaults and also validates dentist access
-  const cookieHeader = cookies().toString();
+  const cookieHeader = (await cookies()).toString();
 
   // Fetch prescriber defaults and clinic settings in parallel
   const [res, settingsRes] = await Promise.all([

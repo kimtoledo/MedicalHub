@@ -9,11 +9,12 @@ import { getEncounter } from "@/lib/clinic-encounters";
 import { getClinicServices, getPatientTreatments } from "@/lib/clinic-treatments";
 import { getOdontogram } from "@/lib/clinic-odontogram";
 import PrescriptionDrawer from "../../../prescriptions/new/PrescriptionDrawer";
-export default async function EncounterPage({
-  params,
-}: {
-  params: { encounterId: string };
-}) {
+export default async function EncounterPage(
+  props: {
+    params: Promise<{ encounterId: string }>;
+  }
+) {
+  const params = await props.params;
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
   const [context, patientData, encounter] = await Promise.all([

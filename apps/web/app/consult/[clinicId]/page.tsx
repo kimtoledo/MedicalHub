@@ -9,10 +9,11 @@ import ConsultForm from "./ConsultForm";
  */
 export const dynamic = "force-dynamic";
 
-export default function ConsultPage({
-  params,
-}: {
-  params: { clinicId: string };
-}) {
+export default async function ConsultPage(
+  props: {
+    params: Promise<{ clinicId: string }>;
+  }
+) {
+  const params = await props.params;
   return <ConsultForm clinicId={params.clinicId} />;
 }

@@ -5,13 +5,14 @@ import { getClinicSession, getClinicShellContext } from "@/lib/clinic-session";
 import { getPatientTreatments } from "@/lib/clinic-treatments";
 import { getOdontogram } from "@/lib/clinic-odontogram";
 
-export default async function DentistPatientPage({
-  params,
-  searchParams,
-}: {
-  params: { patientId: string };
-  searchParams: { appointmentSort?: string };
-}) {
+export default async function DentistPatientPage(
+  props: {
+    params: Promise<{ patientId: string }>;
+    searchParams: Promise<{ appointmentSort?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
   const sort = searchParams.appointmentSort === "asc" ? "asc" : "desc";

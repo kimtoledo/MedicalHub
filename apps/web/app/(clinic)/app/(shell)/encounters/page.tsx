@@ -22,7 +22,7 @@ export default async function EncountersPage() {
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
 
-  const cookieHeader = cookies().toString();
+  const cookieHeader = (await cookies()).toString();
   const res = await fetch(
     getBackendUrl(`/v1/clinic/${identity.clinicId}/encounters`),
     { headers: { cookie: cookieHeader }, cache: "no-store" }

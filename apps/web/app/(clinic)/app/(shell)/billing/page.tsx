@@ -63,15 +63,16 @@ async function fetchInvoices(
   }
 }
 
-export default async function BillingPage({
-  searchParams,
-}: {
-  searchParams: { search?: string; status?: string; dateFrom?: string; dateTo?: string; page?: string };
-}) {
+export default async function BillingPage(
+  props: {
+    searchParams: Promise<{ search?: string; status?: string; dateFrom?: string; dateTo?: string; page?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
 
-  const cookieHeader = cookies().toString();
+  const cookieHeader = (await cookies()).toString();
   const result = await fetchInvoices(identity.clinicId, cookieHeader, searchParams);
   const invoices = result?.data ?? [];
   const total = result?.total ?? 0;

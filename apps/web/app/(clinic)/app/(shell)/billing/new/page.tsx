@@ -17,15 +17,16 @@ export type UnbilledEncounter = {
   branchId: string;
 };
 
-export default async function NewInvoicePage({
-  searchParams,
-}: {
-  searchParams: { encounterId?: string };
-}) {
+export default async function NewInvoicePage(
+  props: {
+    searchParams: Promise<{ encounterId?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
 
-  const cookieHeader = cookies().toString();
+  const cookieHeader = (await cookies()).toString();
   const url = getBackendUrl(`/v1/clinic/${identity.clinicId}/invoices/unbilled`);
 
   let encounters: UnbilledEncounter[] = [];

@@ -41,11 +41,12 @@ export type InvoiceDetail = {
   encounterId: string | null;
 };
 
-export default async function InvoicePage({ params }: { params: { invoiceId: string } }) {
+export default async function InvoicePage(props: { params: Promise<{ invoiceId: string }> }) {
+  const params = await props.params;
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
 
-  const cookieHeader = cookies().toString();
+  const cookieHeader = (await cookies()).toString();
   const url = getBackendUrl(`/v1/clinic/${identity.clinicId}/invoices/${params.invoiceId}`);
 
   let invoice: InvoiceDetail | null = null;

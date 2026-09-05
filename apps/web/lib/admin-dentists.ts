@@ -78,7 +78,7 @@ export async function getAdminDentists(filters: {
   }
 
   const response = await fetch(url, {
-    headers: { cookie: cookies().toString() },
+    headers: { cookie: (await cookies()).toString() },
     cache: 'no-store',
   });
 
@@ -96,7 +96,7 @@ export async function getAdminDentistDetail(
   const response = await fetch(
     getBackendUrl(`/v1/admin/dentists/${encodeURIComponent(dentistId)}`),
     {
-      headers: { cookie: cookies().toString() },
+      headers: { cookie: (await cookies()).toString() },
       cache: 'no-store',
     },
   );

@@ -25,17 +25,18 @@ export type EncounterDetail = {
   dentistLastName: string | null;
 };
 
-export default async function EncounterDetailPage({
-  params,
-}: {
-  params: { encounterId: string };
-}) {
+export default async function EncounterDetailPage(
+  props: {
+    params: Promise<{ encounterId: string }>;
+  }
+) {
+  const params = await props.params;
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
 
   const context = await getClinicShellContext(identity).catch(() => null);
   const hasClinicalRole = ["clinic_owner", "clinic_admin", "dentist", "dental_assistant"].includes(identity.membershipRole);
-  const cookieHeader = cookies().toString();
+  const cookieHeader = (await cookies()).toString();
   const res = await fetch(
     getBackendUrl(`/v1/clinic/${identity.clinicId}/encounters/${params.encounterId}`),
     { headers: { cookie: cookieHeader }, cache: "no-store" }

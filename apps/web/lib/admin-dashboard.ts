@@ -9,7 +9,7 @@ export type AdminDashboardData = {
   recentActivity: Array<{ id: string; action: string; entityType: string; clinicName: string | null; occurredAt: string }>;
 };
 export async function getAdminDashboard(): Promise<AdminDashboardData> {
-  const response = await fetch(getBackendUrl('/v1/admin/dashboard'), { headers: { cookie: cookies().toString() }, cache: 'no-store' });
+  const response = await fetch(getBackendUrl('/v1/admin/dashboard'), { headers: { cookie: (await cookies()).toString() }, cache: 'no-store' });
   if (!response.ok) throw new Error('Admin dashboard is unavailable');
   return ((await response.json()) as { data: AdminDashboardData }).data;
 }

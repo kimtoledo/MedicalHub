@@ -1,11 +1,11 @@
 import type { NextRequest } from 'next/server';
 import { proxyToApi } from '@/lib/api-proxy';
 
-type RouteContext = { params: { clinicId: string; overrideId: string } };
+type RouteContext = { params: Promise<{ clinicId: string; overrideId: string }> };
 
 export async function DELETE(request: NextRequest, context: RouteContext) {
   return proxyToApi(
     request,
-    `/v1/admin/clinics/${encodeURIComponent(context.params.clinicId)}/limit-overrides/${encodeURIComponent(context.params.overrideId)}`,
+    `/v1/admin/clinics/${encodeURIComponent((await context.params).clinicId)}/limit-overrides/${encodeURIComponent((await context.params).overrideId)}`,
   );
 }

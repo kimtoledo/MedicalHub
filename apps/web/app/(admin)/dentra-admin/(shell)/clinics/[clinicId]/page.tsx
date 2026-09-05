@@ -11,8 +11,8 @@ import ClinicPublicationAction from '@/components/admin/ClinicPublicationAction'
 import ClinicDetailTabs from '@/components/admin/ClinicDetailTabs';
 
 type ClinicDetailPageProps = {
-  params: { clinicId: string };
-  searchParams?: { created?: string };
+  params: Promise<{ clinicId: string }>;
+  searchParams?: Promise<{ created?: string }>;
 };
 
 const statusStyles: Record<ClinicStatus, string> = {
@@ -30,7 +30,9 @@ function formatDate(value: string | null): string {
   }).format(new Date(value));
 }
 
-export default async function ClinicDetailPage({ params, searchParams }: ClinicDetailPageProps) {
+export default async function ClinicDetailPage(props: ClinicDetailPageProps) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const wasCreated = searchParams?.created === '1';
   let clinic;
   let packageOptions: AdminClinicPackageOption[] = [];

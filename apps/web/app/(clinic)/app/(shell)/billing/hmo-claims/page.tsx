@@ -21,17 +21,18 @@ export type ClaimListItem = {
   createdAt: string;
 };
 
-export default async function HmoClaimsPage({
-  searchParams,
-}: {
-  searchParams: { status?: string; page?: string };
-}) {
+export default async function HmoClaimsPage(
+  props: {
+    searchParams: Promise<{ status?: string; page?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
 
   const status = searchParams.status ?? "";
   const page = parseInt(searchParams.page ?? "1", 10);
-  const cookieHeader = cookies().toString();
+  const cookieHeader = (await cookies()).toString();
 
   const qs = new URLSearchParams({ page: String(page), pageSize: "20" });
   if (status) qs.set("status", status);

@@ -18,7 +18,7 @@ export type AdminPackageListResult = {
 
 export async function getAdminPackages(): Promise<AdminPackageListResult> {
   const response = await fetch(getBackendUrl('/v1/admin/packages'), {
-    headers: { cookie: cookies().toString() }, cache: 'no-store',
+    headers: { cookie: (await cookies()).toString() }, cache: 'no-store',
   });
   if (!response.ok) throw new Error(`Package list request failed with status ${response.status}`);
   const payload = await response.json() as { success: true; data: AdminPackageListResult };

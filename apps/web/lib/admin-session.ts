@@ -14,7 +14,7 @@ type SessionContextResponse = {
 };
 
 export async function getSuperAdminSession(): Promise<AdminIdentity | null> {
-  const cookieHeader = cookies().toString();
+  const cookieHeader = (await cookies()).toString();
 
   if (!cookieHeader) {
     return null;

@@ -48,15 +48,16 @@ export type ClaimPdfData = {
   } | null;
 };
 
-export default async function ClaimDetailPage({
-  params,
-}: {
-  params: { claimId: string };
-}) {
+export default async function ClaimDetailPage(
+  props: {
+    params: Promise<{ claimId: string }>;
+  }
+) {
+  const params = await props.params;
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
 
-  const cookieHeader = cookies().toString();
+  const cookieHeader = (await cookies()).toString();
   const [claimRes, pdfRes] = await Promise.all([
     fetch(getBackendUrl(`/v1/clinic/${identity.clinicId}/hmo/claims/${params.claimId}`), {
       headers: { cookie: cookieHeader }, cache: "no-store",

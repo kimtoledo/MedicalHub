@@ -1,8 +1,9 @@
 import type { NextRequest } from 'next/server';
 import { proxyToApi } from '@/lib/api-proxy';
 
-async function handler(request: NextRequest, context: { params: { path?: string[] } }) {
-  return proxyToApi(request, `/v1/admin/email-logs${context.params.path?.length ? `/${context.params.path.join('/')}` : ''}`);
+async function handler(request: NextRequest, context: { params: Promise<{ path?: string[] }> }) {
+  const params = await context.params;
+  return proxyToApi(request, `/v1/admin/email-logs${params.path?.length ? `/${params.path.join('/')}` : ''}`);
 }
 
 export const GET = handler;

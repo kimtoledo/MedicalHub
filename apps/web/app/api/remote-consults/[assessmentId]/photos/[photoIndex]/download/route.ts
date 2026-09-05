@@ -7,10 +7,11 @@ import { proxyToApi } from '@/lib/api-proxy';
  */
 async function handler(
   request: NextRequest,
-  { params }: { params: { assessmentId: string; photoIndex: string } },
+  { params }: { params: Promise<{ assessmentId: string; photoIndex: string }> },
 ) {
+  const resolvedParams = await params;
   const search = request.nextUrl.searchParams.toString();
-  const path = `/v1/remote-consults/${params.assessmentId}/photos/${params.photoIndex}/download${search ? '?' + search : ''}`;
+  const path = `/v1/remote-consults/${resolvedParams.assessmentId}/photos/${resolvedParams.photoIndex}/download${search ? '?' + search : ''}`;
   return proxyToApi(request, path);
 }
 

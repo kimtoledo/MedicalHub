@@ -11,7 +11,7 @@ export type AdminSubscriptionListResult = {
 export async function getAdminSubscriptions(filters: { search: string; status?: SubscriptionStatus; packageId?: string; page: number }): Promise<AdminSubscriptionListResult> {
   const url = getBackendUrl('/v1/admin/subscriptions'); url.searchParams.set('page', String(filters.page));
   if (filters.search) url.searchParams.set('search', filters.search); if (filters.status) url.searchParams.set('status', filters.status); if (filters.packageId) url.searchParams.set('packageId', filters.packageId);
-  const response = await fetch(url, { headers: { cookie: cookies().toString() }, cache: 'no-store' });
+  const response = await fetch(url, { headers: { cookie: (await cookies()).toString() }, cache: 'no-store' });
   if (!response.ok) throw new Error(`Subscription list failed with status ${response.status}`);
   return ((await response.json()) as { data: AdminSubscriptionListResult }).data;
 }

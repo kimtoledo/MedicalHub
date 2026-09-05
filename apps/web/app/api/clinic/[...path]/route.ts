@@ -1,8 +1,9 @@
 import { type NextRequest } from 'next/server';
 import { proxyToApi } from '@/lib/api-proxy';
 
-async function handler(request: NextRequest, { params }: { params: { path: string[] } }) {
-  const pathname = '/v1/clinic/' + params.path.join('/');
+async function handler(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const resolvedParams = await params;
+  const pathname = '/v1/clinic/' + resolvedParams.path.join('/');
   return proxyToApi(request, pathname);
 }
 

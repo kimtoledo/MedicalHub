@@ -7,11 +7,12 @@ const when = (value: string) =>
   new Intl.DateTimeFormat("en-PH", { dateStyle: "medium" }).format(
     new Date(`${value}T00:00:00+08:00`),
   );
-export default async function EncountersPage({
-  searchParams,
-}: {
-  searchParams: { patientId?: string };
-}) {
+export default async function EncountersPage(
+  props: {
+    searchParams: Promise<{ patientId?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
   const rows = await getEncounters(

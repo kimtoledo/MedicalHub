@@ -1,2 +1,2 @@
-import type { NextRequest } from 'next/server'; import { proxyToApi } from '@/lib/api-proxy'; type Context = { params: { patientId: string } };
-export async function POST(request: NextRequest, context: Context) { return proxyToApi(request, `/v1/clinic/patients/${encodeURIComponent(context.params.patientId)}/medical-history`); }
+import type { NextRequest } from 'next/server'; import { proxyToApi } from '@/lib/api-proxy'; type Context = { params: Promise<{ patientId: string }> };
+export async function POST(request: NextRequest, context: Context) { return proxyToApi(request, `/v1/clinic/patients/${encodeURIComponent((await context.params).patientId)}/medical-history`); }

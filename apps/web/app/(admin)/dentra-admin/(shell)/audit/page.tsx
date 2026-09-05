@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Search, ScrollText } from 'lucide-react';
 import { getAdminAudit } from '@/lib/admin-audit';
 
 type Props = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 const one = (value: string | string[] | undefined) =>
@@ -34,7 +34,8 @@ function pageHref(filters: {
   return `/dentra-admin/audit?${query}`;
 }
 
-export default async function AuditPage({ searchParams }: Props) {
+export default async function AuditPage(props: Props) {
+  const searchParams = await props.searchParams;
   const actor = one(searchParams?.actor).trim().slice(0, 100);
   const action = one(searchParams?.action).trim().slice(0, 100) || undefined;
   const rawFrom = one(searchParams?.dateFrom);

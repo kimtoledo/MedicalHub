@@ -14,11 +14,13 @@ import DentistAffiliationManager from '@/components/admin/DentistAffiliationMana
 import DentistProfileActions from '@/components/admin/DentistProfileActions';
 
 type DentistDetailPageProps = {
-  params: { dentistId: string };
-  searchParams?: { created?: string };
+  params: Promise<{ dentistId: string }>;
+  searchParams?: Promise<{ created?: string }>;
 };
 
-export default async function DentistDetailPage({ params, searchParams }: DentistDetailPageProps) {
+export default async function DentistDetailPage(props: DentistDetailPageProps) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const wasCreated = searchParams?.created === '1';
   let dentist;
   try {

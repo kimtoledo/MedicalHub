@@ -36,15 +36,16 @@ export type PrescriptionDetail = {
   }>;
 };
 
-export default async function PrescriptionDetailPage({
-  params,
-}: {
-  params: { prescriptionId: string };
-}) {
+export default async function PrescriptionDetailPage(
+  props: {
+    params: Promise<{ prescriptionId: string }>;
+  }
+) {
+  const params = await props.params;
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
 
-  const cookieHeader = cookies().toString();
+  const cookieHeader = (await cookies()).toString();
   const res = await fetch(
     getBackendUrl(`/v1/clinic/${identity.clinicId}/prescriptions/${params.prescriptionId}`),
     { headers: { cookie: cookieHeader }, cache: "no-store" }

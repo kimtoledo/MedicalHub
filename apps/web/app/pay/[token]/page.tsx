@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { CheckCircle2, Clock3, XCircle, AlertTriangle, Ban, RefreshCw } from 'lucide-react';
 
 type LastAttempt = { status: 'pending' | 'succeeded' | 'failed' | 'refunded'; failureReason: string | null; paidAt: string | null };
@@ -12,7 +12,8 @@ function formatManila(iso: string) {
   return new Date(iso).toLocaleString('en-PH', { timeZone: 'Asia/Manila', dateStyle: 'long', timeStyle: 'short' });
 }
 
-export default function PaymentLinkPage({ params }: { params: { token: string } }) {
+export default function PaymentLinkPage(props: { params: Promise<{ token: string }> }) {
+  const params = use(props.params);
   const [link, setLink] = useState<PaymentLink | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

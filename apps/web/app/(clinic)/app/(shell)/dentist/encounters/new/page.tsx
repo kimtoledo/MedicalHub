@@ -3,11 +3,12 @@ import EncounterForm from "@/components/app/encounters/EncounterForm";
 import { getClinicSession, getClinicShellContext } from "@/lib/clinic-session";
 import { getClinicPatientOptions } from "@/lib/clinic-patients";
 import { getClinicDentists } from "@/lib/clinic-dentists";
-export default async function NewEncounterPage({
-  searchParams,
-}: {
-  searchParams: { patientId?: string; appointmentId?: string };
-}) {
+export default async function NewEncounterPage(
+  props: {
+    searchParams: Promise<{ patientId?: string; appointmentId?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
   const isDentist = identity.role === "dentist";

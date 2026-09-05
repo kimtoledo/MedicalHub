@@ -1,3 +1,3 @@
-import type { NextRequest } from 'next/server'; import { proxyToApi } from '@/lib/api-proxy'; type Context = { params: { clinicId: string; closureId: string } };
-export async function PATCH(request: NextRequest, context: Context) { return proxyToApi(request, `/v1/clinic/${encodeURIComponent(context.params.clinicId)}/closures/${encodeURIComponent(context.params.closureId)}`); }
-export async function DELETE(request: NextRequest, context: Context) { return proxyToApi(request, `/v1/clinic/${encodeURIComponent(context.params.clinicId)}/closures/${encodeURIComponent(context.params.closureId)}`); }
+import type { NextRequest } from 'next/server'; import { proxyToApi } from '@/lib/api-proxy'; type Context = { params: Promise<{ clinicId: string; closureId: string }> };
+export async function PATCH(request: NextRequest, context: Context) { return proxyToApi(request, `/v1/clinic/${encodeURIComponent((await context.params).clinicId)}/closures/${encodeURIComponent((await context.params).closureId)}`); }
+export async function DELETE(request: NextRequest, context: Context) { return proxyToApi(request, `/v1/clinic/${encodeURIComponent((await context.params).clinicId)}/closures/${encodeURIComponent((await context.params).closureId)}`); }

@@ -1,10 +1,11 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, use } from 'react';
 import { CheckCircle2, Clock3, Search, ShieldCheck, RotateCcw } from 'lucide-react';
 
 type Appointment = { id: string; startsAt: string; endsAt: string | null; status: string; patientFirstName: string; patientLastInitial: string; patientNumber: string; dentistName: string | null; serviceName: string | null };
-export default function KioskPage({ params }: { params: { branchId: string } }) {
-  const [patientNumber, setPatientNumber] = useState(''); const [lastName, setLastName] = useState(''); const [dateOfBirth, setDateOfBirth] = useState(''); const [appointments, setAppointments] = useState<Appointment[]>([]); const [branchName, setBranchName] = useState(''); const [selected, setSelected] = useState<Appointment | null>(null); const [message, setMessage] = useState<string | null>(null); const [busy, setBusy] = useState(false); const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+export default function KioskPage(props: { params: Promise<{ branchId: string }> }) {
+  const params = use(props.params);
+  const [patientNumber, setPatientNumber] = useState('');const [lastName, setLastName] = useState('');const [dateOfBirth, setDateOfBirth] = useState('');const [appointments, setAppointments] = useState<Appointment[]>([]);const [branchName, setBranchName] = useState('');const [selected, setSelected] = useState<Appointment | null>(null);const [message, setMessage] = useState<string | null>(null);const [busy, setBusy] = useState(false);const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reset = () => { setPatientNumber(''); setLastName(''); setDateOfBirth(''); setAppointments([]); setSelected(null); setMessage(null); setBusy(false); };
   const armReset = () => { if (timer.current) clearTimeout(timer.current); timer.current = setTimeout(reset, 60_000); };
   useEffect(() => { armReset(); return () => { if (timer.current) clearTimeout(timer.current); }; }, []);

@@ -23,7 +23,7 @@ export default async function HmoPayersPage() {
     redirect("/app/settings");
   }
 
-  const cookieHeader = cookies().toString();
+  const cookieHeader = (await cookies()).toString();
   const res = await fetch(
     getBackendUrl(`/v1/clinic/${identity.clinicId}/hmo/payers`),
     { headers: { cookie: cookieHeader }, cache: "no-store" }

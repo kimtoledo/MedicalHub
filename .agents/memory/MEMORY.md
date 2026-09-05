@@ -1,0 +1,1 @@
+- [Next.js package firewall compatibility](nextjs-firewall-compatibility.md) — Next 14 releases are blocked; keep the app on a patched supported major.

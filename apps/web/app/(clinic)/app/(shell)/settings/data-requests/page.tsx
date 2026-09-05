@@ -35,7 +35,7 @@ export default async function DataRequestsPage() {
   if (!identity) redirect("/cl-login");
   if (!identity.isAdmin) redirect("/app/settings");
 
-  const cookieHeader = cookies().toString();
+  const cookieHeader = (await cookies()).toString();
   const [supportAccess, exports] = await Promise.all([
     fetchJson<SupportAccessRequest[]>(getBackendUrl(`/v1/clinic/${identity.clinicId}/operations/support-access`), cookieHeader, []),
     fetchJson<TenantExportRequest[]>(getBackendUrl(`/v1/clinic/${identity.clinicId}/operations/exports`), cookieHeader, []),

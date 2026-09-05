@@ -22,7 +22,7 @@ export default async function CustomDomainsPage() {
   const context = await getClinicShellContext(identity).catch(() => null);
   if (!context?.entitlements["custom_domain.manage"]) notFound();
 
-  const cookieHeader = cookies().toString();
+  const cookieHeader = (await cookies()).toString();
   const res = await fetch(
     getBackendUrl(`/v1/clinic/${identity.clinicId}/custom-domains`),
     { headers: { cookie: cookieHeader }, cache: "no-store" }

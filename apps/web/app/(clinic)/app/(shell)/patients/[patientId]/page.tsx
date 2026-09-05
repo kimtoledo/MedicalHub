@@ -8,13 +8,14 @@ import { getOdontogram } from "@/lib/clinic-odontogram";
 
 export type PatientDetail = ClinicPatientDetail["patient"];
 
-export default async function PatientPage({
-  params,
-  searchParams,
-}: {
-  params: { patientId: string };
-  searchParams: { appointmentSort?: string };
-}) {
+export default async function PatientPage(
+  props: {
+    params: Promise<{ patientId: string }>;
+    searchParams: Promise<{ appointmentSort?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
 

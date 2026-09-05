@@ -21,7 +21,7 @@ type SessionContextResponse = {
 };
 
 export async function getClinicSession(): Promise<ClinicIdentity | null> {
-  const cookieHeader = cookies().toString();
+  const cookieHeader = (await cookies()).toString();
 
   if (!cookieHeader) {
     return null;
@@ -62,7 +62,7 @@ export async function getClinicSession(): Promise<ClinicIdentity | null> {
 }
 
 export async function getClinicShellContext(identity: ClinicIdentity): Promise<ClinicShellContext> {
-  const cookieHeader = cookies().toString();
+  const cookieHeader = (await cookies()).toString();
   const headers = { cookie: cookieHeader };
   const [contextResponse, entitlementResponse] = await Promise.all([
     fetch(getBackendUrl(`/v1/clinic/${encodeURIComponent(identity.clinicId)}/context`), { headers, cache: 'no-store' }),

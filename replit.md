@@ -9,7 +9,7 @@ A dental SaaS platform for the Philippine market. Multi-tenant practice manageme
 The Next.js web frontend runs from `apps/web`:
 
 ```bash
-cd apps/web && npx next dev -p 5000
+cd apps/web && npx next dev --webpack -p 5000
 ```
 
 The workflow **"Start application"** handles this automatically. The app is served at port 5000.
@@ -17,10 +17,12 @@ The workflow **"Start application"** handles this automatically. The app is serv
 The Fastify API runs separately:
 
 ```bash
-npm run api:dev
+npm run db:migrate && npm run api:dev
 ```
 
-The workflow **"Start API"** handles this automatically. The API is served at port 3001.
+The workflow **"Start API"** handles this automatically, applying committed
+database migrations and verifying schema readiness before serving the API at
+port 3001.
 
 ## Project structure
 

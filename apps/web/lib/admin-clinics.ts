@@ -142,7 +142,7 @@ export async function getAdminClinics(filters: {
   }
 
   const response = await fetch(url, {
-    headers: { cookie: cookies().toString() },
+    headers: { cookie: (await cookies()).toString() },
     cache: 'no-store',
   });
 
@@ -160,7 +160,7 @@ export async function getAdminClinicPackageOptions(): Promise<
   const response = await fetch(
     getBackendUrl('/v1/admin/packages/options'),
     {
-      headers: { cookie: cookies().toString() },
+      headers: { cookie: (await cookies()).toString() },
       cache: 'no-store',
     },
   );
@@ -181,7 +181,7 @@ export async function getAdminClinicDetail(
   const response = await fetch(
     getBackendUrl(`/v1/admin/clinics/${encodeURIComponent(clinicId)}`),
     {
-      headers: { cookie: cookies().toString() },
+      headers: { cookie: (await cookies()).toString() },
       cache: 'no-store',
     },
   );

@@ -29,15 +29,16 @@ export type AssessmentDetail = {
   createdAt: string;
 };
 
-export default async function RemoteConsultDetailPage({
-  params,
-}: {
-  params: { assessmentId: string };
-}) {
+export default async function RemoteConsultDetailPage(
+  props: {
+    params: Promise<{ assessmentId: string }>;
+  }
+) {
+  const params = await props.params;
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
 
-  const cookieHeader = cookies().toString();
+  const cookieHeader = (await cookies()).toString();
   const res = await fetch(
     getBackendUrl(`/v1/clinic/${identity.clinicId}/remote-consults/${params.assessmentId}`),
     { headers: { cookie: cookieHeader }, cache: "no-store" }

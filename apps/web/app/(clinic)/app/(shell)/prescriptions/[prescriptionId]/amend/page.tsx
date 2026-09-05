@@ -6,15 +6,16 @@ import { cookies } from "next/headers";
 import AmendPrescriptionClient from "./AmendPrescriptionClient";
 import type { PrescriptionDetail } from "../page";
 
-export default async function AmendPrescriptionPage({
-  params,
-}: {
-  params: { prescriptionId: string };
-}) {
+export default async function AmendPrescriptionPage(
+  props: {
+    params: Promise<{ prescriptionId: string }>;
+  }
+) {
+  const params = await props.params;
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
 
-  const cookieHeader = cookies().toString();
+  const cookieHeader = (await cookies()).toString();
   const res = await fetch(
     getBackendUrl(`/v1/clinic/${identity.clinicId}/prescriptions/${params.prescriptionId}`),
     { headers: { cookie: cookieHeader }, cache: "no-store" }

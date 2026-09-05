@@ -4,7 +4,8 @@ import { getClinicAppointment } from "@/lib/clinic-appointments";
 import { getClinicSession } from "@/lib/clinic-session";
 import { getEncounters } from "@/lib/clinic-encounters";
 
-export default async function AppointmentPage({ params }: { params: { appointmentId: string } }) {
+export default async function AppointmentPage(props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
   const data = await getClinicAppointment(identity.clinicId, params.appointmentId).catch(() => null);

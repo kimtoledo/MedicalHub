@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  agentRules: false,
+  allowedDevOrigins: [
+    '127.0.0.1',
+    ...(process.env.REPLIT_DEV_DOMAIN ? [process.env.REPLIT_DEV_DOMAIN] : []),
+  ],
   // Keep production builds separate from the live development cache. Running
   // `next build` must never replace assets referenced by `next dev`.
   distDir: process.env.NEXT_DIST_DIR || '.next',

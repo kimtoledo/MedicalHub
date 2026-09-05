@@ -14,12 +14,12 @@ import {
 } from '@/lib/admin-clinics';
 
 type ClinicsPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     search?: string | string[];
     status?: string | string[];
     page?: string | string[];
     created?: string | string[];
-  };
+  }>;
 };
 
 const clinicStatuses: ClinicStatus[] = [
@@ -52,7 +52,8 @@ function createPageHref(filters: {
   return `/dentra-admin/clinics?${query.toString()}`;
 }
 
-export default async function ClinicsPage({ searchParams }: ClinicsPageProps) {
+export default async function ClinicsPage(props: ClinicsPageProps) {
+  const searchParams = await props.searchParams;
   const search = getString(searchParams?.search).trim().slice(0, 100);
   const statusValue = getString(searchParams?.status);
   const status = clinicStatuses.includes(statusValue as ClinicStatus)

@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "bash", "web"]
+modules = ["nodejs-20", "bash", "web", "postgresql-16"]
 [nix]
 channel = "stable-25_05"
 
@@ -25,13 +25,13 @@ args = "Start API"
 name = "Start application"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd apps/web && npx next dev -p 5000"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd apps/web && npx next dev --webpack -p 5000"
+waitForPort = 5000
 
 [[workflows.workflow]]
 name = "Start API"
@@ -39,8 +39,11 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run api:dev"
+args = "npm run db:migrate && npm run api:dev"
 waitForPort = 3001
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [[ports]]
 localPort = 3001

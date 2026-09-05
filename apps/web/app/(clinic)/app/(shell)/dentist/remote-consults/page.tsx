@@ -18,17 +18,18 @@ export type ConsultListItem = {
   createdAt: string;
 };
 
-export default async function RemoteConsultsPage({
-  searchParams,
-}: {
-  searchParams: { status?: string; page?: string };
-}) {
+export default async function RemoteConsultsPage(
+  props: {
+    searchParams: Promise<{ status?: string; page?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const identity = await getClinicSession();
   if (!identity) redirect("/cl-login");
 
   const status = searchParams.status ?? "pending";
   const page = parseInt(searchParams.page ?? "1", 10);
-  const cookieHeader = cookies().toString();
+  const cookieHeader = (await cookies()).toString();
 
   const url = getBackendUrl(
     `/v1/clinic/${identity.clinicId}/remote-consults?status=${status}&page=${page}&pageSize=20`

@@ -1,2 +1,5 @@
 import VerificationReviewClient from './VerificationReviewClient';
-export default function VerificationReviewPage({ params }: { params: { submissionId: string } }) { return <VerificationReviewClient submissionId={params.submissionId} />; }
+export default async function VerificationReviewPage(props: { params: Promise<{ submissionId: string }> }) {
+  const params = await props.params;
+  return <VerificationReviewClient submissionId={params.submissionId} />;
+}

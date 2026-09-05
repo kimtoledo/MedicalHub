@@ -51,7 +51,7 @@ export default async function IntegrationsPage() {
   const context = await getClinicShellContext(identity).catch(() => null);
   if (!context?.entitlements["integrations.api"]) notFound();
 
-  const cookieHeader = cookies().toString();
+  const cookieHeader = (await cookies()).toString();
   const [apiKeys, webhooks, notificationProviders] = await Promise.all([
     fetchJson<ApiKey[]>(getBackendUrl(`/v1/clinic/${identity.clinicId}/integrations/api-keys`), cookieHeader, []),
     fetchJson<Webhook[]>(getBackendUrl(`/v1/clinic/${identity.clinicId}/integrations/webhooks`), cookieHeader, []),

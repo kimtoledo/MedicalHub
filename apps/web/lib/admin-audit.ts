@@ -40,7 +40,7 @@ export async function getAdminAudit(filters: {
   if (filters.dateTo) url.searchParams.set('dateTo', filters.dateTo);
 
   const response = await fetch(url, {
-    headers: { cookie: cookies().toString() },
+    headers: { cookie: (await cookies()).toString() },
     cache: 'no-store',
   });
   if (!response.ok) {

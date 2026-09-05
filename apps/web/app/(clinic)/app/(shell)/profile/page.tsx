@@ -7,7 +7,7 @@ export default async function StaffProfilePage() {
   let profile: AccountProfile | null = null;
   try {
     const response = await fetch(getBackendUrl("/v1/profile"), {
-      headers: { cookie: cookies().toString() },
+      headers: { cookie: (await cookies()).toString() },
       cache: "no-store",
     });
     if (response.ok) {

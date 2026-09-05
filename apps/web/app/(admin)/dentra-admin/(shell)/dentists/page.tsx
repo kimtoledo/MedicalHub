@@ -15,12 +15,12 @@ import {
 } from '@/lib/admin-dentists';
 
 type DentistsPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     search?: string | string[];
     verificationStatus?: string | string[];
     page?: string | string[];
     created?: string | string[];
-  };
+  }>;
 };
 
 const verificationStatuses: DentistVerificationStatus[] = [
@@ -63,7 +63,8 @@ function getInitials(firstName: string, lastName: string): string {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 }
 
-export default async function DentistsPage({ searchParams }: DentistsPageProps) {
+export default async function DentistsPage(props: DentistsPageProps) {
+  const searchParams = await props.searchParams;
   const search = getString(searchParams?.search).trim().slice(0, 100);
   const verificationValue = getString(searchParams?.verificationStatus);
   const verificationStatus = verificationStatuses.includes(
