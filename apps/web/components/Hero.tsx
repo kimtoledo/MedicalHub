@@ -2,7 +2,7 @@ import { ArrowRight } from "lucide-react";
 
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden px-4 sm:px-6 pt-16 pb-24">
+    <section className="relative overflow-hidden px-4 sm:px-6 pt-16 pb-24 bg-white">
       {/* Background blobs */}
       <div className="absolute -top-24 -right-24 w-96 h-96 bg-violet-200 rounded-full opacity-40 blur-3xl pointer-events-none" />
       <div className="absolute top-32 -left-24 w-80 h-80 bg-purple-200 rounded-full opacity-30 blur-3xl pointer-events-none" />
