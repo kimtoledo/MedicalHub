@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Loader2,
   RotateCcw,
@@ -95,6 +96,7 @@ export default function OdontogramChart({
   /** Hides the record/correct form entirely — e.g. the encounter it's linked to is finalized. */
   readOnly?: boolean;
 }) {
+  const router = useRouter();
   const [dentition, setDentition] = useState<Dentition>('adult');
   const [selectedTooth, setSelectedTooth] = useState(ARCHES.adult.upper[7]);
   const [selectedSurfaces, setSelectedSurfaces] = useState<string[]>([]);
@@ -213,9 +215,10 @@ export default function OdontogramChart({
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formEl = event.currentTarget;
     setSaving(true);
     setError('');
-    const form = new FormData(event.currentTarget);
+    const form = new FormData(formEl);
     const payload = {
       toothNumber: selectedTooth,
       surfaces: selectedSurfaces,
@@ -232,7 +235,14 @@ export default function OdontogramChart({
       const response = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
       const result = (await response.json()) as { error?: { message?: string } };
       if (!response.ok) throw new Error(result.error?.message ?? 'Tooth event could not be saved');
-      window.location.reload();
+      // Refetch the server-rendered chart data in place instead of a full
+      // document reload — keeps the user's scroll position and selected
+      // arch/dentition, and doesn't re-download the whole page shell.
+      formEl.reset();
+      setSelectedSurfaces([]);
+      setCorrection(null);
+      setSaving(false);
+      router.refresh();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Tooth event could not be saved');
       setSaving(false);

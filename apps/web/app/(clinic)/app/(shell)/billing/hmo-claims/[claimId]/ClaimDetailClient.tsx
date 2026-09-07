@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, Shield, CheckCircle, XCircle, Send, Banknote,
@@ -58,6 +59,7 @@ export default function ClaimDetailClient({
   clinicId: string;
   isAdmin: boolean;
 }) {
+  const router = useRouter();
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const [approvedAmount, setApprovedAmount] = useState(claim.approvedAmountPhp ?? "");
   const [rejectionReason, setRejectionReason] = useState("");
@@ -89,8 +91,10 @@ export default function ClaimDetailClient({
       return;
     }
 
-    // Reload to reflect new status
-    window.location.reload();
+    // Re-fetch the server-rendered claim (new status/amount) in place
+    // instead of a full document reload.
+    setActiveAction(null);
+    router.refresh();
   }
 
   return (

@@ -1,6 +1,6 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
-import { clinicUsageCounters, packages, subscriptionChangeRequests } from '@dentra/db/schema';
+import { clinicUsageCounters, packageLimits, packages, subscriptionChangeRequests } from '@dentra/db/schema';
 import { writeAudit } from '@dentra/db/audit';
 import { AuditAction } from '@dentra/shared';
 import { getClinicCapacitySummary } from '../entitlements/capacity.js';
@@ -17,6 +17,18 @@ export function createSubscriptionOperationsService(database: DB) {
     listPending: () => database.select({ id: subscriptionChangeRequests.id, clinicId: subscriptionChangeRequests.clinicId, type: subscriptionChangeRequests.type, reason: subscriptionChangeRequests.reason, status: subscriptionChangeRequests.status, requestedPackageId: subscriptionChangeRequests.requestedPackageId, packageName: packages.name, requestedMetric: subscriptionChangeRequests.requestedMetric, requestedLimit: subscriptionChangeRequests.requestedLimit, requestedBy: subscriptionChangeRequests.requestedBy, createdAt: subscriptionChangeRequests.createdAt }).from(subscriptionChangeRequests).leftJoin(packages, eq(subscriptionChangeRequests.requestedPackageId, packages.id)).where(eq(subscriptionChangeRequests.status, 'pending')).orderBy(asc(subscriptionChangeRequests.createdAt)),
     reviewRequest: async (requestId: string, input: { status: 'approved' | 'rejected'; note: string }, actor: SubscriptionActor) => database.transaction(async (tx) => { const [current] = await tx.select({ id: subscriptionChangeRequests.id, clinicId: subscriptionChangeRequests.clinicId, status: subscriptionChangeRequests.status }).from(subscriptionChangeRequests).where(eq(subscriptionChangeRequests.id, requestId)).limit(1).for('update'); if (!current) throw new SubscriptionOperationsError('REQUEST_NOT_FOUND', 'Subscription request not found', 404); if (current.status !== 'pending') throw new SubscriptionOperationsError('REQUEST_ALREADY_REVIEWED', 'Subscription request has already been reviewed', 409); const [updated] = await tx.update(subscriptionChangeRequests).set({ status: input.status, reviewedBy: actor.id, reviewedAt: new Date(), reviewNote: input.note, updatedAt: new Date() }).where(eq(subscriptionChangeRequests.id, requestId)).returning(); await audit(tx, actor, clinicIdOr(current.clinicId), requestId, AuditAction.SUBSCRIPTION_REVIEWED, { status: input.status }); return updated; }),
     capacitySummary: (clinicId: string) => getClinicCapacitySummary(database, clinicId),
+    // Active packages a clinic can pick as the target of an upgrade/downgrade
+    // request, with each package's capacity limits so the request form can
+    // show a consequence preview against the clinic's own current usage.
+    listAvailablePackages: async () => {
+      const [packageRows, limitRows] = await Promise.all([
+        database.select({ id: packages.id, name: packages.name, slug: packages.slug, description: packages.description, priceDisplay: packages.priceDisplay, sortOrder: packages.sortOrder }).from(packages).where(eq(packages.isActive, true)).orderBy(packages.sortOrder, packages.name),
+        database.select({ packageId: packageLimits.packageId, metric: packageLimits.metric, limit: packageLimits.limit }).from(packageLimits),
+      ]);
+      const limitsByPackage = new Map<string, Record<string, number | null>>();
+      limitRows.forEach((row) => limitsByPackage.set(row.packageId, { ...(limitsByPackage.get(row.packageId) ?? {}), [row.metric]: row.limit }));
+      return packageRows.map(({ sortOrder: _sortOrder, ...row }) => ({ ...row, limits: limitsByPackage.get(row.id) ?? {} }));
+    },
     usage: (clinicId: string, periodKey: string) => database.select({ metric: clinicUsageCounters.metric, periodKey: clinicUsageCounters.periodKey, used: clinicUsageCounters.used, limit: clinicUsageCounters.limit }).from(clinicUsageCounters).where(and(eq(clinicUsageCounters.clinicId, clinicId), eq(clinicUsageCounters.periodKey, periodKey))),
     incrementUsage: async (clinicId: string, metric: string, periodKey: string, amount: number, limit: number | null, actor?: SubscriptionActor) => database.transaction(async (tx) => { const [row] = await tx.insert(clinicUsageCounters).values({ clinicId, metric, periodKey, used: amount, limit }).onConflictDoUpdate({ target: [clinicUsageCounters.clinicId, clinicUsageCounters.metric, clinicUsageCounters.periodKey], set: { used: sql`${clinicUsageCounters.used} + ${amount}`, limit, updatedAt: new Date() } }).returning(); if (row && limit !== null && row.used > limit) throw new SubscriptionOperationsError('USAGE_LIMIT_REACHED', `Usage limit reached for ${metric}`, 402); if (actor) await audit(tx, actor, clinicId, row.id, AuditAction.USAGE_RECORDED, { metric, amount }); return row; }),
   };

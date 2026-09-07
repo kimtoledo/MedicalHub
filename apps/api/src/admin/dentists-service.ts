@@ -24,7 +24,7 @@ import {
 import { AuditAction, CapacityMetric } from '@dentra/shared';
 import { normalizePrcLicense } from '../dentists/prc-license.js';
 import { dentistVerificationNotification, type NotificationService } from '../notifications/service.js';
-import { assertClinicCapacity, ClinicCapacityError } from '../entitlements/capacity.js';
+import { assertClinicCapacity, ClinicCapacityError, lockClinicRow } from '../entitlements/capacity.js';
 
 export type DentistVerificationStatus =
   typeof dentists.$inferSelect.verificationStatus;
@@ -526,12 +526,7 @@ export function createAdminDentistAffiliationService(
 
         // Lock the clinic row so concurrent affiliation requests for this
         // clinic serialize instead of both reading the same dentist count.
-        await transaction
-          .select({ id: clinics.id })
-          .from(clinics)
-          .where(eq(clinics.id, branch.clinicId))
-          .limit(1)
-          .for('update');
+        await lockClinicRow(transaction, branch.clinicId);
 
         const [existing] = await transaction
           .select({ id: dentistBranchAssignments.id })

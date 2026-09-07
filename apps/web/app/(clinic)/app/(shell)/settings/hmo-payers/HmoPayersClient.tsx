@@ -32,6 +32,7 @@ export default function HmoPayersClient({
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [formState, setFormState] = useState<FormState>("idle");
   const [formError, setFormError] = useState<string | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
 
   function openAdd() {
     setForm({ ...EMPTY_FORM });
@@ -84,23 +85,33 @@ export default function HmoPayersClient({
     const body = await res.json() as { success: boolean; data?: HmoPayer; error?: { message: string } };
 
     setFormState("idle");
-    if (!res.ok) {
+    if (!res.ok || !body.data) {
       setFormError(body.error?.message ?? "Save failed.");
       return;
     }
 
+    const saved = body.data;
+    setPayers((prev) => (editingId
+      ? prev.map((item) => (item.id === editingId ? saved : item))
+      : [...prev, saved]));
     setShowForm(false);
-    window.location.reload();
   }
 
   async function toggleActive(p: HmoPayer) {
-    await fetch(`/api/clinic/${clinicId}/hmo/payers/${p.id}`, {
+    setListError(null);
+    const res = await fetch(`/api/clinic/${clinicId}/hmo/payers/${p.id}`, {
       method: "PATCH",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ isActive: p.isActive === "true" ? "false" : "true" }),
     });
-    window.location.reload();
+    const body = await res.json().catch(() => null) as { data?: HmoPayer; error?: { message: string } } | null;
+    if (!res.ok || !body?.data) {
+      setListError(body?.error?.message ?? "Could not update that payer. Try again.");
+      return;
+    }
+    const saved = body.data;
+    setPayers((prev) => prev.map((item) => (item.id === p.id ? saved : item)));
   }
 
   return (
@@ -210,6 +221,12 @@ export default function HmoPayersClient({
               Cancel
             </button>
           </div>
+        </div>
+      )}
+
+      {listError && (
+        <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-sm text-red-700">
+          <AlertCircle size={14} className="flex-shrink-0 mt-0.5" /> {listError}
         </div>
       )}
 

@@ -90,3 +90,77 @@ describe('createClinicStaffService.invite — seat capacity', () => {
     expect(auditValues).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * Builds a `database` double for update() promoting an existing member into
+ * a capped role (`branchId`/`dentistId`/`isActive` untouched, so only the
+ * role-change path runs). The select queue covers, in order: the clinic
+ * lock update() must take before re-checking capacity (regression coverage
+ * for the missing-lock race — this queue's ordering only lines up if that
+ * lock select actually runs first), the membership lookup, then the
+ * capacity check's override/subscription/package-limit/usage-count lookups.
+ */
+function databaseForRoleChange(usageCount: number, limit: number) {
+  const selectQueue = [
+    [{ id: 'clinic-1' }],                                                                                   // clinic lock
+    [{ id: 'membership-1', userId: 'user-2', role: 'receptionist', branchId: null, dentistId: null, isActive: 'true' }], // membership lookup
+    [],                         // no override
+    [{ packageId: 'pkg-1' }],   // active subscription
+    [{ limit }],                // package_limits row for this metric
+    [{ value: usageCount }],    // live usage count
+  ];
+  let index = 0;
+  const select = vi.fn(() => chainable(selectQueue[index++] ?? []));
+
+  const updateWhere = vi.fn(async () => undefined);
+  const updateSet = vi.fn(() => ({ where: updateWhere }));
+  const update = vi.fn(() => ({ set: updateSet }));
+
+  const deleteWhere = vi.fn(async () => undefined);
+  const del = vi.fn(() => ({ where: deleteWhere }));
+
+  const auditValues = vi.fn(async () => undefined);
+  const insert = vi.fn(() => ({ values: auditValues }));
+
+  const tx = { select, update, delete: del, insert };
+  const database = { transaction: async (callback: (tx: unknown) => unknown) => callback(tx) } as unknown as DB;
+  return { database, select, updateSet, auditValues };
+}
+
+describe('createClinicStaffService.update — role-change seat capacity', () => {
+  it('promotes the member when usage is under the resolved seat limit for the new role', async () => {
+    const { database, updateSet, auditValues } = databaseForRoleChange(0, 1);
+    const service = createClinicStaffService(database);
+
+    const result = await service.update(clinicId, 'membership-1', { role: 'clinic_admin' }, actor);
+
+    expect(result.membershipId).toBe('membership-1');
+    expect(updateSet).toHaveBeenCalledWith(expect.objectContaining({ role: 'clinic_admin' }));
+    expect(auditValues).toHaveBeenCalled();
+  });
+
+  it('rejects the role change with SEAT_LIMIT_REACHED when the target role is already at its seat cap', async () => {
+    const { database, updateSet, auditValues } = databaseForRoleChange(1, 1);
+    const service = createClinicStaffService(database);
+
+    const error = await service.update(clinicId, 'membership-1', { role: 'clinic_admin' }, actor).catch((e) => e);
+
+    expect(error).toBeInstanceOf(ClinicStaffError);
+    expect(error).toMatchObject({ code: 'SEAT_LIMIT_REACHED', statusCode: 409 });
+    expect(updateSet).not.toHaveBeenCalled();
+    expect(auditValues).not.toHaveBeenCalled();
+  });
+
+  it('locks the clinic row before re-checking capacity, same as invite()', async () => {
+    const { database, select } = databaseForRoleChange(0, 1);
+    const service = createClinicStaffService(database);
+
+    await service.update(clinicId, 'membership-1', { role: 'clinic_admin' }, actor);
+
+    // The very first select in the transaction must be the clinic-row lock
+    // (`select(...).limit(1).for('update')`) — this is the fix for the race
+    // where two concurrent role changes could both read the same stale
+    // headcount and both slip past a 1-seat cap.
+    expect(select).toHaveBeenNthCalledWith(1, { id: expect.anything() });
+  });
+});
