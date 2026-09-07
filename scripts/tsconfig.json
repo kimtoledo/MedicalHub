@@ -10,6 +10,9 @@
     "types": ["node"]
   },
   "include": [
+    "./development-accounts.ts",
+    "./development-account-database.ts",
+    "./seed-development-accounts.ts",
     "./demo-presentation-config.ts",
     "./prepare-presentation-demo.ts",
     "./check-demo-readiness.ts"

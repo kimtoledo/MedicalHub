@@ -27,6 +27,7 @@ This repository is intended to be the shared source of truth for Replit Agent, C
 - [`USER_GUIDE_SUPER_ADMIN.md`](USER_GUIDE_SUPER_ADMIN.md) — Super Admin clinic, dentist, subscription, moderation, audit, and operations procedures.
 - [`USER_GUIDE_CLINICS.md`](USER_GUIDE_CLINICS.md) — clinic staff and dentist daily workflows, clinical records, billing, inventory, HMO, and settings.
 - [`USER_GUIDE_PATIENTS.md`](USER_GUIDE_PATIENTS.md) — patient booking, portal, remote consultation, kiosk, payments, reviews, and privacy.
+- [`DEVELOPMENT_ACCOUNTS.md`](DEVELOPMENT_ACCOUNTS.md) — local development login seeding and account list.
 
 ## 2. Demo deployment architecture
 

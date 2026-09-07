@@ -19,6 +19,7 @@
     "db:studio": "cd packages/db && npx drizzle-kit studio --config=drizzle.config.ts",
     "db:push": "cd packages/db && npx drizzle-kit push --config=drizzle.config.ts",
     "db:seed": "tsx scripts/seed-demo.ts",
+    "db:seed:accounts": "tsx scripts/seed-development-accounts.ts",
     "demo:prepare": "npm run db:seed && tsx scripts/prepare-presentation-demo.ts && npm run demo:check",
     "demo:check": "tsx scripts/check-demo-readiness.ts",
     "db:backfill-branch-hours": "tsx scripts/backfill-branch-hours.ts",
