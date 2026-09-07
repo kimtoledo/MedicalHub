@@ -6,6 +6,25 @@ export async function proxyToApi(
   request: NextRequest,
   pathname: string,
 ): Promise<NextResponse> {
+  const browserOrigin = request.headers.get('origin');
+  const browserOriginHost = browserOrigin
+    ? new URL(browserOrigin).host.toLowerCase()
+    : null;
+  const allowedHosts = [
+    request.nextUrl.host,
+    request.headers.get('host'),
+    request.headers.get('x-forwarded-host')?.split(',')[0]?.trim(),
+  ]
+    .filter((host): host is string => Boolean(host))
+    .map((host) => host.toLowerCase());
+
+  if (browserOriginHost && !allowedHosts.includes(browserOriginHost)) {
+    return NextResponse.json(
+      { success: false, error: { code: 'FORBIDDEN', message: 'Origin is not allowed' } },
+      { status: 403 },
+    );
+  }
+
   const url = getBackendUrl(pathname);
   url.search = request.nextUrl.search;
 
@@ -13,6 +32,15 @@ export async function proxyToApi(
   headers.delete('connection');
   headers.delete('content-length');
   headers.delete('host');
+  // Fastify and Better Auth validate this server-to-server hop against their
+  // configured origin. The browser origin was validated above before replacing
+  // a dynamic Replit preview/deployment hostname with that internal value.
+  headers.set(
+    'origin',
+    process.env.CORS_ORIGINS?.split(',')[0]?.trim() ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      'http://localhost:5001',
+  );
 
   const method = request.method.toUpperCase();
   const response = await fetch(url, {

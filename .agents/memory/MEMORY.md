@@ -1,1 +1,2 @@
 - [Next.js package firewall compatibility](nextjs-firewall-compatibility.md) — Next 14 releases are blocked; keep the app on a patched supported major.
+- [Same-origin API proxy security](same-origin-api-proxy-security.md) — validate the browser’s forwarded host, then normalize Origin for the internal auth API hop.
