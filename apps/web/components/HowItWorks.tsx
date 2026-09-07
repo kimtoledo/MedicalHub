@@ -15,7 +15,7 @@ const steps = [
     step: "03",
     title: "Manage everything in one place",
     desc: "From your phone or desktop — view your calendar, handle patient records, and track payments daily.",
-    color: "bg-indigo-100 text-indigo-700",
+    color: "bg-sky-100 text-sky-700",
   },
 ];
 
@@ -29,7 +29,7 @@ export default function HowItWorks() {
           </span>
           <h2 className="text-4xl sm:text-5xl font-extrabold text-violet-900 leading-tight mb-4">
             Up and running{" "}
-            <span className="bg-gradient-to-r from-purple-500 to-violet-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-sky-500 to-violet-600 bg-clip-text text-transparent">
               in three steps.
             </span>
           </h2>
@@ -40,7 +40,7 @@ export default function HowItWorks() {
 
         <div className="grid md:grid-cols-3 gap-8 relative">
           {/* Connector lines */}
-          <div className="hidden md:block absolute top-12 left-1/3 right-1/3 h-0.5 bg-gradient-to-r from-violet-200 to-purple-200" />
+          <div className="hidden md:block absolute top-12 left-1/3 right-1/3 h-0.5 bg-gradient-to-r from-violet-200 to-sky-200" />
 
           {steps.map((s, i) => (
             <div key={s.step} className="flex flex-col items-center text-center relative">

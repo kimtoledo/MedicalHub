@@ -5,7 +5,7 @@ export default function Hero() {
     <section className="relative overflow-hidden px-4 sm:px-6 pt-16 pb-24 bg-white">
       {/* Background blobs */}
       <div className="absolute -top-24 -right-24 w-96 h-96 bg-violet-200 rounded-full opacity-40 blur-3xl pointer-events-none" />
-      <div className="absolute top-32 -left-24 w-80 h-80 bg-purple-200 rounded-full opacity-30 blur-3xl pointer-events-none" />
+      <div className="absolute top-32 -left-24 w-80 h-80 bg-sky-200 rounded-full opacity-30 blur-3xl pointer-events-none" />
 
       <div className="max-w-6xl mx-auto">
         {/* Badge */}
@@ -25,7 +25,7 @@ export default function Hero() {
             </span>{" "}
             your{" "}
             <span className="relative">
-              <span className="bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-violet-600 to-sky-500 bg-clip-text text-transparent">
                 dental clinic.
               </span>
             </span>
@@ -135,7 +135,7 @@ export default function Hero() {
               </div>
 
               {/* Quick actions */}
-              <div className="bg-gradient-to-br from-violet-600 to-purple-500 rounded-2xl p-4 text-white">
+              <div className="bg-gradient-to-br from-violet-600 to-sky-500 rounded-2xl p-4 text-white">
                 <p className="text-xs font-semibold opacity-80 mb-3 uppercase tracking-wide">
                   Quick Actions
                 </p>

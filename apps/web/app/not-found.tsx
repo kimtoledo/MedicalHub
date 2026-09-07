@@ -7,26 +7,40 @@ export const metadata = {
   title: "Page Not Found",
 };
 
-const shortcuts = [
+const shortcuts: {
+  label: string;
+  description: string;
+  href: string;
+  Icon: typeof Stethoscope;
+  accent: "violet" | "sky";
+}[] = [
   {
     label: "Find a dentist",
     description: "Browse verified dental professionals near you",
     href: "/dentists",
     Icon: Stethoscope,
+    accent: "violet",
   },
   {
     label: "Find a clinic",
     description: "Explore clinics using Dentra.ph",
     href: "/clinics",
     Icon: Building2,
+    accent: "sky",
   },
   {
     label: "Go home",
     description: "Back to the Dentra.ph homepage",
     href: "/",
     Icon: Home,
+    accent: "violet",
   },
 ];
+
+const accentClasses = {
+  violet: "bg-violet-100 text-violet-600 group-hover:bg-violet-600 group-hover:text-white",
+  sky: "bg-sky-100 text-sky-600 group-hover:bg-sky-600 group-hover:text-white",
+};
 
 export default function NotFound() {
   return (
@@ -36,7 +50,7 @@ export default function NotFound() {
         <div className="max-w-3xl mx-auto text-center">
           <DentraLogo variant="icon" className="h-14 w-14 mx-auto mb-8 opacity-80" />
 
-          <p className="text-8xl sm:text-9xl font-bold tracking-tight bg-gradient-to-br from-violet-600 to-violet-400 bg-clip-text text-transparent">
+          <p className="text-8xl sm:text-9xl font-bold tracking-tight bg-gradient-to-br from-violet-600 to-sky-500 bg-clip-text text-transparent">
             404
           </p>
 
@@ -65,13 +79,13 @@ export default function NotFound() {
           </div>
 
           <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
-            {shortcuts.map(({ label, description, href, Icon }) => (
+            {shortcuts.map(({ label, description, href, Icon, accent }) => (
               <a
                 key={label}
                 href={href}
                 className="group rounded-2xl border border-violet-100 bg-white p-5 hover:border-violet-300 hover:shadow-md transition-all"
               >
-                <div className="h-10 w-10 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 group-hover:bg-violet-600 group-hover:text-white transition-colors">
+                <div className={`h-10 w-10 rounded-full flex items-center justify-center transition-colors ${accentClasses[accent]}`}>
                   <Icon className="h-5 w-5" />
                 </div>
                 <p className="mt-4 font-semibold text-gray-900 text-sm">{label}</p>

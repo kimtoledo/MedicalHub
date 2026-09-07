@@ -4,10 +4,10 @@ export default function CTASection() {
   return (
     <section id="get-started" className="py-20 px-4 sm:px-6">
       <div className="max-w-4xl mx-auto">
-        <div className="relative overflow-hidden bg-gradient-to-br from-violet-600 via-violet-500 to-purple-500 rounded-4xl px-8 py-16 text-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-violet-600 via-violet-500 to-sky-500 rounded-4xl px-8 py-16 text-center">
           {/* Decorative blobs */}
           <div className="absolute -top-10 -right-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-10 -left-10 w-56 h-56 bg-purple-400/20 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-10 -left-10 w-56 h-56 bg-sky-400/20 rounded-full blur-2xl pointer-events-none" />
 
           <div className="relative z-10">
             <h2 className="text-4xl sm:text-5xl font-extrabold text-white leading-tight mb-4">

@@ -101,22 +101,22 @@ export default function ClinicLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-950 via-violet-900 to-violet-950 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-[#f5f3ff] flex items-center justify-center px-4 py-12">
       {/* Bg decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-32 w-80 h-80 bg-violet-700/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-violet-800/30 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -right-32 w-80 h-80 bg-violet-200/50 rounded-full blur-3xl" />
+        <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-sky-200/40 rounded-full blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <DentraLogo variant="white" className="h-20 w-auto mx-auto mb-2" />
-          <p className="text-violet-400 text-sm mt-1 font-medium">Clinic Portal</p>
+          <DentraLogo className="h-20 w-auto mx-auto mb-2" />
+          <p className="text-violet-500 text-sm mt-1 font-medium">Clinic Portal</p>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-3xl shadow-2xl shadow-violet-950/50 p-8">
+        <div className="bg-white rounded-3xl shadow-xl shadow-violet-200/60 border border-violet-100 p-8">
           <h2 className="text-xl font-bold text-violet-900 mb-1">Sign in</h2>
           <p className="text-violet-500 text-sm mb-6">Access your clinic workspace.</p>
 
@@ -185,7 +185,7 @@ export default function ClinicLoginPage() {
         </div>
 
         <p className="text-center mt-6">
-          <a href="/" className="text-violet-400 hover:text-violet-200 text-sm transition-colors">
+          <a href="/" className="text-violet-500 hover:text-violet-700 text-sm transition-colors">
             ← Back to Dentra.ph
           </a>
         </p>

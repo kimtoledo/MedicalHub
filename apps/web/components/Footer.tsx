@@ -76,7 +76,7 @@ function FloatingBackToTop() {
       aria-label="Back to top"
       aria-hidden={!visible}
       tabIndex={visible ? 0 : -1}
-      className={`fixed right-4 z-50 flex items-center justify-center rounded-full bg-violet-600 text-white shadow-lg shadow-violet-950/20 transition-all duration-300 hover:bg-violet-700 active:scale-95 ${
+      className={`fixed right-4 z-50 flex items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-sky-500 text-white shadow-lg shadow-violet-950/20 transition-all duration-300 hover:from-violet-700 hover:to-sky-600 active:scale-95 ${
         visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0"
       } bottom-[calc(1rem+env(safe-area-inset-bottom))] h-12 w-12 sm:right-6 sm:h-11 sm:w-11`}
     >

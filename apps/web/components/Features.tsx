@@ -22,7 +22,7 @@ const features = [
   },
   {
     icon: Users,
-    color: "bg-indigo-100 text-indigo-700",
+    color: "bg-sky-100 text-sky-700",
     title: "Full Staff Management",
     desc: "Role-based access for owners, dentists, receptionists, and assistants — everyone sees only what they need.",
   },
@@ -57,7 +57,7 @@ export default function Features() {
           </span>
           <h2 className="text-4xl sm:text-5xl font-extrabold text-violet-900 leading-tight mb-4">
             One platform.{" "}
-            <span className="bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-violet-600 to-sky-500 bg-clip-text text-transparent">
               All your clinic needs.
             </span>
           </h2>

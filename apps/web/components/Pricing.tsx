@@ -63,7 +63,7 @@ export default function Pricing() {
           </span>
           <h2 className="text-4xl sm:text-5xl font-extrabold text-violet-900 leading-tight mb-4">
             Simple pricing.{" "}
-            <span className="bg-gradient-to-r from-violet-500 to-violet-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-violet-600 to-sky-500 bg-clip-text text-transparent">
               No surprises.
             </span>
           </h2>
@@ -110,7 +110,7 @@ export default function Pricing() {
                   <li key={f} className="flex items-start gap-2 text-sm">
                     <CheckCircle2
                       size={16}
-                      className={`mt-0.5 flex-shrink-0 ${p.highlight ? "text-violet-300" : "text-violet-500"}`}
+                      className={`mt-0.5 flex-shrink-0 ${p.highlight ? "text-violet-300" : "text-sky-500"}`}
                     />
                     <span className={p.highlight ? "text-violet-100" : "text-violet-700"}>
                       {f}

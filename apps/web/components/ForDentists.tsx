@@ -50,7 +50,7 @@ export default function ForDentists() {
               <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl">
                 {/* Avatar */}
                 <div className="flex flex-col items-center text-center mb-5">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-400 to-purple-400 flex items-center justify-center text-white text-3xl font-bold mb-3">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-400 to-sky-400 flex items-center justify-center text-white text-3xl font-bold mb-3">
                     DR
                   </div>
                   <h3 className="font-bold text-violet-900 text-lg">Dr. Rica Mendoza</h3>
