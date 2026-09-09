@@ -52,6 +52,7 @@
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.10",
-    "esbuild": "^0.28.2"
+    "esbuild": "^0.28.2",
+    "railway": "^3.11.0"
   }
 }

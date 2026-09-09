@@ -8,7 +8,8 @@ dotenv.config({ path: rootEnvPath });
 const environmentSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   API_HOST: z.string().min(1).default('0.0.0.0'),
-  API_PORT: z.coerce.number().int().min(1).max(65_535).default(3001),
+  API_PORT: z.coerce.number().int().min(1).max(65_535).optional(),
+  PORT: z.coerce.number().int().min(1).max(65_535).optional(),
   API_LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
     .default('info'),
@@ -53,7 +54,7 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): ApiCon
   return {
     nodeEnv: result.data.NODE_ENV,
     host: result.data.API_HOST,
-    port: result.data.API_PORT,
+    port: result.data.API_PORT ?? result.data.PORT ?? 3001,
     logLevel: result.data.API_LOG_LEVEL,
     corsOrigins,
     authSecret,
