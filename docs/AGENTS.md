@@ -29,6 +29,16 @@ Read before major work:
 - Plan/package names are not authorization rules. Use entitlement keys.
 - Important clinical/admin/financial actions create audit records.
 
+## Public clinic route layout
+
+- `/clinic/[clinicSlug]` and all nested pages use `apps/web/app/clinic/[clinicSlug]/layout.tsx`.
+- Do not import the main Dentra `Navbar` or marketing `Footer` on these routes, including their loading and error screens.
+- Keep the local `not-found.tsx` and `[...path]/page.tsx` fallback so unknown clinic URLs stay inside the clinic layout. Explicit new subpages take precedence over the fallback.
+- The layout owns the single small **Powered by Dentra.ph** footer. Keep it visible; do not duplicate it inside pages.
+- Show the clinic's logo/name in page content. Subpages should link back to `/clinic/[clinicSlug]` with “Back to [Clinic name]”. Reuse the public clinic data and `brandingImageUrl` helper for uploaded logos, with a text/initials fallback when absent.
+- Keep Dentra's approved UI tokens and accessibility behavior. These pages have no fixed marketing header; do not introduce spacer offsets for it. Other public route families retain their existing layouts.
+- See `BRANDING.md` → **Public clinic route layout** before adding any new clinic page.
+
 ## Security invariants
 - All protected reads/writes require server-side authz.
 - Never accept client-supplied tenant IDs as authority.

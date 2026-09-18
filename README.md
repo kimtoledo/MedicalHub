@@ -33,7 +33,7 @@ Brand and frontend implementation must follow [`docs/BRANDING.md`](docs/BRANDING
 | **Frontend** | Next.js 14 App Router · React 18 · TypeScript · Tailwind CSS |
 | **Backend** | Fastify 5 · TypeScript · Zod · Pino |
 | **Database** | PostgreSQL · Drizzle ORM · Drizzle Kit migrations |
-| **Private files** | Replit Object Storage · short-lived signed access |
+| **Private files** | AWS S3 (private bucket) · short-lived signed access via the API |
 | **Auth** | Better Auth (behind an `AuthService` boundary) |
 | **Shared** | `@dentra/shared` — Zod schemas, enums, `FeatureKey` constants |
 | **Testing** | Vitest · TypeScript checks · production builds · Chrome responsive QA |

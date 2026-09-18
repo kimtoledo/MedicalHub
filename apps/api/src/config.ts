@@ -18,7 +18,32 @@ const environmentSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32).optional(),
   SESSION_SECRET: z.string().min(32).optional(),
   BETTER_AUTH_URL: z.string().url().optional(),
+  // Platform-wide SMTP transport (SMTP2GO). Used as the fallback email sender
+  // for notificationOutbox rows with no clinic-connected provider — e.g.
+  // dentist-verification emails, which carry a null clinicId.
+  SMTP_HOST: z.string().min(1).optional(),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65_535).optional(),
+  SMTP_USER: z.string().min(1).optional(),
+  SMTP_PASSWORD: z.string().min(1).optional(),
+  // "true" for implicit TLS (port 465). Defaults to false — STARTTLS is
+  // negotiated automatically on 587/2525.
+  SMTP_SECURE: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((value) => value === 'true'),
+  EMAIL_FROM: z.string().email().optional(),
+  EMAIL_FROM_NAME: z.string().min(1).optional(),
 });
+
+export type PlatformEmailSettings = {
+  host: string;
+  port: number;
+  user: string;
+  password: string;
+  secure: boolean;
+  from: string;
+  fromName?: string;
+};
 
 export type ApiConfig = {
   nodeEnv: z.infer<typeof environmentSchema>['NODE_ENV'];
@@ -28,6 +53,8 @@ export type ApiConfig = {
   corsOrigins: string[];
   authSecret: string;
   authBaseUrl: string;
+  /** Present only when SMTP_HOST, SMTP_USER, SMTP_PASSWORD and EMAIL_FROM are all set. */
+  platformEmail?: PlatformEmailSettings;
 };
 
 export function loadConfig(environment: NodeJS.ProcessEnv = process.env): ApiConfig {
@@ -50,6 +77,20 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): ApiCon
     );
   }
 
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_SECURE, EMAIL_FROM, EMAIL_FROM_NAME } = result.data;
+  const platformEmail: PlatformEmailSettings | undefined =
+    SMTP_HOST && SMTP_USER && SMTP_PASSWORD && EMAIL_FROM
+      ? {
+          host: SMTP_HOST,
+          port: SMTP_PORT ?? (SMTP_SECURE ? 465 : 587),
+          user: SMTP_USER,
+          password: SMTP_PASSWORD,
+          secure: SMTP_SECURE ?? false,
+          from: EMAIL_FROM,
+          fromName: EMAIL_FROM_NAME,
+        }
+      : undefined;
+
   return {
     nodeEnv: result.data.NODE_ENV,
     host: result.data.API_HOST,
@@ -59,5 +100,6 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): ApiCon
     authSecret,
     authBaseUrl:
       result.data.BETTER_AUTH_URL ?? `http://localhost:${result.data.API_PORT}`,
+    platformEmail,
   };
 }

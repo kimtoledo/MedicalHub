@@ -7,7 +7,7 @@ import { postgresUuidSchema } from '../validation.js';
 const slug = z.string().min(2).max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => !Number.isNaN(new Date(`${value}T00:00:00+08:00`).getTime()), 'Invalid date');
 const selection = z.object({ branchId: postgresUuidSchema, serviceId: postgresUuidSchema, dentistId: postgresUuidSchema.optional(), date });
-const booking = selection.extend({ clinicSlug: slug, startsAt: z.string().datetime({ offset: true }), patientFirstName: z.string().trim().min(1).max(100), patientLastName: z.string().trim().min(1).max(100), patientPhone: z.string().trim().min(7).max(20).regex(/^[0-9+()\-\s]+$/), patientEmail: z.string().trim().email().max(255), chiefComplaint: z.string().trim().min(2).max(1000), agreedToTerms: z.literal(true), recaptchaToken: z.string().min(1) }).strict();
+const booking = selection.extend({ clinicSlug: slug, startsAt: z.string().datetime({ offset: true }), patientFirstName: z.string().trim().min(1).max(100), patientLastName: z.string().trim().min(1).max(100), patientPhone: z.string().trim().min(7).max(20).regex(/^[0-9+()\-\s]+$/), patientEmail: z.string().trim().email().max(255), chiefComplaint: z.string().trim().min(2).max(1000), agreedToTerms: z.literal(true), recaptchaToken: z.string().trim().default('') }).strict();
 
 function error(reply: FastifyReply, caught: unknown) {
   if (caught instanceof PublicBookingError) return reply.status(caught.statusCode).send({ success: false, error: { code: caught.code, message: caught.message } });
@@ -19,6 +19,7 @@ function error(reply: FastifyReply, caught: unknown) {
 async function verifyRecaptcha(token: string, remoteIp?: string): Promise<boolean> {
   const secret = process.env.RECAPTCHA_SECRET_KEY;
   if (!secret) return true;
+  if (!token) return false;
   const params = new URLSearchParams({ secret, response: token });
   if (remoteIp) params.set('remoteip', remoteIp);
   const response = await fetch('https://www.google.com/recaptcha/api/siteverify', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: params });

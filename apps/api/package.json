@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1129.0",
     "@better-auth/drizzle-adapter": "^1.6.26",
     "@dentra/db": "*",
     "@dentra/shared": "*",
@@ -19,15 +20,16 @@
     "@fastify/helmet": "^13.1.0",
     "@fastify/multipart": "^10.1.0",
     "@fastify/rate-limit": "^11.2.0",
-    "@replit/object-storage": "^1.0.0",
     "better-auth": "^1.6.26",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.45.2",
     "fastify": "^5.11.3",
+    "nodemailer": "^6.10.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/nodemailer": "^6.4.24",
     "tsup": "^8.3.5",
     "tsx": "^4.23.12",
     "typescript": "^5",

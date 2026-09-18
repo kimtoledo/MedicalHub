@@ -52,6 +52,7 @@ import { createClinicServiceCatalogService } from './clinic/service-catalog-serv
 import { createClinicInventoryService } from './clinic/inventory-service.js';
 import { createNotificationService } from './notifications/service.js';
 import { createNotificationProvidersService } from './notifications/providers-service.js';
+import { createPlatformEmailService } from './notifications/platform-email.js';
 import { createRecallService } from './clinic/recall-service.js';
 import { createClinicReportsService } from './clinic/reports-service.js';
 import { createSubscriptionOperationsService } from './clinic/subscription-operations-service.js';
@@ -107,7 +108,8 @@ const adminSettings = createPlatformSettingsService(database.db, config);
 const entitlements = createEntitlementService(database.db);
 const publicDirectory = createPublicDirectoryService(database.db);
 const notificationProviders = createNotificationProvidersService(database.db);
-const notifications = createNotificationService(database.db, notificationProviders);
+const platformEmail = createPlatformEmailService(config.platformEmail);
+const notifications = createNotificationService(database.db, notificationProviders, platformEmail);
 const adminDentistProfileState = createAdminDentistProfileStateService(database.db, notifications);
 const clinicRecalls = createRecallService(database.db, notifications);
 const clinicReports = createClinicReportsService(database.db);

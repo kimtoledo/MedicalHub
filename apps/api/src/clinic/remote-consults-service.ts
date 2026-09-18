@@ -1,6 +1,6 @@
 import { createHmac } from 'crypto';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
-import { Client as StorageClient } from '@replit/object-storage';
+import { Client as StorageClient } from '../integrations/storage.js';
 import type { DB } from '@dentra/db';
 import { remoteAssessments, clinics, auditEvents } from '@dentra/db/schema';
 import type { AssessmentPhoto } from '@dentra/db/schema';

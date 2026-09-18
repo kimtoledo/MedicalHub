@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Client as StorageClient } from '@replit/object-storage';
+import { Client as StorageClient } from '../integrations/storage.js';
 import { and, desc, eq, gte, isNotNull, lte, sql } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
 import { clinics, clinicMemberships, dentists, users, verificationSubmissions } from '@dentra/db/schema';

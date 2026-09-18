@@ -44,3 +44,15 @@ Patients need automated reminders for upcoming appointments, and confirmation wh
 
 - In-app push notifications (MVP 3).
 - WhatsApp / Viber integration (MVP 3).
+
+### Appointment receipt extension — 2026-09-18
+
+- Expand the existing booking receipt with the booking reference, selected service, assigned dentist, Philippine time range, and pending clinic confirmation status (requested by the user). Keep reason for visit and clinical notes out of email.
+- Implementation and verification tracked with `../mvp1/08-appointment-booking-public.md`.
+- Completed: receipt template expanded and verified; existing transactional enqueue and post-commit delivery retained. Local SMTP settings are present; live inbox delivery was not tested.
+
+### Personalized booking receipt — 2026-09-18
+
+- User-requested copy refinement: greet the patient by their submitted name, thank them for choosing the clinic, and explain the next steps warmly while preserving booking details and pending confirmation wording.
+- Tracked under this existing task using the small-change exception; Replit task panel is unavailable locally.
+- Completed: receipt uses the submitted full patient name, a thank-you opening, helpful next steps, and a clinic-team sign-off. All 15 focused tests, API typecheck, and API build pass.

@@ -50,6 +50,57 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Minimum five-second appointment loader — 2026-09-18
+- Submission loader stays visible for at least five seconds on success or failure. The request runs immediately alongside the timer; slow requests wait only for their response. Repeat submissions remain blocked throughout.
+- Verified mocked browser timings for fast success/failure and a six-second response, plus 20 web tests, web typecheck, and production build. No live booking or email sent; no API/database changes.
+- Tracked in MVP 1 task 08; queued states unchanged.
+
+### ✅ Booking page visual refinement — 2026-09-18
+- Refined clinic identity, typography, spacing, and booking header. Desktop booking now has a main form and an opt-in live visit summary; mobile stacks the content with full-width actions. Powered by Dentra.ph remains in the shared clinic layout.
+- Replaced pill progress with numbered/completed steps, unified field/button focus and hover states, refreshed schedule/contact screens, and added service duration and next-step guidance using existing booking data.
+- Improved step focus/scroll, contact autocomplete, slot pressed-state semantics, and stale-time clearing when selections change. Preserved loader, form recovery, duplicate-submit guard, pending confirmation, Book again, and existing email behavior.
+- Verified 20 web tests, web typecheck, production build, scoped diff checks, and mocked desktop/mobile browser checks including live summary updates, empty date, stale-time reset, focus, reduced motion, and 320–1280px layouts. No live appointments/emails created; existing lint CLI limitation unchanged.
+- Tracked under MVP 1 task 08. No database, API, or tenant access changes; queued states unchanged.
+
+### ✅ Shared clinic page layout and future-page guidelines — 2026-09-18
+- `/clinic/[clinicSlug]` and nested pages now inherit a shared layout with one compact Powered by Dentra.ph footer. Removed marketing navigation/footer from clinic booking and the homepage's duplicate attribution.
+- Booking page shows clinic logo/initials and name, with a Back to clinic link. Booking scroll spacing is set by the clinic layout, preserving the dentist booking route's header spacing.
+- Added a local not-found screen and catch-all so missing clinic pages/unknown subpaths keep the clinic layout instead of the marketing 404 shell.
+- Documented the required layout, attribution, identity, and navigation rules in `AGENTS.md`, `docs/AGENTS.md`, `docs/BRANDING.md`, and MVP 1 tasks 06/08 for all future clinic pages.
+- Verified desktop/mobile clinic pages and fallbacks, footer uniqueness, back navigation, overflow, and unaffected marketing navigation/footer. Mocked booking loading/error/confirmation/retry checks pass; all 20 web tests, web typecheck, and production build pass. Existing lint script (`next lint`) fails with this Next.js CLI.
+- No database, API, or tenant-authorization changes; queued states unchanged.
+
+### ✅ Personalized appointment receipt — 2026-09-18
+- Receipt email now greets the patient by their submitted full name, thanks them for choosing the clinic, preserves all booking details and pending confirmation guidance, and closes with a warm clinic-team sign-off.
+- Booking service passes the patient name to the existing receipt template; delivery, database, and tenant access behavior are unchanged. Tracked under MVP 2 task 07; queued states unchanged.
+- Verified 15 notification/public-booking tests, API typecheck, API build, and diff whitespace checks.
+
+### ✅ Appointment submission loader and detailed receipt — 2026-09-18
+- Added a branded animated submission screen with reduced-motion support, duplicate-submit protection, preserved contact fields on failure, CAPTCHA reset on failed submission, and focus/scroll handling beneath the fixed navigation.
+- Confirmation shows pending clinic confirmation, booking reference, clinic, branch, service, dentist, Philippine time range, and receipt-email destination; retained Book again and the selected-dentist contact summary.
+- Expanded the existing transactional receipt email with matching booking details and pending status. Delivery continues through the existing outbox/provider with retries; no schema or tenant-query changes. Reason for visit and clinical notes are excluded.
+- Verified 36 focused API tests, repository typechecks and production builds, plus mocked desktop/mobile browser flows (loading, repeat-submit protection, failed-request recovery, reduced motion, receipt layout, Book again). Full suite: 571 passed; existing seed integration test fails because its process does not load `DATABASE_URL` from `.env`. Existing lint CLI limitation remains.
+- Local SMTP configuration is present; live inbox delivery was not tested. Updated MVP 1 task 08 and MVP 2 task 07; queued states unchanged.
+
+### ✅ Selected dentist in booking review — 2026-09-18
+- Contact-details visit summary now shows “Dentist: Dr. First Last” for the selected or profile-fixed dentist, or “Any available dentist” when no preference was chosen.
+- Web typecheck, all 20 web tests, and production build pass. Existing lint-script limitation is unchanged. No API, database, or tenant access changes; queued task states unchanged.
+
+### ✅ Booking confirmation follow-up — 2026-09-18
+- Added a branded “Book again” button to the shared public booking confirmation. Returns to visit details and clears the selected slot, cached availability, errors, consent, and CAPTCHA state; retains clinic/visit selections and resets the date to tomorrow.
+- Added a notice that a copy of the appointment request will be emailed, with an inbox/spam reminder, matching the existing receipt queue without claiming delivery has completed.
+- Validation: web TypeScript check, 20 existing web tests, and production build pass. Existing `next lint` script remains incompatible with the installed Next.js CLI. No database or tenant-query changes; queued task states unchanged.
+
+### ✅ Public appointment validation fix — 2026-09-18
+- Fixed empty/missing reCAPTCHA tokens being rejected before the intended unconfigured-environment bypass; configured secrets still require a nonempty token and successful verification. No database or tenant-query changes.
+- Added seven regression cases; all 13 booking tests pass. Repository typechecks and web/API builds pass; full suite: 571 passed, one database integration test blocked by missing `DATABASE_URL`. Existing web lint script (`next lint`) is incompatible with the installed Next.js CLI.
+- Tracked under `tasks/mvp1/08-appointment-booking-public.md`; no queued task states changed.
+
+### Local S3 configuration and connectivity check (2026-09-17)
+
+- Corrected root `.env` bucket name from `dentra-ph-file` to `dentra-ph-files` after an S3 `NoSuchBucket` response.
+- Verified upload, download with exact byte comparison, and deletion of a temporary diagnostic object through the application storage adapter. This checks S3 connectivity, not the browser/API upload flow.
+
 ### ✅ Subscription tier capacity limits — SOLO/CLINIC/BRANCHES (task #27)
 - New business model: SOLO (1 clinic, 1 dentist, 1 branch, no staff), CLINIC (up to 5 dentists, 1 of each staff role by default, extra seats purchasable), BRANCHES (fully custom per clinic — Super Admin sets branches/dentists/staff/pricing per contract)
 - Migration `0050_overconfident_umar`: added `package_limits` and `clinic_limit_overrides` tables (mirroring the existing `package_features`/`clinic_feature_overrides` override-precedence pattern, but for numeric headcount caps instead of boolean feature flags), plus `clinic_subscriptions.negotiated_price_php`/`billing_note` for BRANCHES custom pricing and `subscription_change_requests.requested_metric`/`requested_limit` for structured add-on requests

@@ -187,7 +187,11 @@ All variables are documented in `.env.example`. Here is a summary:
 | `NEXT_PUBLIC_API_URL` | ✅ Frontend | Public URL of the Fastify API | `http://localhost:3001` locally |
 | `API_INTERNAL_URL` | Optional | Server-only API URL for the Next.js auth proxy/session guard | Defaults to `NEXT_PUBLIC_API_URL` |
 | `BETTER_AUTH_URL` | ✅ API | Base URL for Better Auth | Same as API URL |
-| `STORAGE_BUCKET` | When storage is wired | Object storage bucket name | Provider dashboard (future) |
+| `STORAGE_BUCKET` | ✅ File uploads | AWS S3 bucket name (private) | AWS console |
+| `STORAGE_REGION` | ✅ File uploads | S3 bucket region, e.g. `ap-southeast-1` (falls back to `AWS_REGION`) | AWS console |
+| `STORAGE_ACCESS_KEY` | ✅ File uploads | IAM access key id scoped to the bucket (omit with `STORAGE_SECRET_KEY` to use the default AWS credential chain / instance role) | AWS IAM |
+| `STORAGE_SECRET_KEY` | ✅ File uploads | IAM secret access key | AWS IAM |
+| `STORAGE_ENDPOINT` | Optional | Custom endpoint for S3-compatible stores (MinIO / R2 / LocalStack) | — |
 
 **On Replit:** all secrets are in the Replit Secrets panel — never in code or committed files.  
 **Locally:** copy values from Replit Secrets into your `.env` file.  

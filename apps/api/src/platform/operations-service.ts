@@ -1,4 +1,4 @@
-import { Client as StorageClient } from '@replit/object-storage';
+import { Client as StorageClient } from '../integrations/storage.js';
 import { alias } from 'drizzle-orm/pg-core';
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { DB } from '@dentra/db';

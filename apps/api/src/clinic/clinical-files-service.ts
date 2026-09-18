@@ -1,6 +1,6 @@
 import { createHmac, randomUUID } from 'crypto';
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
-import { Client as StorageClient } from '@replit/object-storage';
+import { Client as StorageClient } from '../integrations/storage.js';
 import type { DB } from '@dentra/db';
 import { writeAudit } from '@dentra/db/audit';
 import { AuditAction } from '@dentra/shared';

@@ -97,6 +97,19 @@ Clinic microsites use `/clinic/[clinic-slug]`; dentist profiles use `/dentists/[
 
 Dentist profiles emphasize professional identity, specialization, credentials, affiliations, locations, availability, and a prominent purple **Book Appointment** CTA.
 
+### Public clinic route layout
+
+Applies to `/clinic/[clinicSlug]` and every descendant, including booking, future services/contact pages, and loading/error states.
+
+- **Clinic identity leads:** show the clinic's own logo and name in page content, using initials when no logo exists.
+- **No main Dentra navigation or marketing footer:** do not import `components/Navbar` or `components/Footer` into this route tree.
+- **Retain attribution:** `apps/web/app/clinic/[clinicSlug]/layout.tsx` provides exactly one compact **Powered by Dentra.ph** footer linking to `https://dentra.ph` on every clinic page. Individual pages must not duplicate or remove it.
+- **Clinic navigation:** include an accessible “← Back to [Clinic name]” link to the clinic homepage on subpages such as appointment booking.
+- **Consistent implementation:** create future clinic pages beneath the existing `[clinicSlug]` layout. Preserve the approved palette, typography, responsive layouts, loading states, and focus indicators. Do not add spacing for a fixed marketing header.
+- Dentra's main marketing, directory, and dentist-profile routes keep their existing navigation/footer behavior.
+
+Approved by the user on 2026-09-18; this rule applies to future clinic page development.
+
 ## 12. Appointment Experience
 
 ```text

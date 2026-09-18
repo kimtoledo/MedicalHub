@@ -2,6 +2,7 @@ import { and, asc, eq, lte } from 'drizzle-orm';
 import type { DB } from '@dentra/db';
 import { notificationOutbox } from '@dentra/db/schema';
 import type { NotificationProvidersService } from './providers-service.js';
+import type { PlatformEmailService } from './platform-email.js';
 
 export type NotificationInput = {
   clinicId?: string | null;
@@ -27,16 +28,24 @@ export type NotificationService = {
 };
 
 /**
- * Notifications are only ever actually sent through a clinic's own connected
- * provider (see providers-service.ts) — there is no platform-wide fallback.
- * A row for a clinic with no provider configured fails with a clear reason
- * instead of being silently marked "sent" with nothing having gone out.
+ * Delivery order for a row: a clinic's own connected provider first (see
+ * providers-service.ts), then the platform-wide SMTP sender (platform-email.ts)
+ * as a fallback — used for platform notifications (null clinicId, e.g. dentist
+ * verification) and for clinics that have not connected their own provider. The
+ * platform fallback is email-only; an SMS row with no clinic provider still
+ * fails with a clear reason rather than being silently marked "sent".
  */
-export function createNotificationService(database: DB, providers?: NotificationProvidersService): NotificationService {
+export function createNotificationService(database: DB, providers?: NotificationProvidersService, platformEmail?: PlatformEmailService): NotificationService {
   async function deliver(row: { id: string; clinicId: string | null; channel: 'email' | 'sms'; recipient: string; subject: string; body: string; attempts: string }) {
     try {
-      if (!row.clinicId || !providers) throw new Error('No clinic-connected provider is configured for this notification');
-      await providers.send(row.clinicId, row.channel, row.recipient, row.subject, row.body);
+      const clinicProvider = row.clinicId && providers ? await providers.hasActiveProvider(row.clinicId, row.channel) : false;
+      if (clinicProvider && row.clinicId && providers) {
+        await providers.send(row.clinicId, row.channel, row.recipient, row.subject, row.body);
+      } else if (row.channel === 'email' && platformEmail?.isConfigured()) {
+        await platformEmail.send(row.recipient, row.subject, row.body);
+      } else {
+        throw new Error(row.channel === 'email' ? 'No email provider is configured for this notification' : 'No SMS provider is configured for this notification');
+      }
       await database.update(notificationOutbox).set({ status: 'sent', sentAt: new Date(), attempts: String(Number(row.attempts) + 1) }).where(eq(notificationOutbox.id, row.id));
       return true;
     } catch (caught) {
@@ -70,9 +79,36 @@ export function createNotificationService(database: DB, providers?: Notification
   };
 }
 
-export function bookingConfirmationNotification(input: { clinicId: string; patientEmail: string; appointmentId: string; clinicName: string; branchName: string; startsAt: string; dedupeKey: string }): NotificationInput {
-  const date = new Intl.DateTimeFormat('en-PH', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Asia/Manila' }).format(new Date(input.startsAt));
-  return { clinicId: input.clinicId, channel: 'email', type: 'booking_confirmation', recipient: input.patientEmail, subject: `Appointment request received — ${input.clinicName}`, body: `Your appointment request with ${input.clinicName} has been received. Location: ${input.branchName}. Date and time: ${date}. Please contact the clinic if you need to make changes.`, dedupeKey: input.dedupeKey };
+export function bookingConfirmationNotification(input: { clinicId: string; patientName: string; patientEmail: string; appointmentId: string; confirmationNumber: string; clinicName: string; branchName: string; serviceName: string; dentistName: string; startsAt: string; endsAt: string; dedupeKey: string }): NotificationInput {
+  const date = new Intl.DateTimeFormat('en-PH', { dateStyle: 'full', timeStyle: 'short', timeZone: 'Asia/Manila' }).format(new Date(input.startsAt));
+  const endTime = new Intl.DateTimeFormat('en-PH', { timeStyle: 'short', timeZone: 'Asia/Manila' }).format(new Date(input.endsAt));
+  return {
+    clinicId: input.clinicId, channel: 'email', type: 'booking_confirmation', recipient: input.patientEmail,
+    subject: `Appointment request received — ${input.clinicName}`,
+    body: [
+      `Hi ${input.patientName.trim()},`,
+      '',
+      `Thank you for choosing ${input.clinicName} for your dental care! We've received your appointment request and look forward to caring for your smile.`,
+      '',
+      'Here are the details of your request:', 
+      '',
+      `Booking reference: ${input.confirmationNumber}`,
+      `Clinic: ${input.clinicName}`,
+      `Branch: ${input.branchName}`,
+      `Service: ${input.serviceName}`,
+      `Dentist: ${input.dentistName}`,
+      `Schedule: ${date} – ${endTime} (Philippine Time, UTC+08:00)`,
+      '',
+      'The clinic team will review your request and contact you to confirm the schedule. Your appointment is not yet confirmed, so please wait for confirmation before your visit.',
+      'If you have any questions or need to change your request, please contact the clinic and share your booking reference. We’re happy to help.',
+      '',
+      'Warm regards,',
+      `${input.clinicName} team`,
+      '',
+      'Sent via Dentra.ph — Smarter Dentistry. Better Care.',
+    ].join('\n'),
+    dedupeKey: input.dedupeKey,
+  };
 }
 
 /**

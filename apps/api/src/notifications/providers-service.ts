@@ -49,6 +49,12 @@ export function createNotificationProvidersService(database: DB) {
   return {
     status: async (clinicId: string) => database.select({ id: clinicNotificationProviders.id, channel: clinicNotificationProviders.channel, providerName: clinicNotificationProviders.providerName, fromAddress: clinicNotificationProviders.fromAddress, status: clinicNotificationProviders.status, lastUsedAt: clinicNotificationProviders.lastUsedAt, lastError: clinicNotificationProviders.lastError, createdAt: clinicNotificationProviders.createdAt }).from(clinicNotificationProviders).where(eq(clinicNotificationProviders.clinicId, clinicId)),
 
+    /** True when this clinic has its own active provider for the channel — callers fall back to the platform sender when false. */
+    hasActiveProvider: async (clinicId: string, channel: NotificationChannel) => {
+      const [row] = await database.select({ id: clinicNotificationProviders.id }).from(clinicNotificationProviders).where(and(eq(clinicNotificationProviders.clinicId, clinicId), eq(clinicNotificationProviders.channel, channel), eq(clinicNotificationProviders.status, 'active'))).limit(1);
+      return Boolean(row);
+    },
+
     setProvider: async (clinicId: string, channel: NotificationChannel, providerName: 'sendgrid' | 'twilio', credential: Record<string, string>, fromAddress: string, actor: NotificationProviderActor) => {
       const fields = credentialFields(providerName, credential);
       if (Object.values(fields).some((value) => !value)) throw new NotificationProviderError('INVALID_CREDENTIAL', `Missing required ${providerName} credential fields`, 400);

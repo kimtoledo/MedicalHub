@@ -4,6 +4,10 @@ Read `docs/AGENTS.md` for the full instructions.
 
 For frontend and PWA work, read and follow `docs/BRANDING.md`. Do not introduce a competing visual system without explicit approval.
 
+## Public clinic pages
+
+For `/clinic/[clinicSlug]` and all subpages, use the shared clinic route layout. Do not add the main Dentra `Navbar` or marketing `Footer`. Keep one small **Powered by Dentra.ph** footer supplied by the layout; show clinic logo/name in page content and a back-to-clinic link on subpages. See `docs/BRANDING.md` → **Public clinic route layout**.
+
 ## Quick reference
 
 - Schema: `packages/db/src/schema/`

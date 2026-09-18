@@ -35,3 +35,12 @@ Each clinic gets a public-facing page at `/clinic/[clinicSlug]` that patients ca
 3. **Booking CTA link** — ✅ Hero and closing CTA link to `/clinic/[clinicSlug]/appointment` for Task 08's booking flow.
 4. **Clinic settings content editor** — ✅ Clinic Owners/Admins can update structured hero/profile/contact/social content and per-branch weekly hours from `/app/settings`; changes are tenant-scoped and audited.
 5. **Publish/unpublish toggle** — ✅ Clinic Owners/Admins use a confirmed auto-approval policy backed by the existing operational-status and effective microsite-entitlement enforcement; every transition remains audited.
+
+## Shared clinic page layout — 2026-09-18
+
+- User-approved: `/clinic/[clinicSlug]` and every nested page use clinic identity without the main Dentra navigation or marketing footer. Keep a single small “Powered by Dentra.ph” footer.
+- Add a shared route layout; remove the homepage's duplicate footer and the booking page's marketing shell. Show clinic logo/name and a back-to-clinic link on booking. Adjust booking scroll spacing locally, preserving dentist-route behavior.
+- Document the rule in root and full agent instructions, branding guidelines, and booking task notes so future pages inherit it. Validate desktop/mobile pages, booking/loading/confirmation, missing-clinic handling, and the unaffected marketing site.
+- Replit task panel unavailable locally; this implementation proceeds under the user's explicit approval and is tracked here before code changes.
+- Completed: shared layout owns the attribution footer; clinic booking uses clinic logo/initials, name, and back link. Local not-found screen and catch-all keep missing/unknown clinic URLs out of the marketing shell.
+- Verified desktop/mobile clinic homepage, booking, missing clinic/booking and unknown subpage; one footer, no marketing header, no horizontal overflow, working back navigation. Mocked booking regression checks pass for loader, error recovery, confirmation, duplicate-submit guard, and Book again. All 20 web tests, web typecheck, and production build pass. Existing `next lint` script remains incompatible with the installed Next.js CLI.

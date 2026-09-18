@@ -1,5 +1,5 @@
 import { and, eq, isNull } from 'drizzle-orm';
-import { Client as StorageClient } from '@replit/object-storage';
+import { Client as StorageClient } from '../integrations/storage.js';
 import type { DB } from '@dentra/db';
 import { writeAudit } from '@dentra/db/audit';
 import { clinics } from '@dentra/db/schema';
