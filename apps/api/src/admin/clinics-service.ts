@@ -29,6 +29,8 @@ import {
 } from '@dentra/db/schema';
 import { AuditAction, CapacityMetric, FeatureKey } from '@dentra/shared';
 import { assertClinicCapacity, ClinicCapacityError, getClinicCapacitySummary } from '../entitlements/capacity.js';
+import type { NotificationService } from '../notifications/service.js';
+import { clinicOwnerWelcomeNotification } from '../notifications/service.js';
 
 export type ClinicStatus = typeof clinics.$inferSelect.status;
 
@@ -1206,6 +1208,7 @@ function getUniqueConstraint(error: unknown): string | undefined {
 
 export function createAdminClinicCreationService(
   database: DB,
+  notifications?: NotificationService,
 ): AdminClinicCreationService {
   return {
     listPackageOptions: async () => database
@@ -1220,9 +1223,9 @@ export function createAdminClinicCreationService(
 
     create: async (input, actor) => {
       try {
-        return await database.transaction(async (transaction) => {
+        const result = await database.transaction(async (transaction) => {
           const [availablePackage] = await transaction
-            .select({ id: packages.id })
+            .select({ id: packages.id, name: packages.name })
             .from(packages)
             .where(
               and(
@@ -1355,12 +1358,27 @@ export function createAdminClinicCreationService(
             },
           ]);
 
+          const welcome = notifications
+            ? await notifications.enqueue(transaction as unknown as DB, clinicOwnerWelcomeNotification({
+                clinicId: createdClinic.id,
+                ownerEmail: input.ownerEmail,
+                clinicName: createdClinic.name,
+                packageName: availablePackage.name,
+                dedupeKey: `clinic-owner-welcome:${createdClinic.id}`,
+              }))
+            : null;
+
           return {
-            ...createdClinic,
-            ownerUserId,
-            packageId: input.packageId,
+            clinic: {
+              ...createdClinic,
+              ownerUserId,
+              packageId: input.packageId,
+            },
+            notificationId: welcome?.id ?? null,
           };
         });
+        if (result.notificationId) void notifications?.attemptDelivery(result.notificationId);
+        return result.clinic;
       } catch (error) {
         if (error instanceof AdminClinicCreationError) {
           throw error;

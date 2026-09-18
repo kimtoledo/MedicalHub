@@ -22,6 +22,7 @@ const types = [
   ['dentist_verification_approved', 'Dentist verification approved'],
   ['dentist_verification_rejected', 'Dentist verification rejected'],
   ['dentist_verification_revoked', 'Dentist verification revoked'],
+  ['clinic_owner_welcome', 'Clinic owner welcome'],
   ['booking_confirmation', 'Booking confirmation'],
   ['appointment_reminder', 'Appointment reminder'],
   ['appointment_cancelled', 'Appointment cancelled'],

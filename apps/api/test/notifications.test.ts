@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bookingConfirmationNotification, dentistVerificationNotification } from '../src/notifications/service.js';
+import { bookingConfirmationNotification, clinicOwnerWelcomeNotification, dentistVerificationNotification } from '../src/notifications/service.js';
 
 describe('notification templates', () => {
   it('uses non-sensitive booking confirmation content and a dedupe key', () => {
@@ -32,5 +32,26 @@ describe('notification templates', () => {
     });
     expect(message.body).toContain('PRC identity and submitted credentials matched.');
     expect(message.body).not.toMatch(/storage|document\/|https?:\/\//i);
+  });
+
+  it('creates a warm clinic owner welcome email with honest onboarding guidance', () => {
+    const message = clinicOwnerWelcomeNotification({
+      clinicId: 'clinic',
+      ownerEmail: 'owner@example.test',
+      clinicName: 'Pearl Dental Clinic',
+      packageName: 'Solo',
+      dedupeKey: 'clinic-owner-welcome:clinic',
+    });
+
+    expect(message).toMatchObject({
+      channel: 'email',
+      type: 'clinic_owner_welcome',
+      recipient: 'owner@example.test',
+      subject: 'Welcome to Dentra.ph — Pearl Dental Clinic',
+      dedupeKey: 'clinic-owner-welcome:clinic',
+    });
+    for (const detail of ['Thank you for registering Pearl Dental Clinic', 'trusting Dentra.ph', 'Package: Solo', 'Status: Trial', 'Private draft', 'password setup', 'The Dentra.ph Team']) {
+      expect(message.body).toContain(detail);
+    }
   });
 });

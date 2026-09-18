@@ -56,3 +56,8 @@ Patients need automated reminders for upcoming appointments, and confirmation wh
 - User-requested copy refinement: greet the patient by their submitted name, thank them for choosing the clinic, and explain the next steps warmly while preserving booking details and pending confirmation wording.
 - Tracked under this existing task using the small-change exception; Replit task panel is unavailable locally.
 - Completed: receipt uses the submitted full patient name, a thank-you opening, helpful next steps, and a clinic-team sign-off. All 15 focused tests, API typecheck, and API build pass.
+
+### Clinic owner welcome — 2026-09-18
+
+- Added `clinic_owner_welcome` to the outbox and email-log filters. Super Admin clinic creation queues the welcome atomically and attempts delivery after commit through the clinic-provider/platform-SMTP fallback with existing retries.
+- The email includes no credentials or private operational data. It clearly states that invitation/password setup is separate and that the clinic page remains a private draft.

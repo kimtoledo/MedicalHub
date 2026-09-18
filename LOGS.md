@@ -50,6 +50,13 @@ Updated manually after each session or merged task.
 
 ## Completed
 
+### ✅ Clinic owner welcome email — 2026-09-18
+- Super Admin clinic creation now queues a welcome email to the submitted owner address inside the same transaction and starts delivery only after commit. Delivery uses the clinic-provider/platform-SMTP fallback and existing retry handling; delivery failure does not undo the created clinic.
+- The message thanks the owner for registering and trusting Dentra.ph, summarizes the clinic, package, trial/private-draft status, and gives onboarding next steps while clearly stating that invitation/password setup is separate.
+- Added notification type `clinic_owner_welcome`, generated migration `0051_fluffy_silvermane`, exposed the type in Email Logs filtering, and updated the creation form's “What happens next” copy.
+- Focused notification/admin/public-booking/provider tests pass (78), along with all 20 web tests and repository typechecks. No live clinic or email was created during verification.
+- Tracked under MVP 1 task 02 and MVP 2 task 07. No tenant-query behavior changed.
+
 ### ✅ Minimum five-second appointment loader — 2026-09-18
 - Submission loader stays visible for at least five seconds on success or failure. The request runs immediately alongside the timer; slow requests wait only for their response. Repeat submissions remain blocked throughout.
 - Verified mocked browser timings for fast success/failure and a six-second response, plus 20 web tests, web typecheck, and production build. No live booking or email sent; no API/database changes.

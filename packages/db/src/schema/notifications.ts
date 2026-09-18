@@ -14,6 +14,7 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'dentist_verification_approved',
   'dentist_verification_rejected',
   'dentist_verification_revoked',
+  'clinic_owner_welcome',
 ]);
 
 export const notificationOutbox = pgTable('notification_outbox', {

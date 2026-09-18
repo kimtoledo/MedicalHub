@@ -7,7 +7,7 @@ import type { PlatformEmailService } from './platform-email.js';
 export type NotificationInput = {
   clinicId?: string | null;
   channel: 'email' | 'sms';
-  type: 'booking_confirmation' | 'appointment_reminder' | 'appointment_cancelled' | 'appointment_rescheduled' | 'recall_reminder' | 'prescription_share' | 'dentist_verification_approved' | 'dentist_verification_rejected' | 'dentist_verification_revoked';
+  type: 'booking_confirmation' | 'appointment_reminder' | 'appointment_cancelled' | 'appointment_rescheduled' | 'recall_reminder' | 'prescription_share' | 'dentist_verification_approved' | 'dentist_verification_rejected' | 'dentist_verification_revoked' | 'clinic_owner_welcome';
   recipient: string;
   subject: string;
   body: string;
@@ -90,7 +90,7 @@ export function bookingConfirmationNotification(input: { clinicId: string; patie
       '',
       `Thank you for choosing ${input.clinicName} for your dental care! We've received your appointment request and look forward to caring for your smile.`,
       '',
-      'Here are the details of your request:', 
+      'Here are the details of your request:',
       '',
       `Booking reference: ${input.confirmationNumber}`,
       `Clinic: ${input.clinicName}`,
@@ -106,6 +106,47 @@ export function bookingConfirmationNotification(input: { clinicId: string; patie
       `${input.clinicName} team`,
       '',
       'Sent via Dentra.ph — Smarter Dentistry. Better Care.',
+    ].join('\n'),
+    dedupeKey: input.dedupeKey,
+  };
+}
+
+export function clinicOwnerWelcomeNotification(input: {
+  clinicId: string;
+  ownerEmail: string;
+  clinicName: string;
+  packageName: string;
+  dedupeKey: string;
+}): NotificationInput {
+  return {
+    clinicId: input.clinicId,
+    channel: 'email',
+    type: 'clinic_owner_welcome',
+    recipient: input.ownerEmail,
+    subject: `Welcome to Dentra.ph — ${input.clinicName}`,
+    body: [
+      'Hi there,',
+      '',
+      `Thank you for registering ${input.clinicName} and for trusting Dentra.ph to support your clinic. We’re excited to be part of your journey toward simpler clinic operations and better patient care.`,
+      '',
+      'Your clinic workspace has been created with these details:',
+      `Clinic: ${input.clinicName}`,
+      `Package: ${input.packageName}`,
+      'Status: Trial',
+      'Clinic page: Private draft',
+      '',
+      'What happens next:',
+      '1. Complete your account invitation and password setup when you receive the separate access instructions.',
+      '2. Add your clinic profile, branches, operating hours, services, and team members.',
+      '3. Review your public clinic page and publish it when everything is ready.',
+      '',
+      'Your clinic is not publicly visible yet. Account access and password setup are handled separately from this welcome email.',
+      '',
+      'If you need help getting started, please contact the Dentra.ph team. We’re happy to help you set up your clinic successfully.',
+      '',
+      'Warm regards,',
+      'The Dentra.ph Team',
+      'Smarter Dentistry. Better Care.',
     ].join('\n'),
     dedupeKey: input.dedupeKey,
   };

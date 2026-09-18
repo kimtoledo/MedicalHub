@@ -43,6 +43,14 @@ Super Admin needs to create and manage clinics end-to-end: from onboarding a new
 7. **Feature overrides** — ✅ Super Admins can add or remove feature-key overrides with a required reason and optional expiry; previous overrides are expired for history and every change is audited.
 8. **Microsite toggle** — ✅ Super Admins can publish or unpublish with confirmation; publishing requires an operational clinic and the effective `microsite.publish` entitlement, and updates `clinics.publication_status`.
 
+## Clinic owner welcome email — 2026-09-18
+
+- User-requested extension: after Super Admin successfully creates a clinic, queue a welcome email to the submitted owner email through the notification outbox.
+- Thank the owner for registering and trusting Dentra.ph; include the clinic name, selected package, trial/draft status, and practical onboarding next steps. Clarify that password/invitation setup remains separate.
+- Queue the email inside the clinic-creation transaction and attempt delivery only after commit. Add a dedicated notification type and generated migration. Email delivery failure must not roll back clinic creation; the outbox retry policy remains responsible for transient failures.
+- Replit task panel is unavailable locally; this work is explicitly authorized by the user and recorded before implementation.
+- Completed: clinic creation now enqueues a dedicated owner welcome message in the same transaction, then starts delivery after commit. The message thanks the owner for registering and trusting Dentra.ph, summarizes clinic/package/status, and explains onboarding and separate access setup. The creation form now reflects this behavior, and Email Logs can filter the new message type.
+
 ---
 
 ## Project task refs

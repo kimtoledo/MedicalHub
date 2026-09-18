@@ -206,9 +206,9 @@ export default function CreateClinicForm({ packages }: CreateClinicFormProps) {
           <div>
             <p className="text-sm font-semibold text-violet-900">What happens next</p>
             <p className="mt-1 text-sm leading-6 text-violet-700">
-              The clinic is created as a private draft in trial status. The owner is
-              linked to the clinic, but invitation delivery and password setup remain
-              a separate onboarding step.
+              The clinic is created as a private draft in trial status. We’ll send the
+              owner a welcome email with the clinic details and next steps. Invitation
+              delivery and password setup remain a separate onboarding step.
             </p>
           </div>
         </div>

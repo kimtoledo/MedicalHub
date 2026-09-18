@@ -8,7 +8,7 @@ import type { AuthServices } from '../auth/types.js';
 import { postgresUuidSchema } from '../validation.js';
 
 const statuses = ['held', 'queued', 'processing', 'sent', 'failed', 'cancelled'] as const;
-const types = ['booking_confirmation', 'appointment_reminder', 'appointment_cancelled', 'appointment_rescheduled', 'recall_reminder', 'prescription_share', 'dentist_verification_approved', 'dentist_verification_rejected', 'dentist_verification_revoked'] as const;
+const types = ['booking_confirmation', 'appointment_reminder', 'appointment_cancelled', 'appointment_rescheduled', 'recall_reminder', 'prescription_share', 'dentist_verification_approved', 'dentist_verification_rejected', 'dentist_verification_revoked', 'clinic_owner_welcome'] as const;
 const dateOnly = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const listQuery = z.object({
   search: z.string().trim().max(200).default(''),
